@@ -24,10 +24,10 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.1.4, build 7 |
+| Version | 1.2.1, build 9 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
-| Minimum deployment target | macOS 27 |
+| macOS requirement | macOS 27 or later |
 | Interface | SwiftUI and AppKit |
 | Playback engine | Bundled libmpv and FFmpeg dependencies |
 | Signing | Ad hoc for local use; not notarized |
@@ -54,6 +54,7 @@ This is an independent implementation of the core free-player workflow. It is **
     - [Export and restore](#export-and-restore)
     - [Local and network behavior](#local-and-network-behavior)
   - [Building from source](#building-from-source)
+- [Automatic GitHub releases](#automatic-github-releases)
     - [Requirements](#requirements)
     - [Build the bundle](#build-the-bundle)
     - [Build details and environment variables](#build-details-and-environment-variables)
@@ -339,7 +340,7 @@ The application code has no account, telemetry, cloud-sync, purchasing, or autom
 - Python 3 and zsh for packaging.
 - A compatible installed `libmpv.2.dylib` and its dependent libraries.
 
-No third-party Swift packages are downloaded. SQLite and UI/graphics frameworks come from the SDK. The macOS 14 deployment target does not imply the development toolchain runs on every macOS 14 machine. The existing bundle was checked on the development Mac, not across every OS version.
+No third-party Swift packages are downloaded. SQLite and UI/graphics frameworks come from the SDK. The documented system requirement is macOS 27 or later; building also requires a compatible Swift toolchain and macOS SDK. The existing bundle was checked on the development Mac, not across every OS version.
 
 ### Build the bundle
 
@@ -519,6 +520,26 @@ Primary technical references:
 - [mpv](https://mpv.io/), [FFmpeg](https://ffmpeg.org/), and [libass](https://github.com/libass/libass)
 
 The generated app records runtime origin in `Contents/Resources/Runtime.txt`. Current packaging is for local use and does not assemble a complete third-party license/source distribution. Distribution would require handling the bundled components' applicable notices and source requirements. This repository currently contains no standalone license grant for the newly written application source.
+
+## Automatic GitHub releases
+
+Ordinary branch pushes and pull requests run [Checks](.github/workflows/ci.yml): version/format consistency, Python release-tool tests, and Swift tests. They do not publish a release.
+
+Pushing a version tag runs [Release](.github/workflows/release.yml) on a GitHub-hosted Apple Silicon macOS 26 runner. It validates the tag against `Resources/Info.plist`, README and the newest `versions.md` entry; runs the checks; imports a pinned playback runtime; builds and signs the app ad hoc; and creates the versioned DMG with its installation notes and checksum. The release uses that version's notes from `versions.md`.
+
+Commit and push the completed changes before tagging that commit. For example, to publish version 1.2.0 after its metadata and release notes have been updated:
+
+```sh
+git push origin HEAD
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+Use the actual version from `Resources/Info.plist` for each release. The workflow does not increment versions or edit commits. Only exact `vMAJOR.MINOR.PATCH` tags matching the newest version are accepted. Watch progress in the repository's **Actions** tab. GitHub Actions must be enabled and repository policy must allow the workflow's `contents: write` permission. Publishing uses the temporary `GITHUB_TOKEN`; no personal access token or Apple signing credentials are required.
+
+The workflow creates a draft, uploads the DMG and `SHA256SUMS.txt`, and verifies GitHub's reported asset sizes and SHA-256 digests before publishing. Failed uploads leave a draft; use **Re-run failed jobs** after fixing the failure. Retrying resumes the draft, while already-published releases are left untouched. Old GitHub releases remain available, and the README's latest-release link follows the newest release automatically. Local DMG builds archive previous images under `dist/releases/old/`; GitHub runners start fresh and do not retain that local archive.
+
+The playback runtime download is fixed in [Runtime/pinned.json](Runtime/pinned.json) to the official [IINA 1.5.0 release](https://github.com/iina/iina/releases/tag/v1.5.0), with SHA-256 verification before mounting or importing. Only its playback libraries are bundled. You can fetch the same build input locally with `python3 scripts/fetch-runtime.py`. Updating the pin requires reviewing the new runtime, its checksum, and playback compatibility. Releases remain unnotarized; automation does not change first-launch approval requirements.
 
 ## Versions and release notes
 

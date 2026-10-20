@@ -1,5 +1,35 @@
 # Lola Player versions
 
+## 1.2.1 (build 9) — 2026-10-20
+
+### Added
+
+- None.
+
+### Modified
+
+- README consistently states macOS 27 or later as the documented system requirement and removes stale macOS 14 guidance.
+
+### Removed
+
+- None.
+
+## 1.2.0 (build 8) — 2026-10-20
+
+### Added
+
+- GitHub Actions checks on branch pushes and pull requests, plus automatic tested macOS arm64 DMG releases on matching version-tag pushes.
+- Pinned, checksum-verified official playback runtime downloads for independent GitHub builds.
+- Release tooling extracts version-specific notes, verifies local and uploaded asset digests, publishes only complete drafts, supports retrying failed drafts, and protects published releases from replacement.
+
+### Modified
+
+- Documented release tagging, Actions permissions, failure recovery, runtime updates and local archive behavior; disk-image imports share the runtime pin.
+
+### Removed
+
+- None.
+
 ## 1.1.4 (build 7) — 2026-10-20
 
 ### Added

@@ -12,12 +12,13 @@ ROOT = Path(__file__).resolve().parent.parent
 source = Path(sys.argv[1]).expanduser().resolve()
 mount = None
 if source.suffix.lower() == '.dmg':
-    if source.name == 'IINA.v1.5.0.dmg':
-        expected = '8fad50479b10e09645053457cec46bd53d054ced2242cfe68f74586735a20dc7'
+    pin = json.loads((ROOT/'Runtime/pinned.json').read_text())
+    if source.name == pin['filename']:
+        expected = pin['sha256']
         with source.open('rb') as handle:
             digest = hashlib.file_digest(handle, 'sha256').hexdigest()
         if digest != expected:
-            raise SystemExit('Official IINA 1.5.0 disk-image checksum does not match')
+            raise SystemExit('Pinned official IINA disk-image checksum does not match')
     else:
         raise SystemExit('For other releases, extract the official app and pass its .app path')
     mount = Path(tempfile.mkdtemp(prefix='runtime-mount-', dir=ROOT/'.build'))

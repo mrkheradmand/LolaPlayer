@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Validate tag and prepare release notes
+        run: python3 scripts/release-metadata.py "$GITHUB_REF_NAME"
+      - name: Run checks
+        run: zsh scripts/ci-checks.sh
+      - name: Download and import pinned playback runtime
+        run: python3 scripts/fetch-runtime.py
+      - name: Build and verify app and DMG
+        env:
+          LUMEN_MPV_LIBRARY: ${{ github.workspace }}/Runtime/Frameworks/libmpv.2.dylib
+        run: |
+          zsh scripts/build-app.sh
+          zsh scripts/build-dmg.sh
+      - name: Upload verified assets and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish-release.py "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY"

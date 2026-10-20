@@ -5,3 +5,5 @@ Use `python3 scripts/import-runtime.py '/path/to/IINA.app'` to stage a compatibl
 `Frameworks/` contains local packaging inputs and is ignored by Git. The final app embeds its dependency closure and runs without this directory or IINA installed. Build-time probing writes actual versions/capabilities into the app's `RuntimeCapabilities.json`; a newer FFmpeg must accompany a compatible libmpv, rather than replacing FFmpeg dylibs in an older runtime.
 
 Tracker modules are intentionally excluded at the user’s request. MIDI uses the macOS General MIDI synthesizer. The current staged runtime comes from the official IINA 1.5.0 package: mpv 0.41.0 / FFmpeg 9.0.1.
+
+`pinned.json` records the official download URL, filename and SHA-256 used by GitHub release builds. `python3 scripts/fetch-runtime.py` downloads that exact image, verifies it before import, and stages its libraries. The disk-image importer reads the same pin. Local app imports remain available for development; CI selects the pinned staged library explicitly so an installed Homebrew runtime cannot replace it.
