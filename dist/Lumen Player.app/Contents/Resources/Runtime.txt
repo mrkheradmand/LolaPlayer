@@ -1,0 +1,5 @@
+Playback runtime: libmpv and its shared-library dependencies.
+Local source: /Applications/IINA.app/Contents/Frameworks/libmpv.2.dylib
+mpv: https://mpv.io/ (GPLv2 or later for this runtime).
+FFmpeg: https://ffmpeg.org/ ; libass: https://github.com/libass/libass
+This build is for local use. Before redistribution, supply all applicable licenses and corresponding source.

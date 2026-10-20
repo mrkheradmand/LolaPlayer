@@ -1,0 +1,469 @@
+# Lumen Player
+
+![Lumen Player welcome screen](app.jpg)
+
+Lumen Player is a native macOS video and audio player with **bookmarks across files and history** and **Float on Top that follows playback**. It was built after inspecting the locally installed Elmedia Player 8.24 with REA and observing its interface.
+
+This is an independent implementation of the core free-player workflow. It does not modify Elmedia or copy its executable or artwork. It is **not an exact visual or feature-complete clone**. PRO features are intentionally excluded; remaining differences are documented below.
+
+| App information | Value |
+| --- | --- |
+| Version | 1.0, build 1 |
+| Bundle identifier | `local.lumenplayer.app` |
+| Current packaged architecture | Apple Silicon / arm64 |
+| Minimum deployment target | macOS 14 |
+| Interface | SwiftUI and AppKit |
+| Playback engine | Bundled libmpv and FFmpeg dependencies |
+| Signing | Ad hoc for local use; not notarized |
+| Application | [dist/Lumen Player.app](dist/Lumen%20Player.app) |
+
+## Contents
+
+- [Getting started](#getting-started)
+- [Features](#features)
+- [Supported media](#supported-media)
+- [Using the player](#using-the-player)
+- [Keyboard shortcuts](#keyboard-shortcuts)
+- [Importing from Elmedia](#importing-from-elmedia)
+- [Data, preferences, and backups](#data-preferences-and-backups)
+- [Building from source](#building-from-source)
+- [Testing and verification](#testing-and-verification)
+- [Project structure](#project-structure)
+- [Troubleshooting](#troubleshooting)
+- [Limitations and excluded features](#limitations-and-excluded-features)
+- [Dependencies and provenance](#dependencies-and-provenance)
+
+## Getting started
+
+1. Open **`dist/Lumen Player.app`** in Finder. You can copy the entire bundle to your Applications folder for regular use.
+2. Press **⌘O**, click **Open File…**, or drag media onto the player.
+3. Press **Space** to pause or resume.
+4. Press **⌘B** to save the current position.
+5. Press **⇧⌘B** to see bookmarks from every file.
+6. Click the **pin** button to enable floating during playback.
+
+The packaged app includes its playback libraries. Running it does not require a separate IINA, mpv, FFmpeg, or Swift development installation. An Intel build is not supplied.
+
+At launch, the welcome screen offers to resume the most recently opened file; playback does not start automatically until you open/select media. Closing the main window quits the app. If Lumen's library is empty, supported Elmedia databases are imported automatically when available.
+
+## Features
+
+### Persistent bookmarks across files
+
+Bookmarks belong to durable file records, rather than only to the currently open video.
+
+- Save with **⌘B** or the bookmark button.
+- Browse **View → Show All Bookmarks** or press **⇧⌘B**.
+- Select a bookmark to reopen its source file at the saved second.
+- Edit its name and time in seconds through **… → Edit…**.
+- Delete individual bookmarks with their trash buttons, or search by filename/bookmark title.
+- Remove every bookmark for one file using its file-row trash button or right-clicking the filename and choosing **Remove All Bookmarks for This File**.
+- Import/export bookmarked records as JSON.
+
+Selecting a bookmark starts playback even when automatic playback is disabled. Bookmarks survive app relaunch, clearing the playlist, and removing individual playlist entries. Times retain fractional-second precision internally, while displayed timestamps use whole seconds. Bookmark deletion currently has no Undo command.
+
+File matching uses normalized paths, filesystem identity, and macOS URL bookmarks to help recognize renamed or moved files. If automatic resolution fails, right-click the file entry and choose **Relocate File…** to reconnect the original record without losing its bookmarks.
+
+### Playback-aware Float on Top
+
+Enable the pin button, **View → Float on Top**, or **⌥⌘T**.
+
+| State | Behavior with Float on Top enabled |
+| --- | --- |
+| Playing loaded media | Floating window |
+| Paused | Normal window level; preference remains enabled |
+| Resumed | Floating returns automatically |
+| Stopped or at end of file | Normal window level |
+| Opening, buffering, or playback failure | Normal window level |
+| Preference disabled | Normal window level |
+
+The selected pin represents the saved preference, not necessarily the current window level. The status overlay appears when floating is enabled or its active state changes, then hides automatically after **two seconds**. It displays **Floating** when active and **Float on Top · paused** when suspended, including other inactive states such as end of file. Hiding the message does not change the floating preference or window level.
+
+### Other playback controls
+
+- Local video/audio playback; hardware decoding requested using libmpv's `auto-safe` mode.
+- Direct media URLs and compatible network streams.
+- Multiple-file opening, folder import, and M3U playlist loading/saving.
+- Persistent playlist membership and Lumen history.
+- Seeking, ten-second skips, jump to time, frame stepping, and chapters.
+- Playback speed from **0.25× to 4×**.
+- Four repeat modes: off, one file, current folder, and whole library; shuffle and A–B looping.
+- macOS Now Playing integration and previous/play-pause/next media-command handlers.
+- Volume/mute, embedded track selection, external audio, and external subtitles.
+- Audio/subtitle delay and subtitle size adjustments.
+- Full screen, window size presets, and aspect-ratio selection.
+- Native menus, keyboard shortcuts, tooltips, and labeled controls.
+
+## Supported media
+
+The app uses libmpv with FFmpeg rather than relying solely on macOS system codecs. File extensions are not a complete decoder inventory: playback also depends on codecs, file integrity, encryption, and the bundled runtime.
+
+| Category | Documented formats or inputs |
+| --- | --- |
+| Video containers | MP4, MKV, MOV, AVI, WebM, M4V, WMV, FLV, MPEG/MPG, TS |
+| Audio files | MP3, M4A, FLAC, WAV, OGG, Opus; AAC playback depends on the engine and container |
+| Playlists | M3U and M3U8 |
+| External subtitles | SRT, ASS, SSA, VTT, SUB |
+| Network media | Direct playable HTTP/HTTPS addresses; RTSP and RTMP addresses are accepted and passed to the engine |
+
+**Verified in the visible app:** H.264 video in MP4 with AC-3 audio, and H.264 video in MKV with Opus audio. Other formats and network protocols have not all been individually tested. Live streams may not support seeking or frame stepping.
+
+Input details:
+
+- **Finder registrations are not playback restrictions.** Open… can pass other extensions to the engine. Some engine-readable formats are not registered document types.
+- **Folder import is not recursive.** It scans regular, non-hidden files directly in the folder using a media-extension allowlist, including `.opus`, `.mpg`, and `.aac`. For other engine-readable extensions, open the file individually.
+- **Local M3U/M3U8 files are parsed as lists of paths/URLs.** Relative paths resolve against the playlist folder. Full local HLS manifest semantics are not implemented by this parser. Remote media/manifest URLs go directly to libmpv.
+- **SUB has several formats.** Binary/paired subtitle support depends on the engine and companion files.
+- **Online media requires a playable address.** YouTube or other arbitrary video webpages are not extracted into streams.
+- DRM-protected services and legacy Flash/SWF playback are not supported workflows.
+
+## Using the player
+
+### Opening media and the library
+
+Use **File → Open…** for files, folders, or playlists. Opening multiple files adds them to the queue and selects the first according to the autoplay preference. Right-click the video for common playback, bookmark, floating, and opening actions.
+
+| Sidebar tab | Purpose |
+| --- | --- |
+| Playlist | Current queue, retained between normal launches |
+| History | All file/URL records, ordered by most recent opening |
+| Bookmarks | All bookmarked records, grouped by file |
+
+File-entry context menus offer **Play**, **Add to Playlist**, and, for local files, **Show in Finder** and **Relocate File…**. Each row has a trash button for its current tab:
+
+| Tab | Row trash button | Footer action |
+| --- | --- | --- |
+| Playlist | Remove that entry from the queue | **Empty Playlist** clears the whole queue |
+| History | Remove that file from History and Open Recent | **Empty History** clears all visible history |
+| Bookmarks | Remove all bookmarks for that file | **Export…** |
+
+Individual bookmarks also have their own trash buttons. Right-click a filename in Bookmarks to choose **Remove All Bookmarks for This File**. Empty actions apply to the entire list, even while a search is active.
+
+These controls never delete media from disk. History removal preserves file records needed by bookmarks and the playlist; it persists after relaunch and is not undone by automatic position saves. Explicitly reopening a file adds it to History again. Removing/emptying the playlist leaves history and bookmarks intact. Removing all bookmarks leaves that file in History and the playlist, but removes its group from the Bookmarks tab.
+
+**File → Open Recent** lists up to 30 files and links to full history. **File → Save Playlist…** writes an M3U list of locations; it does not copy media or export bookmarks.
+
+### Seeking, speed, looping, audio, and subtitles
+
+- Drag the timeline, use the ten-second skip controls, or choose **Playback → Jump to Time…**. Times accept seconds or colon-separated values, such as `90`, `01:30`, or `01:02:30`.
+- The speed button toggles between 1× and 1.5×. Settings provides more speeds; keyboard shortcuts adjust by 0.1×.
+- Click the **repeat button immediately after Next** to cycle: **Repeat Off → One File → Current Folder → Whole Library → Repeat Off**. Right-click it to select a mode directly. Playback → Repeat and Settings use the same modes.
+- **Repeat Off:** continue through the playlist without wrapping at its ends. **One File:** restart the current file when it ends; manual Previous/Next still use the playlist.
+- **Current Folder:** cycle through regular, non-hidden media files in the current file’s immediate folder, sorted naturally by filename. Unopened sibling files are registered without appearing as played in History. Folder repeat requires a local media file; network URLs do not have a folder scope.
+- **Whole Library:** cycle through all file/URL records known to Lumen, including records outside the playlist or hidden from History, in natural filename order. Missing local files are skipped. This does not scan the entire Mac.
+- Folder/library modes wrap from the last item to the first and from the first to the last. Automatic transitions and manual track changes start the selected file at zero. Shuffle chooses another available item within the active scope when possible.
+- For A–B looping, set A at the start and B at a later position. Clear/Cancel removes the loop. Opening another file clears its loop points.
+- Choose chapters from **Playback → Chapters** when present. Frame stepping pauses playback; reverse stepping depends on the source/decoder.
+- Select embedded tracks through **Audio → Audio Track** and **Subtitles → Subtitle Track**.
+- Load external files through **Audio → Use External Audio…** or **Subtitles → Add Subtitles from File…**. You can also open/drop supported subtitles while media is loaded.
+- Press **V** to toggle subtitles. Change their size through the Subtitles menu.
+- Settings provides audio/subtitle delay. Positive values delay that stream; steppers use 0.1-second increments over −60 to +60 seconds.
+
+The engine attempts to find matching external subtitles automatically. Opening subtitles alone does not choose a video for them.
+
+### Settings and defaults
+
+Open **Lumen Player → Settings…**, press **⌘,**, or click the playback-settings button.
+
+| Setting | Initial default | Saved between launches? |
+| --- | --- | --- |
+| Float on Top while media is playing | Off | Yes |
+| Remember playback position for every file | On | Yes |
+| Play automatically when opening media | On | Yes |
+| Ask for a name when adding a bookmark | Off | Yes |
+| Playback speed | 1× | No |
+| Repeat | Off | No |
+| Shuffle | Off | No |
+| Audio/subtitle delay | 0 seconds | No |
+
+When position remembering is enabled, opening a file resumes its stored position. Reaching the end stores zero as its resume position. Positions are saved approximately every five seconds and on pause, file switching, and normal shutdown. Bookmark changes are saved immediately.
+
+### MacBook media buttons and Now Playing
+
+The app registers Apple's public `MPRemoteCommandCenter` handlers and publishes filename, duration, elapsed time, playback rate, and playing/paused/stopped state through `MPNowPlayingInfoCenter`.
+
+| Physical media key | Player action |
+| --- | --- |
+| Previous (usually F7) | Previous item in the active playlist/folder/library scope |
+| Play/pause (usually F8) | Toggle playback |
+| Next (usually F9) | Next item in the active scope |
+
+Start playing media in Lumen so macOS can select it as the Now Playing app. Commands are disabled when no playable media is loaded; previous/next are disabled at non-repeating sequence boundaries. The app also handles separate system Play and Pause commands. It unregisters handlers and clears its metadata on shutdown.
+
+If your function row is configured to use standard F1–F12 keys, use **Fn/Globe + F7/F8/F9** to send the media actions. On a Touch Bar Mac, use the corresponding media controls. macOS decides which media app receives these commands; another player or browser may own them until Lumen starts playing again. No global key interception or Accessibility/Input Monitoring permission request is implemented.
+
+The integration is built against Apple's public framework. Verification of actual hardware presses is distinct from compiling/testing the application: the automated test suite does not simulate the MacBook's physical keyboard or certify routing when other media apps are active.
+
+References: [MPRemoteCommandCenter](https://developer.apple.com/documentation/mediaplayer/mpremotecommandcenter), [MPNowPlayingInfoCenter](https://developer.apple.com/documentation/mediaplayer/mpnowplayinginfocenter).
+
+## Keyboard shortcuts
+
+Shortcuts apply when focus is not inside a text field or modal dialog. Help → Keyboard Shortcuts offers a shorter reference.
+
+| Action | Shortcut |
+| --- | --- |
+| Open files/folder/playlist | ⌘O |
+| Open media URL | ⇧⌘O |
+| Save playlist | ⌘S |
+| Play / pause | Space |
+| Stop and return to beginning | ⌘. |
+| Jump to time | ⌘J |
+| Back / forward 10 seconds | ← / → |
+| Previous / next playlist item | ⌘← / ⌘→ |
+| Volume up / down | ↑ / ↓ |
+| Mute | ⌘M |
+| Next / previous frame | E / ⇧E |
+| Bookmark current position | ⌘B |
+| Show all bookmarks | ⇧⌘B |
+| Show history | ⇧⌘H |
+| Show playlist | ⌘L |
+| Toggle Float on Top preference | ⌥⌘T |
+| Set loop starting / return point | ⌥⌘A / ⌥⌘B |
+| Increase / decrease speed | ⌘] / ⌘[ |
+| Reset speed | ⌘\ |
+| Show / hide subtitles | V |
+| Toggle full screen | ⌃⌘F |
+| Settings | ⌘, |
+| Minimize | ⌥⌘M |
+| Hide app | ⌘H |
+| Close window / quit | ⌘W / ⌘Q |
+
+Click the video to play/pause; double-click to toggle full screen.
+
+## Importing from Elmedia
+
+The importer supports the database schemas observed in Elmedia 8.24 at:
+
+```text
+~/Library/Application Support/Elmedia Player/
+```
+
+| Source database | Imported information |
+| --- | --- |
+| `Playlist.db` | Paths, durations, and saved positions from `playlist_items` |
+| `TimeBookmarks.db` | Paths and archived bookmark times/names from `time_bookmarks` |
+| `LastPosition.db` | Not directly imported; its hashed identifiers were not mapped to additional paths |
+
+Import runs automatically if the normal Lumen library is empty. Choose **File → Import Elmedia Library…** to repeat it. Original databases are opened read-only; archives are decoded with an explicit allowlist of Foundation classes.
+
+Repeated imports skip bookmark times already present within 0.001 seconds. Existing Lumen positions are preserved for known paths. Imported records appear in the library; a manual repeat import does not necessarily enqueue all records, so use **Add to Playlist** if needed.
+
+The original installation check recovered **three files and six bookmarks**. That is a verification result, not a library-size limit. Other versions/layouts may require importer changes. Migration covers paths recoverable from the two supported databases, not every possible Elmedia history source.
+
+## Data, preferences, and backups
+
+| Data | Location |
+| --- | --- |
+| Records, history, positions, bookmarks | `~/Library/Application Support/LumenPlayer/library.json` |
+| Preferences and playlist UUIDs | UserDefaults domain `local.lumenplayer.app` |
+| Window frame | AppKit window-frame autosave |
+| Build and test output | `.build/` |
+| Built application | `dist/Lumen Player.app` |
+
+Library records contain UUIDs, media locations, filesystem identity, macOS URL-bookmark data, last-opened dates, positions, durations, and bookmark names/times. Writes use atomic replacement. If decoding fails, the app preserves the original, reports the problem, and uses a separate `library-recovery-<UUID>.json` file.
+
+### Export and restore
+
+**Playback → Export Bookmarks…**, or **Export…** in Bookmarks, writes complete records for bookmarked files. It includes paths/URLs, resume metadata, and URL-bookmark data—not just titles and seconds. Import expects Lumen's JSON format and skips exact duplicate time/title pairs. TXT/PBF exchange is not implemented.
+
+For a complete backup, quit the app and copy `library.json`. You can export preferences separately:
+
+```sh
+defaults export local.lumenplayer.app LumenPlayer-preferences.plist
+```
+
+To restore, quit Lumen, keep a copy of the current data, and put the backed-up library at its original location. Restore saved preferences while the app is closed with:
+
+```sh
+defaults import local.lumenplayer.app LumenPlayer-preferences.plist
+```
+
+A bookmark export omits unbookmarked history and playlist membership; a full library/preferences backup preserves both.
+
+### Local and network behavior
+
+The application code has no account, telemetry, cloud-sync, purchasing, or automatic-update integration. Local playback and library operations do not require a server. Network playback connects to the supplied source through the engine. Media is referenced in place, rather than copied or uploaded by the library. Elmedia's original files/preferences are not modified.
+
+## Building from source
+
+### Requirements
+
+- Swift **6.2 or later** with a compatible macOS SDK.
+- Xcode or Command Line Tools providing `swift`, `xcrun`, `otool`, `install_name_tool`, and `codesign`.
+- Python 3 and zsh for packaging.
+- A compatible installed `libmpv.2.dylib` and its dependent libraries.
+
+No third-party Swift packages are downloaded. SQLite and UI/graphics frameworks come from the SDK. The macOS 14 deployment target does not imply the development toolchain runs on every macOS 14 machine. The existing bundle was checked on the development Mac, not across every OS version.
+
+### Build the bundle
+
+From the project root:
+
+```sh
+scripts/build-app.sh
+```
+
+The script builds the release executable, creates the bundle, copies the metadata/icon, bundles playback dependencies, and signs the app ad hoc. Output:
+
+```text
+dist/Lumen Player.app
+```
+
+Packaging searches in this order:
+
+1. Existing file selected by `LUMEN_MPV_LIBRARY`.
+2. `/opt/homebrew/lib/libmpv.2.dylib`.
+3. `/usr/local/lib/libmpv.2.dylib`.
+4. `/Applications/IINA.app/Contents/Frameworks/libmpv.2.dylib`.
+
+Example override:
+
+```sh
+LUMEN_MPV_LIBRARY="/absolute/path/to/libmpv.2.dylib" scripts/build-app.sh
+```
+
+The current bundle uses the open-source runtime installed with IINA and contains **59 playback libraries**. It does not need IINA to remain installed. Replacement runtimes must match the executable architecture and required APIs. Dependencies colocated with the runtime or referenced by absolute path are supported; arbitrary external `@rpath` layouts may require bundler changes.
+
+Open `Package.swift` in Xcode for source inspection/debugging. A standalone development executable may need a library search path as well as `LUMEN_MPV_LIBRARY`; the packaged app provides its own `Contents/Frameworks` runpath.
+
+### Build details and environment variables
+
+- Caches are kept under `.build/` to avoid relying on writable global caches.
+- Release debug information is disabled because the original managed environment blocked `dsymutil`; packaging does not produce a release dSYM.
+- `--disable-sandbox` applies to SwiftPM's build sandbox; it does not change macOS security settings.
+- `Resources/AppIcon.icns` is supplied. `scripts/generate-icon.swift` contains the artwork source; normal builds copy the existing icon.
+- `.build/`, `dist/`, and generated research fixtures are ignored by `.gitignore`.
+
+| Variable | Purpose |
+| --- | --- |
+| `LUMEN_MPV_LIBRARY` | Select runtime for packaging, or override the runtime loaded at app startup |
+| `LUMEN_DATA_DIR` | Select a different directory for `library.json` during a normal launch |
+
+The data-directory override does not isolate UserDefaults preferences or playlist IDs. Terminal environment variables do not automatically apply to a separately Finder-launched app.
+
+## Testing and verification
+
+Run:
+
+```sh
+scripts/test.sh
+```
+
+The test script uses `.build/tests` and explicitly loads the toolchain's Swift Testing macro plugin to address the discovery issue encountered with the development toolchain.
+
+The latest recorded run passed **eighteen tests in three suites**, including additional parameterized floating-state cases. Coverage includes:
+
+- Bookmarks across files and reconstruction of the library from disk.
+- Resume-position storage and repeat visits without duplicate records.
+- Rename/symlink identity and explicit relocation without losing bookmarks.
+- Independent bookmark editing/deletion per file.
+- Preservation of an unreadable library file.
+- History removal/emptying without losing bookmarks or queue records, persistence after relaunch, and re-adding a reopened file.
+- Compatibility with older libraries that lack an explicit history-membership flag.
+- Removing all bookmarks for one file while preserving its resume position and other files’ bookmarks.
+- Existing core history-cleanup behavior.
+- Read-only, repeatable Elmedia import without duplicate bookmarks.
+- Float preference/pause combinations and inactive playback states.
+- All four repeat selections, forward/backward wrapping boundaries, empty/single-item scopes, stable natural library ordering, and folder discovery without changing History.
+
+Visible-app checks verified MP4/MKV playback, imported bookmark navigation across files, floating during playback, suspension on pause/end, a new five-second bookmark, and reopening it after relaunch. The final signature was verified with:
+
+```sh
+codesign --verify --deep --strict "dist/Lumen Player.app"
+```
+
+### Optional real-engine smoke test
+
+Provide a directory containing `first.mp4` and `second.mkv`, both longer than ten seconds:
+
+```sh
+"dist/Lumen Player.app/Contents/MacOS/LumenPlayer" \
+  --smoke-test /absolute/path/to/fixtures
+```
+
+The runner exercises decoding, actual window levels, pause/resume, file switching, bookmarks, persistence, and end-of-file behavior. It creates an isolated library subdirectory beside the fixtures, writes `smoke-result.json`, and exits. It temporarily changes float/autoplay/bookmark-prompt preferences and restores them on normal completion; its playlist is not persisted.
+
+The command-line runner could not launch in the original agent's restricted shell, so no successful automated GUI smoke run is claimed. Visible checks were performed instead. Generated `Research/test-media/` files are local fixtures, not requirements for using the app.
+
+## Project structure
+
+```text
+Package.swift                    Package and target configuration
+Sources/
+  PlayerApp/
+    Application.swift            Window/app lifecycle and native menus
+    PlayerModel.swift            Playback state, settings, persistence coordination
+    PlayerView.swift             Video, transport controls, library, settings UI
+    SmokeTest.swift              Optional real-engine smoke runner
+    SystemMediaControls.swift    macOS media commands and Now Playing metadata
+  PlayerCore/
+    Library.swift                Records, bookmarks, storage, floating policy
+    ElmediaImport.swift          Read-only database/archive importer
+    PlaybackOrder.swift          Repeat modes, ordering, and folder discovery
+  CMpv/
+    CMpv.m                       Objective-C libmpv bridge and OpenGL renderer
+    include/CMpv.h               Swift-facing playback API
+  CSQLite/                       System SQLite module map/header
+Tests/PlayerCoreTests/            Swift Testing suites
+Resources/                       Metadata and app icon
+scripts/                         Build, runtime bundling, tests, icon source
+Research/                        REA findings, evidence, reference resources
+```
+
+UI-facing Swift code runs on the main actor. The bridge dynamically loads libmpv, sends asynchronous commands, reads playback state, and renders on a dedicated serial OpenGL queue. Separating rendering from synchronous client reads follows libmpv's threading requirements. OpenGL is deprecated by Apple but used here for compatibility with the bundled runtime; Metal rendering is not implemented.
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| Runtime missing/loading error | Rebuild; check `Contents/Frameworks/libmpv.2.dylib`, dependencies, architecture, and any runtime override. |
+| Build cannot find libmpv | Set `LUMEN_MPV_LIBRARY` to an installed compatible runtime. |
+| Packaging reports a missing dependency | Check the reported library path and runtime dependency layout. |
+| Testing macro plugin cannot load | Confirm `xcrun --find swiftc` selects the intended toolchain and its `lib/swift/host/plugins/testing/libTestingMacros.dylib` exists. |
+| File unavailable | Reconnect its volume, restore its path, or use **Relocate File…**. |
+| Folder import omits a file | Scans are shallow and extension-filtered; open the file directly. |
+| URL does not play | Use a direct media address; check access/connectivity. Opening times out after 20 seconds. |
+| No audio/subtitles | Check mute/volume, track selection, subtitle visibility, and external-file compatibility. |
+| Media keys control another app | Start playback in Lumen and check macOS Now Playing. With standard function keys enabled, use Fn/Globe with F7/F8/F9. |
+| Selected pin but no floating | Playback may be paused, loading, buffering, finished, or failed. The preference stays selected while suspended. |
+| Missing bookmarks | Open All Bookmarks, clear search, and check the library directory. Clearing the playlist does not remove bookmarks. |
+| Library cannot be decoded | Preserve the original and restore a backup or import a bookmark export; the error identifies the original location. |
+| No Elmedia import results | Check the source directory and supported database schemas. |
+
+## Limitations and excluded features
+
+PRO features intentionally omitted:
+
+- Casting/streaming to Apple TV, Chromecast, Smart TVs, or other devices.
+- Picture-in-Picture.
+- Video color/brightness/contrast tuning.
+- Equalizer and advanced audio routing/passthrough.
+- Screenshot sequences and capture tools.
+- Activation, purchases, promotions, and upgrade dialogs.
+
+Other differences from Elmedia:
+
+- A new interface/library sidebar rather than an exact visual reconstruction.
+- No Flash/SWF, dedicated Blu-ray folder/disc workflow, or DVD menu interface.
+- No OpenSubtitles account/search integration or arbitrary webpage video extraction.
+- No detached controls/playlists, controls auto-hide mode, or full Elmedia preference system.
+- No playlist drag-reordering, custom shortcut editor, or bookmark Undo.
+- JSON bookmark exchange only; no TXT/PBF interoperability.
+- Folder-scanning and local-HLS limitations described under Supported Media.
+- Some playback settings are session-only.
+- No cloud synchronization, automatic updater, or installer.
+
+Validation does not certify every codec, service, hardware configuration, HDR path, or macOS version. The deployment target and broad engine support should not be read as evidence that every combination was tested.
+
+## Dependencies and provenance
+
+The application is newly written Swift and Objective-C. Playback uses open-source libmpv with dependent libraries, including FFmpeg and libass. REA inspected the original app's Mach-O metadata and a snapshot of its SQLite bookmark storage. See [Research/findings.md](Research/findings.md) and [Research/rea-evidence.json](Research/rea-evidence.json) for observations and coverage limits.
+
+Primary technical references:
+
+- [libmpv client API](https://github.com/mpv-player/mpv/blob/master/include/mpv/client.h)
+- [libmpv rendering API](https://github.com/mpv-player/mpv/blob/master/include/mpv/render.h)
+- [libmpv OpenGL integration](https://github.com/mpv-player/mpv/blob/master/include/mpv/render_gl.h)
+- [mpv](https://mpv.io/), [FFmpeg](https://ffmpeg.org/), and [libass](https://github.com/libass/libass)
+
+The generated app records runtime origin in `Contents/Resources/Runtime.txt`. Current packaging is for local use and does not assemble a complete third-party license/source distribution. Distribution would require handling the bundled components' applicable notices and source requirements. This repository currently contains no standalone license grant for the newly written application source.
