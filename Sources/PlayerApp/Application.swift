@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 import PlayerCore
 
-@main struct LumenApplication {
+@main struct LolaApplication {
     static func main() {
         let application = NSApplication.shared
         let delegate = AppDelegate()
@@ -32,7 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1080, height: 680), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = "Lumen Player"; window.minSize = NSSize(width: 800, height: 420)
+        window.title = "Lola Player"; window.minSize = NSSize(width: 800, height: 420)
         window.appearance = NSAppearance(named: .darkAqua); window.backgroundColor = .black
         window.titlebarAppearsTransparent = true; window.isReleasedWhenClosed = false
         window.collectionBehavior = [.fullScreenPrimary]; window.delegate = self
@@ -67,11 +67,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     func buildMenus() {
         let bar = NSMenu(); NSApp.mainMenu = bar
-        let app = submenu(bar, "Lumen Player")
-        item(app, "About Lumen Player") { NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "Lumen Player", .applicationVersion: "1.0", .credits: NSAttributedString(string: "An independent native media player.\nBuilt with Swift, AppKit, and libmpv.")]) }
+        let app = submenu(bar, "Lola Player")
+        item(app, "About Lola Player") { NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "Lola Player", .applicationVersion: "1.0", .credits: NSAttributedString(string: "An independent native media player.\nBuilt with Swift, AppKit, and libmpv.")]) }
         item(app, "Settings…", key: ",") { self.model.settingsOpen = true }
-        app.addItem(.separator()); item(app, "Hide Lumen Player", key: "h") { NSApp.hide(nil) }
-        item(app, "Quit Lumen Player", key: "q") { NSApp.terminate(nil) }
+        app.addItem(.separator()); item(app, "Hide Lola Player", key: "h") { NSApp.hide(nil) }
+        item(app, "Quit Lola Player", key: "q") { NSApp.terminate(nil) }
         let file = submenu(bar, "File")
         item(file, "Open…", key: "o") { self.model.openPanel() }
         item(file, "Open URL…", key: "o", modifiers: [.command, .shift]) { self.model.openURL() }

@@ -68,7 +68,7 @@ static id foundationNode(Node n) {
     self = [super initWithFrame:frame pixelFormat:format];
     if (self) {
         self.wantsBestResolutionOpenGLSurface = YES; _errors = [NSMutableArray array];
-        _renderQueue = dispatch_queue_create("local.lumenplayer.render", DISPATCH_QUEUE_SERIAL);
+        _renderQueue = dispatch_queue_create("local.lolaplayer.render", DISPATCH_QUEUE_SERIAL);
     }
     return self;
 }
@@ -88,7 +88,7 @@ static id foundationNode(Node n) {
     option(_mpv,"config","no"); option(_mpv,"vo","libmpv"); option(_mpv,"hwdec","auto-safe");
     option(_mpv,"terminal","no"); option(_mpv,"keep-open","yes"); option(_mpv,"idle","yes");
     option(_mpv,"input-default-bindings","no"); option(_mpv,"osc","no"); option(_mpv,"sub-auto","fuzzy");
-    option(_mpv,"audio-client-name","Lumen Player"); option(_mpv,"ytdl","no");
+    option(_mpv,"audio-client-name","Lola Player"); option(_mpv,"ytdl","no");
     int result = initialize(_mpv);
     if (result < 0) { self.engineError = @(errorString(result)); return NO; }
     _renderGL = self.openGLContext;

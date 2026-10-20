@@ -2,9 +2,9 @@
 import PackageDescription
 
 let package = Package(
-    name: "LumenPlayer",
+    name: "LolaPlayer",
     platforms: [.macOS(.v14)],
-    products: [.executable(name: "LumenPlayer", targets: ["PlayerApp"])],
+    products: [.executable(name: "LolaPlayer", targets: ["PlayerApp"])],
     targets: [
         .systemLibrary(name: "CSQLite"),
         .target(name: "PlayerCore", dependencies: ["CSQLite"]),

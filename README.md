@@ -1,8 +1,10 @@
-# Lumen Player
+# Lola Player
 
-![Lumen Player welcome screen](app.jpg)
+![Lola Player welcome screen](app.jpg)
 
-Lumen Player is a native macOS video and audio player with **bookmarks across files and history** and **Float on Top that follows playback**. It was built after inspecting the locally installed Elmedia Player 8.24 with REA and observing its interface.
+*Screenshot from the earlier Lumen Player build; the app is now named Lola Player.*
+
+Lola Player is a native macOS video and audio player with **bookmarks across files and history** and **Float on Top that follows playback**. It was built after inspecting the locally installed Elmedia Player 8.24 with REA and observing its interface.
 
 This is an independent implementation of the core free-player workflow. It does not modify Elmedia or copy its executable or artwork. It is **not an exact visual or feature-complete clone**. PRO features are intentionally excluded; remaining differences are documented below.
 
@@ -15,7 +17,7 @@ This is an independent implementation of the core free-player workflow. It does 
 | Interface | SwiftUI and AppKit |
 | Playback engine | Bundled libmpv and FFmpeg dependencies |
 | Signing | Ad hoc for local use; not notarized |
-| Application | [dist/Lumen Player.app](dist/Lumen%20Player.app) |
+| Application | [dist/Lola Player.app](dist/Lola%20Player.app) |
 
 ## Contents
 
@@ -35,7 +37,7 @@ This is an independent implementation of the core free-player workflow. It does 
 
 ## Getting started
 
-1. Open **`dist/Lumen Player.app`** in Finder. You can copy the entire bundle to your Applications folder for regular use.
+1. Open **`dist/Lola Player.app`** in Finder. You can copy the entire bundle to your Applications folder for regular use.
 2. Press **⌘O**, click **Open File…**, or drag media onto the player.
 3. Press **Space** to pause or resume.
 4. Press **⌘B** to save the current position.
@@ -44,7 +46,7 @@ This is an independent implementation of the core free-player workflow. It does 
 
 The packaged app includes its playback libraries. Running it does not require a separate IINA, mpv, FFmpeg, or Swift development installation. An Intel build is not supplied.
 
-At launch, the welcome screen offers to resume the most recently opened file; playback does not start automatically until you open/select media. Closing the main window quits the app. If Lumen's library is empty, supported Elmedia databases are imported automatically when available.
+At launch, the welcome screen offers to resume the most recently opened file; playback does not start automatically until you open/select media. Closing the main window quits the app. If Lola's library is empty, supported Elmedia databases are imported automatically when available.
 
 ## Features
 
@@ -84,7 +86,7 @@ The selected pin represents the saved preference, not necessarily the current wi
 - Local video/audio playback; hardware decoding requested using libmpv's `auto-safe` mode.
 - Direct media URLs and compatible network streams.
 - Multiple-file opening, folder import, and M3U playlist loading/saving.
-- Persistent playlist membership and Lumen history.
+- Persistent playlist membership and Lola history.
 - Seeking, ten-second skips, jump to time, frame stepping, and chapters.
 - Playback speed from **0.25× to 4×**.
 - Four repeat modes: off, one file, current folder, and whole library; shuffle and A–B looping.
@@ -150,7 +152,7 @@ These controls never delete media from disk. History removal preserves file reco
 - Click the **repeat button immediately after Next** to cycle: **Repeat Off → One File → Current Folder → Whole Library → Repeat Off**. Right-click it to select a mode directly. Playback → Repeat and Settings use the same modes.
 - **Repeat Off:** continue through the playlist without wrapping at its ends. **One File:** restart the current file when it ends; manual Previous/Next still use the playlist.
 - **Current Folder:** cycle through regular, non-hidden media files in the current file’s immediate folder, sorted naturally by filename. Unopened sibling files are registered without appearing as played in History. Folder repeat requires a local media file; network URLs do not have a folder scope.
-- **Whole Library:** cycle through all file/URL records known to Lumen, including records outside the playlist or hidden from History, in natural filename order. Missing local files are skipped. This does not scan the entire Mac.
+- **Whole Library:** cycle through all file/URL records known to Lola, including records outside the playlist or hidden from History, in natural filename order. Missing local files are skipped. This does not scan the entire Mac.
 - Folder/library modes wrap from the last item to the first and from the first to the last. Automatic transitions and manual track changes start the selected file at zero. Shuffle chooses another available item within the active scope when possible.
 - For A–B looping, set A at the start and B at a later position. Clear/Cancel removes the loop. Opening another file clears its loop points.
 - Choose chapters from **Playback → Chapters** when present. Frame stepping pauses playback; reverse stepping depends on the source/decoder.
@@ -163,7 +165,7 @@ The engine attempts to find matching external subtitles automatically. Opening s
 
 ### Settings and defaults
 
-Open **Lumen Player → Settings…**, press **⌘,**, or click the playback-settings button.
+Open **Lola Player → Settings…**, press **⌘,**, or click the playback-settings button.
 
 | Setting | Initial default | Saved between launches? |
 | --- | --- | --- |
@@ -188,9 +190,9 @@ The app registers Apple's public `MPRemoteCommandCenter` handlers and publishes 
 | Play/pause (usually F8) | Toggle playback |
 | Next (usually F9) | Next item in the active scope |
 
-Start playing media in Lumen so macOS can select it as the Now Playing app. Commands are disabled when no playable media is loaded; previous/next are disabled at non-repeating sequence boundaries. The app also handles separate system Play and Pause commands. It unregisters handlers and clears its metadata on shutdown.
+Start playing media in Lola so macOS can select it as the Now Playing app. Commands are disabled when no playable media is loaded; previous/next are disabled at non-repeating sequence boundaries. The app also handles separate system Play and Pause commands. It unregisters handlers and clears its metadata on shutdown.
 
-If your function row is configured to use standard F1–F12 keys, use **Fn/Globe + F7/F8/F9** to send the media actions. On a Touch Bar Mac, use the corresponding media controls. macOS decides which media app receives these commands; another player or browser may own them until Lumen starts playing again. No global key interception or Accessibility/Input Monitoring permission request is implemented.
+If your function row is configured to use standard F1–F12 keys, use **Fn/Globe + F7/F8/F9** to send the media actions. On a Touch Bar Mac, use the corresponding media controls. macOS decides which media app receives these commands; another player or browser may own them until Lola starts playing again. No global key interception or Accessibility/Input Monitoring permission request is implemented.
 
 The integration is built against Apple's public framework. Verification of actual hardware presses is distinct from compiling/testing the application: the automated test suite does not simulate the MacBook's physical keyboard or certify routing when other media apps are active.
 
@@ -244,9 +246,9 @@ The importer supports the database schemas observed in Elmedia 8.24 at:
 | `TimeBookmarks.db` | Paths and archived bookmark times/names from `time_bookmarks` |
 | `LastPosition.db` | Not directly imported; its hashed identifiers were not mapped to additional paths |
 
-Import runs automatically if the normal Lumen library is empty. Choose **File → Import Elmedia Library…** to repeat it. Original databases are opened read-only; archives are decoded with an explicit allowlist of Foundation classes.
+Import runs automatically if the normal Lola library is empty. Choose **File → Import Elmedia Library…** to repeat it. Original databases are opened read-only; archives are decoded with an explicit allowlist of Foundation classes.
 
-Repeated imports skip bookmark times already present within 0.001 seconds. Existing Lumen positions are preserved for known paths. Imported records appear in the library; a manual repeat import does not necessarily enqueue all records, so use **Add to Playlist** if needed.
+Repeated imports skip bookmark times already present within 0.001 seconds. Existing Lola positions are preserved for known paths. Imported records appear in the library; a manual repeat import does not necessarily enqueue all records, so use **Add to Playlist** if needed.
 
 The original installation check recovered **three files and six bookmarks**. That is a verification result, not a library-size limit. Other versions/layouts may require importer changes. Migration covers paths recoverable from the two supported databases, not every possible Elmedia history source.
 
@@ -258,24 +260,26 @@ The original installation check recovered **three files and six bookmarks**. Tha
 | Preferences and playlist UUIDs | UserDefaults domain `local.lumenplayer.app` |
 | Window frame | AppKit window-frame autosave |
 | Build and test output | `.build/` |
-| Built application | `dist/Lumen Player.app` |
+| Built application | `dist/Lola Player.app` |
+
+The application keeps its original `local.lumenplayer.app` identifier, `LumenPlayer` data directory, and `LUMEN_*` environment-variable names for compatibility with existing libraries and preferences. Renaming the app does not reset bookmarks, history, playlist membership, settings, or the saved window frame.
 
 Library records contain UUIDs, media locations, filesystem identity, macOS URL-bookmark data, last-opened dates, positions, durations, and bookmark names/times. Writes use atomic replacement. If decoding fails, the app preserves the original, reports the problem, and uses a separate `library-recovery-<UUID>.json` file.
 
 ### Export and restore
 
-**Playback → Export Bookmarks…**, or **Export…** in Bookmarks, writes complete records for bookmarked files. It includes paths/URLs, resume metadata, and URL-bookmark data—not just titles and seconds. Import expects Lumen's JSON format and skips exact duplicate time/title pairs. TXT/PBF exchange is not implemented.
+**Playback → Export Bookmarks…**, or **Export…** in Bookmarks, writes complete records for bookmarked files. It includes paths/URLs, resume metadata, and URL-bookmark data—not just titles and seconds. Import expects Lola's JSON format and skips exact duplicate time/title pairs. TXT/PBF exchange is not implemented.
 
 For a complete backup, quit the app and copy `library.json`. You can export preferences separately:
 
 ```sh
-defaults export local.lumenplayer.app LumenPlayer-preferences.plist
+defaults export local.lumenplayer.app LolaPlayer-preferences.plist
 ```
 
-To restore, quit Lumen, keep a copy of the current data, and put the backed-up library at its original location. Restore saved preferences while the app is closed with:
+To restore, quit Lola, keep a copy of the current data, and put the backed-up library at its original location. Restore saved preferences while the app is closed with:
 
 ```sh
-defaults import local.lumenplayer.app LumenPlayer-preferences.plist
+defaults import local.lumenplayer.app LolaPlayer-preferences.plist
 ```
 
 A bookmark export omits unbookmarked history and playlist membership; a full library/preferences backup preserves both.
@@ -306,7 +310,7 @@ scripts/build-app.sh
 The script builds the release executable, creates the bundle, copies the metadata/icon, bundles playback dependencies, and signs the app ad hoc. Output:
 
 ```text
-dist/Lumen Player.app
+dist/Lola Player.app
 ```
 
 Packaging searches in this order:
@@ -369,7 +373,7 @@ The latest recorded run passed **eighteen tests in three suites**, including add
 Visible-app checks verified MP4/MKV playback, imported bookmark navigation across files, floating during playback, suspension on pause/end, a new five-second bookmark, and reopening it after relaunch. The final signature was verified with:
 
 ```sh
-codesign --verify --deep --strict "dist/Lumen Player.app"
+codesign --verify --deep --strict "dist/Lola Player.app"
 ```
 
 ### Optional real-engine smoke test
@@ -377,7 +381,7 @@ codesign --verify --deep --strict "dist/Lumen Player.app"
 Provide a directory containing `first.mp4` and `second.mkv`, both longer than ten seconds:
 
 ```sh
-"dist/Lumen Player.app/Contents/MacOS/LumenPlayer" \
+"dist/Lola Player.app/Contents/MacOS/LolaPlayer" \
   --smoke-test /absolute/path/to/fixtures
 ```
 
@@ -424,7 +428,7 @@ UI-facing Swift code runs on the main actor. The bridge dynamically loads libmpv
 | Folder import omits a file | Scans are shallow and extension-filtered; open the file directly. |
 | URL does not play | Use a direct media address; check access/connectivity. Opening times out after 20 seconds. |
 | No audio/subtitles | Check mute/volume, track selection, subtitle visibility, and external-file compatibility. |
-| Media keys control another app | Start playback in Lumen and check macOS Now Playing. With standard function keys enabled, use Fn/Globe with F7/F8/F9. |
+| Media keys control another app | Start playback in Lola and check macOS Now Playing. With standard function keys enabled, use Fn/Globe with F7/F8/F9. |
 | Selected pin but no floating | Playback may be paused, loading, buffering, finished, or failed. The preference stays selected while suspended. |
 | Missing bookmarks | Open All Bookmarks, clear search, and check the library directory. Clearing the playlist does not remove bookmarks. |
 | Library cannot be decoded | Preserve the original and restore a backup or import a bookmark export; the error identifies the original location. |

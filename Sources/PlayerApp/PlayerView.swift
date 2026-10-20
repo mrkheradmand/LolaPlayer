@@ -25,7 +25,7 @@ struct PlayerView: View {
                     if model.currentID == nil {
                         VStack(spacing: 16) {
                             Image(systemName: "play.rectangle").font(.system(size: 55, weight: .ultraLight)).foregroundStyle(.white.opacity(0.4))
-                            Text("Lumen Player").font(.system(size: 25, weight: .medium))
+                            Text("Lola Player").font(.system(size: 25, weight: .medium))
                             Text("Drop a video, an audio file, or a folder").foregroundStyle(.secondary)
                             Button("Open File…") { model.openPanel() }.keyboardShortcut("o").controlSize(.large)
                             if let recent = model.historyRecords.first {
@@ -81,7 +81,7 @@ struct PlayerView: View {
             return true
         }
         .overlay { if model.dropTarget { RoundedRectangle(cornerRadius: 8).stroke(.blue, lineWidth: 3).padding(4).allowsHitTesting(false) } }
-        .alert("Lumen Player", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
+        .alert("Lola Player", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button("OK") { model.error = nil }
         } message: { Text(model.error ?? "") }
         .sheet(isPresented: $model.settingsOpen) { settings }

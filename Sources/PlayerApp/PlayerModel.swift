@@ -190,7 +190,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         engine?.setProperty("pause", value: "yes")
         engine?.command(["loadfile", pendingLocation!, "replace"])
         engine?.setProperty("ab-loop-a", value: "no"); engine?.setProperty("ab-loop-b", value: "no")
-        window?.title = library.record(id)?.name ?? "Lumen Player"
+        window?.title = library.record(id)?.name ?? "Lola Player"
         applyWindowLevel()
         systemMediaControls?.update()
     }
