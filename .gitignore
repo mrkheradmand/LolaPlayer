@@ -1,8 +1,13 @@
 .build/
 .DS_Store
-Research/
+Research/*
+!Research/test-media/
 Screenshots/
 AGENTS.md
 Runtime/Frameworks/
 Runtime/source.json
 __pycache__/
+dist/releases/
+.vscode/
+DeveloperDocs/
+dist/releases/old/

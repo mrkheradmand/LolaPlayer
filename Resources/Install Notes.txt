@@ -1,0 +1,10 @@
+Lola Player — Installation
+
+1. Drag Lola Player.app to Applications using the shortcut in this disk image.
+2. Eject the disk image and open Lola Player from Applications.
+
+First launch
+
+The app isn't notarized, so the first launch is blocked: go to System Settings → Privacy & Security and click Open Anyway, or run this in Terminal after copying the app to Applications:
+
+xattr -dr com.apple.quarantine "/Applications/Lola Player.app"

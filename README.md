@@ -1,25 +1,33 @@
 # Lola Player
 
-**[Download Lola Player for Mac (.dmg)](https://github.com/mrkheradmand/LolaPlayer/releases/latest/download/LolaPlayer-arm64.dmg)** · Apple Silicon · macOS 14 or later
+**[Download Lola Player for Mac (.dmg)](https://github.com/mrkheradmand/LolaPlayer/releases/latest)** · Apple Silicon · macOS 27 or later
 
-Open the DMG and drag Lola Player to Applications. The app is signed ad hoc and is not notarized; macOS may require approval in **System Settings → Privacy & Security** on first launch.
+Open the DMG and drag Lola Player to Applications.
+
+**First launch:** The app isn't notarized, so the first launch is blocked: go to **System Settings → Privacy & Security** and click **Open Anyway**, or run this in Terminal after copying the app to Applications:
+
+```sh
+xattr -dr com.apple.quarantine "/Applications/Lola Player.app"
+```
+
+These instructions are also included in **Install Notes.txt** inside the DMG.
 
 ![Lola Player welcome screen](app.jpg)
 
 *Screenshot from the app Lola Player.*
 
-Lola Player is a native macOS video and audio player with **named bookmarks at any video timestamp** and **Float on Top that follows playback**. It was built after inspecting the locally installed Elmedia Player 8.24 with REA and observing its interface.
+Lola Player is a native macOS video and audio player with **named bookmarks at any video timestamp** and **Float on Top that follows playback**. 
 
 > **Save a moment. Name it. Find it again.** Bookmark the selected time in any playable video and give the bookmark a meaningful name. Lola keeps bookmarks from all your videos in a separate, searchable **Bookmarks** list—even after you open another file or restart the app. Search by bookmark name or filename, then click a bookmark to reopen the video and start playback at the exact saved time.
 
-This is an independent implementation of the core free-player workflow. It does not modify Elmedia or copy its executable or artwork. It is **not an exact visual or feature-complete clone**. PRO features are intentionally excluded; remaining differences are documented below.
+This is an independent implementation of the core free-player workflow. It is **not an exact visual or feature-complete clone**. 
 
 | App information | Value |
 | --- | --- |
-| Version | 1.1.2, build 5 |
+| Version | 1.1.4, build 7 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
-| Minimum deployment target | macOS 14 |
+| Minimum deployment target | macOS 27 |
 | Interface | SwiftUI and AppKit |
 | Playback engine | Bundled libmpv and FFmpeg dependencies |
 | Signing | Ad hoc for local use; not notarized |
@@ -59,7 +67,7 @@ This is an independent implementation of the core free-player workflow. It does 
 
 ## Getting started
 
-1. [Download the DMG](https://github.com/mrkheradmand/LolaPlayer/releases/latest/download/LolaPlayer-arm64.dmg), open it, and drag **Lola Player** to **Applications**. Eject the disk image and open the app from Applications. For a local source build, open **`dist/Lola Player.app`** in Finder.
+1. [Open the latest release](https://github.com/mrkheradmand/LolaPlayer/releases/latest) and download **`LolaPlayer-<version>-macOS-arm64.dmg`** from Assets. Open the DMG and drag **Lola Player** to **Applications**. Eject the disk image and open the app from Applications. For a local source build, open **`dist/Lola Player.app`** in Finder.
 2. Press **⌘O**, click **Open File…**, or drag media onto the player.
 3. Press **Space** to pause or resume.
 4. Press **⌘B** to save the current position.

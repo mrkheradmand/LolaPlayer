@@ -1,5 +1,48 @@
 # Lola Player versions
 
+## 1.1.4 (build 7) — 2026-10-20
+
+### Added
+
+- None.
+
+### Modified
+
+- DMG filenames include the app release version, macOS, and arm64; verified packaging archives older images with checksums under dist/releases/old without overwriting existing archives.
+- README download links use the latest release page to support versioned asset filenames; saved the DMG naming and archiving rule in project instructions.
+
+### Removed
+
+- None.
+
+## 1.1.3 (build 6) — 2026-10-20
+
+### Added
+
+- Install Notes.txt inside the DMG with installation and first-launch instructions.
+
+### Modified
+
+- README documents Open Anyway and the app-specific quarantine-removal command after copying Lola Player to Applications.
+
+### Removed
+
+- None.
+
+## 1.1.2 (build 5) — 2026-10-20
+
+### Added
+
+- DMG distribution packaging with an Applications shortcut and SHA-256 checksum.
+
+### Modified
+
+- README includes a prominent latest-release DMG download link and installation steps.
+
+### Removed
+
+- None.
+
 ## 1.1.1 (build 4) — 2026-10-20
 
 ### Added
