@@ -4,562 +4,424 @@
 <dict>
 	<key>files</key>
 	<dict>
-		<key>Resources/AppIcon.icns</key>
-		<data>
-		oTg8u1KoVs4ePA57BxXEmmxAO5s=
-		</data>
 		<key>Resources/LolaPlayerIcon.icns</key>
 		<data>
 		oTg8u1KoVs4ePA57BxXEmmxAO5s=
 		</data>
 		<key>Resources/Runtime.txt</key>
 		<data>
-		sbNwQ7On2Uc+y6GuAiKqm0qONxM=
+		mJ6JGDsqay6gPjPkg9iW5vdwnZU=
+		</data>
+		<key>Resources/RuntimeCapabilities.json</key>
+		<data>
+		RlSPI92frBQTdUocM8gG6+AQeNs=
 		</data>
 		<key>Resources/WelcomeNature.png</key>
 		<data>
 		6UE9ZRVTPAlDnJdTNccqQO7PlsY=
 		</data>
+		<key>Resources/versions.md</key>
+		<data>
+		zthFdn+lImO7QKD9LVWaWHk8syI=
+		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
-		<key>Frameworks/libX11.6.dylib</key>
+		<key>Frameworks/libSvtAv1Enc.4.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			Fi4yiVRuTsx1tIM//lfXTJNWkoQ=
+			qkyWgBpWBt0SCu4PJGfny+VHemk=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"b90f51455d49e7c9047f73188c39eb20ea163af5" or cdhash H"162e3289546e4ecc75b4833ffe57d74c93569284" or cdhash H"50b1b4510d6a251111945757baf98de22504ea6c" or cdhash H"6257e6c2b240e434d6a46ec47e7e008461286ee1"</string>
-		</dict>
-		<key>Frameworks/libXau.6.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			jI/izfFh+k+EK+T4m/yBCyVdyQw=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"68ddf7f8a22ad9becf984888c7656a436ecf7299" or cdhash H"8c8fe2cdf161fa4f842be4f89bfc810b255dc90c" or cdhash H"d6a1c1d94325e5d3c327793f011d242b38c35e96" or cdhash H"10e22bafeee04c258b5bb1f6f3dd2f0dc88c51b4"</string>
-		</dict>
-		<key>Frameworks/libXdmcp.6.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			BJdWmnqSjk8/twPWxjv7HCnyZLA=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"66362a91f45191fdd4b321f1434c7f63999986bc" or cdhash H"0497569a7a928e4f3fb703d6c63bfb1c29f264b0" or cdhash H"6738587c5ef6351d203e65faf1427dee6efccab7" or cdhash H"b3890cd8928411e365ada2e183a261b31f09a068"</string>
+			<string>cdhash H"aa4c96801a5606dd120aee0f2467e7cbe5477a69"</string>
 		</dict>
 		<key>Frameworks/libarchive.13.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			lH2+R3g3tO+/hHq5pIfgUehJGzI=
+			fQX4qKvGWe+XTtvB9jSNovtJcVU=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"58b741673b3972d627bc5810148e82a74092ea4e" or cdhash H"947dbe477837b4efbf847ab9a487e051e8491b32" or cdhash H"cd7d82eeb694204fd684fedc664efc127ca856c1" or cdhash H"f0f39c36f75c09a9ad87b1b77dd6bc7d9aa220a6"</string>
+			<string>cdhash H"7d05f8a8abc659ef974edbc1f6348da2fb497155"</string>
 		</dict>
 		<key>Frameworks/libass.9.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			Co0/zsinvjsxi+4r/joyOpx2UYE=
+			CnezsPEyVAtnQPRWx65aaaT3eGA=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"7ab20a1b20958fa82c715c0922555ed0971d9757" or cdhash H"0a8d3fcec8a7be3b318bee2bfe3a323a9c765181" or cdhash H"651f8aaf9c21bbb62f029cd752be2369410f2d9a" or cdhash H"e7f82dafc3998aec78886430a49bf1d9f19894a1"</string>
+			<string>cdhash H"0a77b3b0f132540b6740f456c7ae5a69a4f77860"</string>
 		</dict>
-		<key>Frameworks/libavcodec.60.dylib</key>
+		<key>Frameworks/libavcodec.63.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			1sfWNtlAUGLM8qIq6zmhnMTgPVY=
+			NnSlLs9mtCSxQYiRoMEN8AbLWj0=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"5b818b56ae216ed60ed470bc7e26af62fff60c27" or cdhash H"d6c7d636d9405062ccf2a22aeb39a19cc4e03d56" or cdhash H"94a069110460c50bb597443857895f28fb864829" or cdhash H"9a944ee8a70a492d582fb0c66e7d0decefc7dcbe"</string>
+			<string>cdhash H"3674a52ecf66b424b1418891a0c10df006cb5a3d"</string>
 		</dict>
-		<key>Frameworks/libavdevice.60.dylib</key>
+		<key>Frameworks/libavdevice.63.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			zNQRNcr6LOznJjEzI5v9Nm13YnQ=
+			3x78B06kDz/gZ5R5uAsplEJcE64=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"d1ee7f4fd041429af64efd47d33f69d50eb5ef2f" or cdhash H"ccd41135cafa2cece7263133239bfd366d776274" or cdhash H"1cce858ec6800cc76352cb9c2fa0dd91a14d686f" or cdhash H"4ab72edb1d880499afcd18c717629bed883b2a76"</string>
+			<string>cdhash H"df1efc074ea40f3fe0679479b80b2994425c13ae"</string>
 		</dict>
-		<key>Frameworks/libavfilter.9.dylib</key>
+		<key>Frameworks/libavfilter.12.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			qr7LrPlqUT0UVjM/lcJOBzC1Y7I=
+			ilRHAInpWfh1xWXYoPmjFP2qam0=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"7b02871d940bf2bd258cfdc5c4f8c8133352112a" or cdhash H"aabecbacf96a513d1456333f95c24e0730b563b2" or cdhash H"0694181b70671106de1fa131209c8dc182c38185" or cdhash H"097c3ffce0babcd2c33120218da60bbeff6e38a1"</string>
+			<string>cdhash H"8a54470089e959f875c565d8a0f9a314fdaa6a6d"</string>
 		</dict>
-		<key>Frameworks/libavformat.60.dylib</key>
+		<key>Frameworks/libavformat.63.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			dDZWmyK4Cc7sHHFrQKQoGZ8Wi1E=
+			UpY0M6pjMY4nsrPg6f6ZflF15gQ=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"da011dda3ff1604178a3213df021442c61c73ead" or cdhash H"7436569b22b809ceec1c716b40a428199f168b51" or cdhash H"43aed0cd8f1ed8b3d1fa5290e5944b2b61473369" or cdhash H"a2dfd19e204b1ac1efbf084d367130974e7a820d"</string>
+			<string>cdhash H"52963433aa63318e27b2b3e0e9fe997e5175e604"</string>
 		</dict>
-		<key>Frameworks/libavutil.58.dylib</key>
+		<key>Frameworks/libavutil.61.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			Pj6WhghIuYD6lsLx2LY+y0yRhhE=
+			6SOXhwfguvbv5nm6suaxTyl9Sac=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"c66e7100816f99ecee045abae70245b113261d06" or cdhash H"3e3e96860848b980fa96c2f1d8b63ecb4c918611" or cdhash H"85a6a2c120cd3b88509844b93ffa5f68243521ef" or cdhash H"e135fb5b6c903c2628f3acc837b66644f751d0cc"</string>
+			<string>cdhash H"e923978707e0baf6efe679bab2e6b14f297d49a7"</string>
 		</dict>
-		<key>Frameworks/libb2.1.dylib</key>
+		<key>Frameworks/libbluray.3.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			4plvS3Gt9elVsJZDGRvmNzomUAs=
+			lZZF1qXw1jY5itCCfeGFz96bXLo=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"6553a986e4e11be1fa20e563174952289488168f" or cdhash H"e2996f4b71adf5e955b09643191be6373a26500b" or cdhash H"9e04875f00bc5c44b8ebb3701f032e87aa0cdb24" or cdhash H"d6a756792f09194721756c2493129dcce2c79f37"</string>
+			<string>cdhash H"959645d6a5f0d636398ad0827de185cfde9b5cba"</string>
 		</dict>
-		<key>Frameworks/libbluray.2.dylib</key>
+		<key>Frameworks/libbrotlicommon.1.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			lItjZHhsEbzKQLcIHgrZngYEnK8=
+			UNgoML6Y6793xDtFMoZA/mLq5Qk=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"91b8f1b73381201330db8e21e63058b5b829966a" or cdhash H"948b6364786c11bcca40b7081e0ad99e06049caf" or cdhash H"1ea8e7e4fc0f6de2ca17674e6a3cd1505e522240" or cdhash H"0ee6354d2fad88c5cc2c09df4c67e95127b0335e"</string>
+			<string>cdhash H"50d82830be98ebbf77c43b45328640fe62eae509"</string>
 		</dict>
-		<key>Frameworks/libdav1d.6.dylib</key>
+		<key>Frameworks/libbrotlidec.1.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			LTWjEEQExn4QXc6YQjNMpe27tyU=
+			Ea9maSjfq6SeFvgUIdlszqzK2eU=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"a999e903631df6d03c441dcaae54f76cc5b60de3" or cdhash H"2d35a3104404c67e105dce9842334ca5edbbb725" or cdhash H"c26d98d84abb59470dacaf720da36f976428ec21" or cdhash H"17d81dbc824013d806b06c85697062230bbfc65e"</string>
+			<string>cdhash H"11af666928dfaba49e16f81421d96cceaccad9e5"</string>
+		</dict>
+		<key>Frameworks/libbrotlienc.1.dylib</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			xENuvRTQr5Ma24s89m8hLq2bXng=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"c4436ebd14d0af931adb8b3cf66f212ead9b5e78"</string>
+		</dict>
+		<key>Frameworks/libbs2b.0.dylib</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			LfJD2AD+K7O628KmnDtjPmp/HRo=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"2df243d800fe2bb3badbc2a69c3b633e6a7f1d1a"</string>
+		</dict>
+		<key>Frameworks/libdav1d.7.dylib</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			rNkp9+jNbwGEJETwJ5b60ohE5T8=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"acd929f7e8cd6f01842444f02796fad28844e53f"</string>
 		</dict>
 		<key>Frameworks/libfontconfig.1.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			K0GPLWJpEwDT5xVbJPug0/2RPmI=
+			kqoupwY0f59CPCplQaj2fC4wO8c=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"f7b8cc77785c3ad120440fbf71f699b937e267ec" or cdhash H"2b418f2d62691300d3e7155b24fba0d3fd913e62" or cdhash H"f84ebda593bf95b092f3c62123587d998379ea69" or cdhash H"111b68dae2601669d9b0ceb546fb65598e7ec076"</string>
+			<string>cdhash H"92aa2ea706347f9f423c2a6541a8f67c2e303bc7"</string>
 		</dict>
 		<key>Frameworks/libfreetype.6.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			3miQKiengN5BT3D3HPW3RmEZLhI=
+			oWVlE5+vyIxxPG36ApGdcwt0gsg=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"c5b99e3b8d8b33476e1d4768ca33a96876a114fd" or cdhash H"de68902a27a780de414f70f71cf5b74661192e12" or cdhash H"8275e9b3f2f35bed2870bda8f98d71b001fd82c9" or cdhash H"5fdc8ddb2a2d12075fcca539ffc15315526d1482"</string>
+			<string>cdhash H"a16565139fafc88c713c6dfa02919d730b7482c8"</string>
 		</dict>
 		<key>Frameworks/libfribidi.0.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			867W4OcgsnyzYA3thbEBSgKDUdw=
+			PLTIXjsuAcYaAT+RnWYLYqxk+Qc=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"a24dcb44b5cd7ba7fc6b6d85f81899320834670e" or cdhash H"f3aed6e0e720b27cb3600ded85b1014a028351dc" or cdhash H"b8231f3d7236d1e5608f538a508c66ad948d9e12" or cdhash H"d82d4d27c61459e101491a76873c86164c737a39"</string>
-		</dict>
-		<key>Frameworks/libglib-2.0.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			8yBUKUA6ZQnCzGJ2qY3r2dpw2Y0=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"35d9fc33b957a12a9a7e3fb7098a7f0f95f64b01" or cdhash H"f3205429403a6509c2cc6276a98debd9da70d98d" or cdhash H"da55570c7748529a8c16f14c971936e2f43ecab3" or cdhash H"7c734d396eb478ac21d465ce8670543d9599b549"</string>
-		</dict>
-		<key>Frameworks/libgmp.10.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			Gjly3xvKP7YQtlCntoNtP3iYyvk=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"dcaa5a4c2eaeb9cfb6d83082ca0e504fc33175ff" or cdhash H"1a3972df1bca3fb610b650a7b6836d3f7898caf9" or cdhash H"68f5da5078e5d328bb1bc811df2774c64d9a0516" or cdhash H"80c1ad4164afdc6729c51a487333765e55e6923e"</string>
-		</dict>
-		<key>Frameworks/libgnutls.30.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			CDntTBdq/Wg1dEwW3ywkheA9Iz0=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"87fd8263898737b41a42a8f1a5161daba4df779e" or cdhash H"0839ed4c176afd6835744c16df2c2485e03d233d" or cdhash H"182634754803b849c1aff3f7040086787d7e98ec" or cdhash H"760f1232be101de0be17df39d54c018117aedb7e"</string>
-		</dict>
-		<key>Frameworks/libgraphite2.3.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			QHUczZuVCfqp43HCBTZGDDr/V0g=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"c759e1cc7315b08eef33b0d9948c4e8a7ab589c9" or cdhash H"40751ccd9b9509faa9e371c20536460c3aff5748" or cdhash H"c796f6bc1914b83e08c6f97291fc473624e060ba" or cdhash H"942ac3ff901da1da96f0058f7abed73629314939"</string>
+			<string>cdhash H"3cb4c85e3b2e01c61a013f919d660b62ac64f907"</string>
 		</dict>
 		<key>Frameworks/libharfbuzz.0.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			1HPFT7UtfBQJFusKyNUxD8JXPpk=
+			Ennut5vCDdEZfNYF2G//IYu5WmQ=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"40c4f781faaf135152479fa4c3b72a18ffb0d7d5" or cdhash H"d473c54fb52d7c140916eb0ac8d5310fc2573e99" or cdhash H"9496c9c5f88c7c53c601519fb7dc130685172520" or cdhash H"d3982c82d68230d19181cf46d4b7b7d4f96d680b"</string>
+			<string>cdhash H"1279eeb79bc20dd1197cd605d86fff218bb95a64"</string>
 		</dict>
-		<key>Frameworks/libhogweed.6.dylib</key>
+		<key>Frameworks/libjpeg.62.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			XxumTQuruuEJQnmCban0CS8OGWk=
+			/SPP28djJu5mGNzsdOn6OVf6IA0=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"8bfad6eb4aeffc526a8cd69600cb994422b3adb8" or cdhash H"5f1ba64d0babbae1094279826da9f4092f0e1969" or cdhash H"6e07d83bebc8008bf9547d1737f336d8cccddad4" or cdhash H"e1ededc55498a8086c601a8bde3916f41f1b012e"</string>
+			<string>cdhash H"fd23cfdbc76326ee6618dcec74e9fa3957fa200d"</string>
 		</dict>
-		<key>Frameworks/libidn2.0.dylib</key>
+		<key>Frameworks/libjxl.0.11.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			UqqN5/1ZZd0f5XoCeNvtJPc19X8=
+			WsMEMZL7IFw2fhboYkHF0B/qCU4=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"ed193330e57aef989129358e666dbb639dd1dcc2" or cdhash H"52aa8de7fd5965dd1fe57a0278dbed24f735f57f" or cdhash H"ed9e5c8dea04d1db8608f86f11fa33dca93d51bb" or cdhash H"7cbd22ccb86c140914869a73e196ac29e0c6550e"</string>
+			<string>cdhash H"5ac3043192fb205c367e16e86241c5d01fea094e"</string>
 		</dict>
-		<key>Frameworks/libintl.8.dylib</key>
+		<key>Frameworks/libjxl_cms.0.11.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			/pRpofdg0FFOtKVcz3LxTJ7JAPU=
+			CbL3bbmvxvb74yXMNzBgrGxxeSg=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"6551749753094755c17877e8655f83301892cd92" or cdhash H"fe9469a1f760d0514eb4a55ccf72f14c9ec900f5" or cdhash H"ea9cd81e92620dc080dfeaad597c9222d1b6a362" or cdhash H"5e09613e4c3a1f536c7886752b3559ab13f35f03"</string>
+			<string>cdhash H"09b2f76db9afc6f6fbe325cc373060ac6c717928"</string>
 		</dict>
-		<key>Frameworks/libjpeg.8.dylib</key>
+		<key>Frameworks/libjxl_threads.0.11.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			IpERg7MxZFxzoNf0JmNuCM4FWLA=
+			rfMyAh+2dYiuXF9uffDPm94hJPE=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"7da0a61d90ca903d31a43045281d822b37117410" or cdhash H"22911183b331645c73a0d7f426636e08ce0558b0" or cdhash H"71ec93d55ab2b7f240977bad5fe14ff9d6c5c3cb" or cdhash H"a5a5d3eb37c60b21e0a2e3f90ddccfc02502f187"</string>
+			<string>cdhash H"adf332021fb67588ae5c5f6e7df0cf9bde2124f1"</string>
 		</dict>
 		<key>Frameworks/liblcms2.2.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			5wPAhDhrgs/mIr2ILdr6aoR3fBg=
+			ygLbAlDyrkv1O7LX+JREBPLiHbw=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"23290113b49666dcf8a9df02c4ac3feee38d101d" or cdhash H"e703c084386b82cfe622bd882ddafa6a84777c18" or cdhash H"90999a1075b8f1df6cf2451b8619678d7eb3cd1e" or cdhash H"16be9f1fb7fd273d2caccfaa67a32b0b3ca3dc39"</string>
+			<string>cdhash H"ca02db0250f2ae4bf53bb2d7f8944404f2e21dbc"</string>
 		</dict>
 		<key>Frameworks/libluajit-5.1.2.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			clJwUcMlRvXreAbnw0ks8abjvOI=
+			QLHoTdm660kET8e6ylpC9JG4rpw=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"ce9827259f6833b8fd88b0d9d21c4c0bc1b166e0" or cdhash H"72527051c32546f5eb7806e7c3492cf1a6e3bce2" or cdhash H"0d062bb7f2cecb7b217ff3d05597e24104867187" or cdhash H"f9d0a898a353ebcae56c1bea34b0fbeb3b8fcfdc"</string>
+			<string>cdhash H"40b1e84dd9baeb49044fc7baca5a42f491b8ae9c"</string>
 		</dict>
 		<key>Frameworks/liblz4.1.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			VneliLmRQ/RVfezse+pqSBmR1CY=
+			ABsd2MU+k4ntZa3bOL2Fiiu32Zo=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"db57478322baf86d3acc7a22e87c6f60385c4879" or cdhash H"5677a588b99143f4557decec7bea6a481991d426" or cdhash H"dba71b7daf0e152c15f118eec84ea8824a691944" or cdhash H"293f7f75799e74e0e7ae792f3c058f121b323b83"</string>
-		</dict>
-		<key>Frameworks/liblzma.5.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			+UB0+CQApC762V85wslzQqTi4oU=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"0a138c67d2e928e6a7f65a2fce7ba31bd0f73ce1" or cdhash H"f94074f82400a42efad95f39c2c97342a4e2e285" or cdhash H"543a3459f2a84f7d51eef907dfc70e9883432560" or cdhash H"9daed6beb9421634caf3fac51ea9883192c340ae"</string>
+			<string>cdhash H"001b1dd8c53e9389ed65addb38bd858a2bb7d99a"</string>
 		</dict>
 		<key>Frameworks/libmpv.2.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			9xvEjVGWxqEyIaf+PVR+cWKJ5p8=
+			Fo6el9gzz4/ihotP4KGNHxraTUE=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"5b973e2f88ae2fa93664ab18fdd76de5ea588bc0" or cdhash H"f71bc48d5196c6a13221a7fe3d547e716289e69f" or cdhash H"9597263db3623899dae8a11abe5e833dc063e9b6" or cdhash H"075f2be79b5c535d91c16f9e4d4a39123309af2f"</string>
+			<string>cdhash H"168e9e97d833cf8fe2868b4fe0a18d1f1ada4d41"</string>
 		</dict>
 		<key>Frameworks/libmujs.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			gCNXH5IiuxrjvVrN7skIpJm2d/A=
+			DkOXRq7EeAb0S5xPhRYlcRJ6waI=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"f95a879ec6da3ae734eec255d239e70b94bae5d0" or cdhash H"8023571f9222bb1ae3bd5acdeec908a499b677f0" or cdhash H"cea83d0a0bb0ac3634daa8e97c0d1eb7f4957960" or cdhash H"9b27db2cc9a205c2e737f6f6e9ede0bb743cbb8f"</string>
+			<string>cdhash H"0e439746aec47806f44b9c4f85162571127ac1a2"</string>
 		</dict>
-		<key>Frameworks/libnettle.8.dylib</key>
+		<key>Frameworks/libogg.0.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			ug/SypmLywZbz/CRlDbVNRnoSB8=
+			gUR6yX58rHCEVCvQki+oFYzAP+Y=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"4b4ee630e5386dbbebfaa2377442e9359d3d99c4" or cdhash H"ba0fd2ca998bcb065bcff0919436d53519e8481f" or cdhash H"b4c31a94fd5e99e4c55338f915ec8b41c9d0dbe0" or cdhash H"6a6d5fd628134865daf960a814db26b19a10e510"</string>
+			<string>cdhash H"81447ac97e7cac7084542bd0922fa8158cc03fe6"</string>
 		</dict>
-		<key>Frameworks/libp11-kit.0.dylib</key>
+		<key>Frameworks/libplacebo.360.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			Uwl+o+VAjI/7MBVU++s+8DONNxc=
+			rt3eZEVGivikJD4Ljir78dGPbrg=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"faf1d9faa9e3af850202a360a51a1d89ced20e01" or cdhash H"53097ea3e5408c8ffb301554fbeb3ef0338d3717" or cdhash H"2eec0a425d43825f5331690dbc8411c93d88d2c5" or cdhash H"62c735da374f3224ee1b0175d9afbc4fb3da657e"</string>
+			<string>cdhash H"aeddde6445468af8a4243e0b8e2afbf1d18f6eb8"</string>
 		</dict>
-		<key>Frameworks/libpcre2-8.0.dylib</key>
+		<key>Frameworks/librubberband.3.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			iIE1CYIQ/spkUutePE/YessALaU=
+			1SYoaLwpOsGvRdTisMD6YCNKheY=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"7f64401854a4cb52b7e0edc38acc916f6331d6af" or cdhash H"888135098210feca6452eb5e3c4fd87acb002da5" or cdhash H"bf3265447b080b7f8164dfa8f4a0ea9577bac200" or cdhash H"bf351e2398b784ee8d4a7a32c7f5ecb30a6847b1"</string>
-		</dict>
-		<key>Frameworks/libpng16.16.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			P/u7aW0ZE6DiQ6CxsAz5yGrL68M=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"96e354e0efc5088b36e5744e502f80176b9a0798" or cdhash H"3ffbbb696d1913a0e243a0b1b00cf9c86acbebc3" or cdhash H"3938d1dfc3a32ef3ad1cb02eff0a50f934fd36c1" or cdhash H"0e1be7cb20a27572a9bc7de496249365bfea6c74"</string>
-		</dict>
-		<key>Frameworks/libpostproc.57.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			OBnyB/0pjwwivqgKWVYISqM6QAA=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"3641f16a440a97ff242a09acefc109a504455e1b" or cdhash H"3819f207fd298f0c22bea80a5956084aa33a4000" or cdhash H"220a7a501df0af3c313e6c884e0dc6c62f7f17d1" or cdhash H"5c3025a28ad9d08ad5fe10594a02bf1e79d49c3f"</string>
-		</dict>
-		<key>Frameworks/librubberband.2.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			19jcmoVL+pzo0+7a5wt4G9caT0E=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"e1a26a4d6b37aa860412d2d98e539eb15397b35b" or cdhash H"d7d8dc9a854bfa9ce8d3eedae70b781bd71a4f41" or cdhash H"9060e400713bdc255243f59279757744c421821a" or cdhash H"6a5785077b6791b05682a60fb49e43215fad4b6c"</string>
-		</dict>
-		<key>Frameworks/libsamplerate.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			TmQ7SbH6zYG5pjgigCNdEjnlpOk=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"7acbf9bc8d546672d0f684f5358de7d8e033db92" or cdhash H"4e643b49b1facd81b9a6382280235d1239e5a4e9" or cdhash H"9ef69fd1458d1a3f513289d55db6e238cb11501f" or cdhash H"04e4f57aa0cb8d3dd35b861f2d583c2950c03503"</string>
+			<string>cdhash H"d5262868bc293ac1af45d4e2b0c0fa60234a85e6"</string>
 		</dict>
 		<key>Frameworks/libsharpyuv.0.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			g1eG7Glx8V+rWxYEsuUncMh+VMY=
+			6vnRicb2wb58TiRamH8owrmZKIY=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"ecab5a205118fd40c597e4617a02b873b007c53a" or cdhash H"835786ec6971f15fab5b1604b2e52770c87e54c6" or cdhash H"4961ec3381e80a51ef2110da12ef6f251c37dbbf" or cdhash H"c972da4c28389053b0843b9e2e178f46cf6d9df9"</string>
-		</dict>
-		<key>Frameworks/libsnappy.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			mSP0a9bo9e29Klq+UB2+lDK0uDM=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"110a2cef9244859f851a7dca5ebc410c78e2e008" or cdhash H"9923f46bd6e8f5edbd2a5abe501dbe9432b4b833" or cdhash H"73dceba55ff2559265d4aa10da1012e6d259d30b" or cdhash H"2ac09f7c407f572fcfa793ddaacca2a0ea0dc1e0"</string>
-		</dict>
-		<key>Frameworks/libsodium.23.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			HNn/1rlY73n9BvEQzHxi+LGqpJQ=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"d3655b8d3c93a06811ccd3e37fcd1d581f7df521" or cdhash H"1cd9ffd6b958ef79fd06f110cc7c62f8b1aaa494" or cdhash H"a70eeda008b7e96038b7af620ca97f5b5e2232bd" or cdhash H"65a221b4c193236f680812712af344fdf6b906bb"</string>
+			<string>cdhash H"eaf9d189c6f6c1be7c4e245a987f28c2b9992886"</string>
 		</dict>
 		<key>Frameworks/libsoxr.0.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			ZxUudb3VtxkvB1qTTswtkniN5Cw=
+			yH3MzGQNn8TCwlgk/+rrXHZbHeA=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"8cff5f26c6b111283f4c6cd4fda006ff9ff5cdd9" or cdhash H"67152e75bdd5b7192f075a934ecc2d92788de42c" or cdhash H"c94cb57e4baae709b6cf6700f3da5333a90d5846" or cdhash H"75b1d351a54e5847e1817c7ccda51ef56d322118"</string>
+			<string>cdhash H"c87dcccc640d9fc4c2c25824ffeaeb5c765b1de0"</string>
 		</dict>
 		<key>Frameworks/libspeex.1.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			4OB34e7DmD/4PENjnbqeIfUBDOc=
+			ZnjuBA3SXCR5FMsGl1RVtgxyv+U=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"5dc1a81a5fd164bc94e23fcf62acf3a108dcae60" or cdhash H"e0e077e1eec3983ff83c43639dba9e21f5010ce7" or cdhash H"5add5b059dd1aa695f61eb15701f61ec8973a996" or cdhash H"7a41474e291c5722d5ba5c7c3af6320b487dafe2"</string>
+			<string>cdhash H"6678ee040dd25c247914cb06975455b60c72bfe5"</string>
 		</dict>
-		<key>Frameworks/libswresample.4.dylib</key>
+		<key>Frameworks/libswresample.7.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			VrprfNNUgEGvmWEiJ9mmA4GOK/g=
+			LFCUUp8tO3VizhsO53ZzVQHmnhs=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"e81186da60ee29cb27de55ccbc1de4876f272623" or cdhash H"56ba6b7cd3548041af99612227d9a603818e2bf8" or cdhash H"866fbf9a429e97f5364d90a302c99cf97304cc4d" or cdhash H"373b17b938f77f2c12bada1db107b22e84a59d27"</string>
+			<string>cdhash H"2c5094529f2d3b7562ce1b0ee776735501e69e1b"</string>
 		</dict>
-		<key>Frameworks/libswscale.7.dylib</key>
+		<key>Frameworks/libswscale.10.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			OrdS+ErxjByHKGxarpo0stgOD0Y=
+			xXwI/napXBRYuwtJ8ifbEF2XHnE=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"9a58397cf587e5aae3682668269520c248410279" or cdhash H"3ab752f84af18c1c87286c5aae9a34b2d80e0f46" or cdhash H"ecb6de365a216eeeb82381e7ae51017e947c7b65" or cdhash H"b2ffbd33275cd558010602d6cb4d2ba8cb3755ef"</string>
-		</dict>
-		<key>Frameworks/libtasn1.6.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			/ySriw35lSUppRA0NEtExiSNebc=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"cc0158ee1983ad9dfaf14d2134161d3ae411d1c7" or cdhash H"ff24ab8b0df9952529a51034344b44c6248d79b7" or cdhash H"93db075a34ddc0333914f6b21cdfd5b8fdb5ca5f" or cdhash H"5797834fe5f6b6d96fab905f57f539089d69367c"</string>
+			<string>cdhash H"c57c08fe76a95c1458bb0b49f227db105d971e71"</string>
 		</dict>
 		<key>Frameworks/libuchardet.0.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			vnJM6C7DGKQ2LE2Tk3uoEPmDkno=
+			YBoq3U1aIl6N4HuEK9/Oxu1FIj8=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"b6a0174c0a96f2191864b6bbe8eba2453e60460a" or cdhash H"be724ce82ec318a4362c4d93937ba810f983927a" or cdhash H"b5033e8d1e8f31b35f08cba4040ee0a97b63b224" or cdhash H"8f6f6d4054e18a32ae336af4b8ed3f25dd877be6"</string>
+			<string>cdhash H"601a2add4d5a225e8de07b842bdfcec6ed45223f"</string>
 		</dict>
-		<key>Frameworks/libunibreak.5.dylib</key>
+		<key>Frameworks/libudfread.3.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			LmdqDIm9Gnr4BEghyhLlMXtN6To=
+			FB7esn4pDb9dTb19Tc+h8eNdtw8=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"457e721d6c9791039d58c6acae2927775bfc58cd" or cdhash H"2e676a0c89bd1a7af8044821ca12e5317b4de93a" or cdhash H"134dc21f2b82da8c16ff5c423413dccabf551e8a" or cdhash H"16fc0c1c604e38b7c5cef66b6787bf671cda83e1"</string>
+			<string>cdhash H"141edeb27e290dbf5d4dbd7d4dcfa1f1e35db70f"</string>
 		</dict>
-		<key>Frameworks/libunistring.5.dylib</key>
+		<key>Frameworks/libunibreak.7.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			RilgjExPAD31SRojaupPg05KxcQ=
+			4GfBLhE26amenamJnmIJpPt7TqQ=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"e9f70238f89e7a57e817e2746f640e96ce8f09fd" or cdhash H"4629608c4c4f003df5491a236aea4f834e4ac5c4" or cdhash H"ebbff46eba602ac185a7a30b02e0bc4d0d5e91a7" or cdhash H"9d8017e0dfc03b2769d6865e97b78ee08ef6a830"</string>
+			<string>cdhash H"e067c12e1136e9a99e9da9899e6209a4fb7b4ea4"</string>
 		</dict>
-		<key>Frameworks/libvidstab.1.2.dylib</key>
+		<key>Frameworks/libvorbis.0.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			RH0aIoH/TFXVPQTYETbrvwl1y8s=
+			nD39kC5wHiHWIYe5jBbD7XMXr1I=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"09857bf9a84a77f4ada56b57bb4629ad8785d8ac" or cdhash H"447d1a2281ff4c55d53d04d81136ebbf0975cbcb" or cdhash H"305d70b491112f3da2467eb2f8cb8f6feff2d619" or cdhash H"83f399936b1fb935e96a8809e95e8bd0e9c35c14"</string>
+			<string>cdhash H"9c3dfd902e701e21d62187b98c16c3ed7317af52"</string>
+		</dict>
+		<key>Frameworks/libvorbisenc.2.dylib</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			KYgisjp8rHxnIp62wDye+xumq8I=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"298822b23a7cac7c67229eb6c03c9efb1ba6abc2"</string>
 		</dict>
 		<key>Frameworks/libwebp.7.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			SxEV7HosA4GUy7SubflQehWHjVU=
+			nl6Gm1f9UFYm4QvITsLR57dbpX4=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"c58d83929648ec6198d938609c75e1c909155ea3" or cdhash H"4b1115ec7a2c038194cbb4ae6df9507a15878d55" or cdhash H"72076fe28c3d9885622db648b0a2ab7e3dc6b1cd" or cdhash H"fc63892f69f6122fea0b80fefa3da0450a1fc9aa"</string>
+			<string>cdhash H"9e5e869b57fd505626e10bc84ec2d1e7b75ba57e"</string>
 		</dict>
 		<key>Frameworks/libwebpmux.3.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			lZR5TNUodRf9WYJmiDsnYYQ1CVI=
+			S1h1HOIzQaDI3eDlwwjAQONWQ/U=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"a847a10d6e2fe4e03da8aca6cf2bcf4220b9317c" or cdhash H"9594794cd5287517fd598266883b276184350952" or cdhash H"6980b10e17fbb09b4d855f96f3b34ae527a4f993" or cdhash H"0df41842181bd993603689b2c50dcb21dae46b55"</string>
-		</dict>
-		<key>Frameworks/libxcb-shape.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			Rxv+mVq6ouCAFYuaFknfTgLUUbY=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"b42987d0d04290a9f0b153bbc5981aefbe9c97b3" or cdhash H"471bfe995abaa2e080158b9a1649df4e02d451b6" or cdhash H"4cb0ce78c42564eb3a0a0a4e5b5af21204797590" or cdhash H"1fbbf16d31b5d9c170ea41046b23a53dcc198dd4"</string>
-		</dict>
-		<key>Frameworks/libxcb-shm.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			MmEoIghCrEp56PHXBfEEGfiE564=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"bb067bb29778b7f9e0de70e555cbed9b3fdac382" or cdhash H"326128220842ac4a79e8f1d705f10419f884e7ae" or cdhash H"fa05de232396426cb49ad8c73e0979292dee227d" or cdhash H"d39812d40005cfd08efc2daa440ba191996509d2"</string>
-		</dict>
-		<key>Frameworks/libxcb-xfixes.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			r+tHc1ZC960zwQvFkTj1T4iWrf8=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"568b8da2b270817711f3c6840b3b37a53c139ab7" or cdhash H"afeb47735642f7ad33c10bc59138f54f8896adff" or cdhash H"aef8fd13964e93c47f65af7ae777f30edd3b26de" or cdhash H"2fec44c6e4e5396edb4c0521849294114f24445d"</string>
-		</dict>
-		<key>Frameworks/libxcb.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			0TL3HS1fLAaFLubrwag3EwaSjK4=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"e6a1eb39afe00eb19a11a5679c3425dfc317df64" or cdhash H"d132f71d2d5f2c06852ee6ebc1a8371306928cae" or cdhash H"c66367c7a68c18cec1dc168d3c0427f4abac7a3d" or cdhash H"2fd96c71c5157e9f7740d297a1730325d7d720ae"</string>
+			<string>cdhash H"4b58751ce23341a0c8dde0e5c308c040e35643f5"</string>
 		</dict>
 		<key>Frameworks/libzimg.2.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			ueXLlSNh40i+Z2f6Kr6wqQhaQH0=
+			lDsVOTJyGK2FeoJoCv4/JUXuf10=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"1a63d7b7d31deb73becb9a8aca3a441b3b26b6f3" or cdhash H"b9e5cb952361e348be6767fa2abeb0a9085a407d" or cdhash H"ed18c99f1ef8dc755ff7bb42ebbe24dffdf06855" or cdhash H"9246a77b436f42c68f17e73e86223bf1a5ed8a39"</string>
-		</dict>
-		<key>Frameworks/libzmq.5.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			u6lrwSi7bYoMEspMH1agvS/YXCs=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"3e6a40081182532c145ff5b611bff7dead493f66" or cdhash H"bba96bc128bb6d8a0c12ca4c1f56a0bd2fd85c2b" or cdhash H"7f556fc964c9552742a16a32b13ef14e658e584e" or cdhash H"0c00702f53fd1957fca37e66a77d26def289c57b"</string>
+			<string>cdhash H"943b1539327218ad857a82680afe3f2545ee7f5d"</string>
 		</dict>
 		<key>Frameworks/libzstd.1.dylib</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			9+0hXAXBL63XHFtrmyw/F6rjR5w=
+			NGl+XnQqcDpWBfEFddQk1HDaSGQ=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"038284e8d46311f704a8c50eb537da93b5d266b3" or cdhash H"f7ed215c05c12fadd71c5b6b9b2c3f17aae3479c" or cdhash H"e6d6beba58b8040ec9432e6017aaee257ec4f6eb" or cdhash H"e9e478fd9b82fa98242961d948db2a02173ffc16"</string>
-		</dict>
-		<key>Resources/AppIcon.icns</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			+zBHdTRF/Iy94cZAR/5DSuKpCef/+NA7MBgXeS0YDjM=
-			</data>
+			<string>cdhash H"34697e5e742a703a5605f10575d424d470da4864"</string>
 		</dict>
 		<key>Resources/LolaPlayerIcon.icns</key>
 		<dict>
@@ -572,7 +434,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			/nZ06EUcvhEfIB1dgaD4t2oel3fBqqN2h3HRpN7MM74=
+			o/3/0mnalU3OwRkfmxEmugADsbquxusrvqyakvLWzQA=
+			</data>
+		</dict>
+		<key>Resources/RuntimeCapabilities.json</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			winW1T716B3x3XgNAUl3LjEenV8ctXbOhxb1JeAv3V0=
 			</data>
 		</dict>
 		<key>Resources/WelcomeNature.png</key>
@@ -580,6 +449,13 @@
 			<key>hash2</key>
 			<data>
 			oR5OFPLzoXi/ZXuaEBU6ppfEX78BAjjeEHS5e4/UhsY=
+			</data>
+		</dict>
+		<key>Resources/versions.md</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			ERPCXrZkVOGjOpjefKce9+pAqhpiNCY/PXAEmLA0UYA=
 			</data>
 		</dict>
 	</dict>

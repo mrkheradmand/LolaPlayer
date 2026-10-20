@@ -106,7 +106,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
                 attributes: [.font: NSFont.systemFont(ofSize: 13), .paragraphStyle: paragraph]
             ))
             NSApp.orderFrontStandardAboutPanel(options: [
-                .applicationName: "Lola Player", .applicationVersion: "1.0", .credits: credits
+                .applicationName: "Lola Player",
+                .applicationVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Development",
+                .credits: credits
             ])
         }
         item(app, "Settings…", key: ",") { self.model.settingsOpen = true }
@@ -158,6 +160,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         item(playbackMenu, "Import Bookmarks…") { self.model.importBookmarks() }
         item(playbackMenu, "Export Bookmarks…") { self.model.exportBookmarks() }
         chapterMenu = submenu(playbackMenu, "Chapters"); chapterMenu.delegate = self
+        item(playbackMenu, "Choose Disc Title…") { self.model.chooseDiscTitle() }
+        item(playbackMenu, "Use Longest Disc Title") { self.model.chooseDiscTitle(automatic: true) }
         let loop = submenu(playbackMenu, "A–B Loop")
         item(loop, "Set Starting Point", key: "a", modifiers: [.command, .option]) { self.model.setLoopA() }
         item(loop, "Set Return Point", key: "b", modifiers: [.command, .option]) { self.model.setLoopB() }
@@ -188,6 +192,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         item(windows, "Minimize", key: "m", modifiers: [.command, .option]) { self.window.miniaturize(nil) }
         item(windows, "Zoom") { self.window.zoom(nil) }
         let help = submenu(bar, "Help")
+        item(help, "Playback Support…") {
+            let runtime = self.model.runtimeCapabilities
+            let alert = NSAlert()
+            alert.messageText = "Playback Support"
+            alert.informativeText = "\(runtime["mpv"] as? String ?? "Runtime version unavailable")\nFFmpeg \(runtime["ffmpeg"] as? String ?? "version unavailable")\n\nVVC: \(runtime["vvc"] as? Bool == true ? "Available" : "Not included")\nProRes RAW: \(runtime["prores_raw"] as? Bool == true ? "Available" : "Not included")\nMIDI: uses macOS General MIDI instruments when available.\n\nSupported codecs do not guarantee every file variant. This player provides playback only."
+            alert.runModal()
+        }
         item(help, "Keyboard Shortcuts") {
             let alert = NSAlert(); alert.messageText = "Keyboard Shortcuts"
             alert.informativeText = "Space — Play / Pause\n← / → — Seek 10 seconds\n↑ / ↓ — Volume\n⌘B — Save bookmark\n⇧⌘B — All bookmarks\n⇧⌘H — History\n⌥⌘T — Float on Top while playing\n⌘L — Playlist\n⌘O — Open file\n⌃⌘F — Full screen\n⌘[ / ⌘] — Playback speed\nE / ⇧E — Next / previous frame"
@@ -205,7 +216,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             menu.addItem(.separator())
             for record in model.records where !record.bookmarks.isEmpty {
                 let group = submenu(menu, record.name)
-                for bookmark in record.bookmarks { item(group, "\(timestamp(bookmark.seconds)) — \(bookmark.title)") { self.model.play(record.id, at: bookmark.seconds) } }
+                for bookmark in record.bookmarks { item(group, "\(timestamp(bookmark.seconds)) — \(bookmark.title)") { self.model.playBookmark(record.id, bookmark: bookmark) } }
             }
         } else if menu === audioMenu || menu === subtitleMenu {
             menu.removeAllItems(); let audio = menu === audioMenu

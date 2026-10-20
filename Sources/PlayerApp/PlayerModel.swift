@@ -80,6 +80,14 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     @ObservationIgnored var lastFloatingState: Bool?
     @ObservationIgnored var folderIDs: [UUID] = []
     @ObservationIgnored var systemMediaControls: SystemMediaControls?
+    @ObservationIgnored private var openingPlaylists = Set<URL>()
+    @ObservationIgnored private var midi: MIDIPlayback?
+    @ObservationIgnored let runtimeCapabilities: [String: Any] = {
+        guard let url = Bundle.main.url(forResource: "RuntimeCapabilities", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let result = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [:] }
+        return result
+    }()
 
     var current: MediaRecord? { currentID.flatMap { library.record($0) } }
     var records: [MediaRecord] { _ = revision; return library.recent }
@@ -146,12 +154,18 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         for url in urls {
             if url.pathExtension.lowercased() == "m3u" || url.pathExtension.lowercased() == "m3u8", url.isFileURL {
                 do {
-                    let text = try String(contentsOf: url, encoding: .utf8)
-                    let items = text.components(separatedBy: .newlines).filter { !$0.isEmpty && !$0.hasPrefix("#") }.compactMap { line -> URL? in
-                        if let remote = URL(string: line), remote.scheme != nil { return remote }
-                        return url.deletingLastPathComponent().appendingPathComponent(line)
+                    let identity = url.standardizedFileURL.resolvingSymlinksInPath()
+                    guard openingPlaylists.count < 16, !openingPlaylists.contains(identity) else {
+                        throw CocoaError(.fileReadCorruptFile, userInfo: [NSLocalizedDescriptionKey: "The playlist contains a cycle or exceeds 16 nested playlists."])
                     }
-                    open(items)
+                    openingPlaylists.insert(identity)
+                    defer { openingPlaylists.remove(identity) }
+                    let text = try String(contentsOf: url, encoding: .utf8)
+                    if MediaInput.isHLS(text) {
+                        ids.append(try library.visit(url))
+                    } else {
+                        open(MediaInput.playlistItems(text, relativeTo: url))
+                    }
                 } catch { self.error = error.localizedDescription }
                 continue
             }
@@ -160,8 +174,23 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             }
             var directory: ObjCBool = false
             if url.isFileURL, FileManager.default.fileExists(atPath: url.path, isDirectory: &directory), directory.boolValue {
+                if let (root, kind) = MediaInput.discFolder(url) {
+                    perform { ids.append(try library.visitDisc(root, kind: kind)) }
+                    continue
+                }
                 do { open(try MediaFormats.files(in: url)) }
                 catch { self.error = error.localizedDescription }; continue
+            }
+            if url.isFileURL && url.pathExtension.lowercased() == "iso" {
+                let alert = NSAlert()
+                alert.messageText = "Open Disc Image"
+                alert.informativeText = "Choose the disc type for \(url.lastPathComponent). The image must contain accessible, unencrypted media. Disc menus are not supported."
+                alert.addButton(withTitle: "DVD"); alert.addButton(withTitle: "Blu-ray"); alert.addButton(withTitle: "Cancel")
+                let response = alert.runModal()
+                if response == .alertFirstButtonReturn || response == .alertSecondButtonReturn {
+                    perform { ids.append(try library.visitDisc(url, kind: response == .alertFirstButtonReturn ? .dvd : .bluray)) }
+                }
+                continue
             }
             perform { ids.append(try library.visit(url)) }
         }
@@ -171,6 +200,14 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
 
     func play(_ id: UUID, at bookmark: Double? = nil) {
         guard let url = library.resolve(id) else { return }
+        if ["vvc", "h266"].contains(url.pathExtension.lowercased()), runtimeCapabilities["vvc"] as? Bool == false {
+            error = "This build does not contain a VVC decoder. A newer compatible playback runtime is required."
+            return
+        }
+        if let kind = library.record(id)?.discKind, runtimeCapabilities[kind.rawValue] as? Bool == false {
+            error = "This build does not include \(kind == .dvd ? "DVD" : "Blu-ray") disc reading. Individual video files can still be opened."
+            return
+        }
         if url.isFileURL && !FileManager.default.fileExists(atPath: url.path) {
             error = "The file \(url.lastPathComponent) is unavailable. Use Relocate File in History to find it."; return
         }
@@ -178,6 +215,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         if currentID == id, loaded, pendingLocation == nil, let bookmark {
             seek(bookmark); setPaused(false); return
         }
+        midi?.shutdown(); midi = nil
         guard engine?.engineReady == true else { pendingURLs.append(url); return }
         if !queue.contains(id) { queue.append(id) }
         perform { _ = try library.visit(url) }
@@ -186,7 +224,32 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         paused = !autoplay; buffering = true; handledEnd = false; loopA = nil; loopB = nil
         pendingSeek = bookmark ?? (rememberPosition ? library.record(id)?.position : 0)
         if bookmark != nil { paused = false }
-        pendingLocation = url.isFileURL ? url.path : url.absoluteString; loadingSince = Date()
+        window?.title = library.record(id)?.name ?? "Lola Player"
+        if url.isFileURL && ["mid", "midi"].contains(url.pathExtension.lowercased()) {
+            engine?.command(["stop"])
+            pendingLocation = nil; loadingSince = nil; tracks = []; chapters = []
+            do {
+                let playback = try MIDIPlayback(url: url)
+                midi = playback; duration = playback.duration
+                playback.rate = speed; playback.volume = muted ? 0 : volume / 100
+                playback.seek(min(pendingSeek ?? 0, max(0, duration - 0.1)))
+                position = playback.position; pendingSeek = nil
+                if !paused { try playback.play() }
+                loaded = true; buffering = false
+            } catch {
+                midi?.shutdown(); midi = nil; failed = true; buffering = false
+                self.error = "MIDI playback: \(error.localizedDescription)"
+            }
+            applyWindowLevel(); systemMediaControls?.update(force: true)
+            return
+        }
+        if let kind = library.record(id)?.discKind {
+            engine?.setProperty("options/\(kind.deviceOption)", value: url.path)
+            pendingLocation = kind.playbackURL(title: library.record(id)?.discTitle)
+        } else {
+            pendingLocation = url.isFileURL ? url.path : url.absoluteString
+        }
+        loadingSince = Date()
         engine?.setProperty("pause", value: "yes")
         engine?.command(["loadfile", pendingLocation!, "replace"])
         engine?.setProperty("ab-loop-a", value: "no"); engine?.setProperty("ab-loop-b", value: "no")
@@ -198,6 +261,18 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func tick() {
         guard let engine, engine.engineReady else { return }
         ticks += 1
+        if let midi {
+            position = midi.position
+            if let loopA, let loopB, position >= loopB { midi.seek(loopA); position = loopA }
+            if !paused && position >= duration {
+                midi.pause(); ended = true; paused = true
+                if !handledEnd { handledEnd = true; handleEnd() }
+            }
+            if ticks % 34 == 0 { persistPosition() }
+            if message != nil && Date() > messageUntil { message = nil }
+            applyWindowLevel(); systemMediaControls?.update()
+            return
+        }
         let errors = engine.drainErrors()
         if let problem = errors.first {
             error = "Playback: \(problem)"
@@ -247,23 +322,52 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func setPaused(_ value: Bool) {
         guard loaded else { return }
         if !value && ended { seek(0) }
+        if let midi {
+            do { if value { midi.pause() } else { try midi.play() } }
+            catch { self.error = "MIDI playback: \(error.localizedDescription)"; return }
+        }
         paused = value; engine?.setProperty("pause", value: value ? "yes" : "no"); applyWindowLevel()
         systemMediaControls?.update(force: true)
         if value { persistPosition() }
     }
     func togglePlayback() { setPaused(!paused) }
+    func chooseDiscTitle(automatic: Bool = false) {
+        guard let record = current, let kind = record.discKind else {
+            notify("Open a DVD or Blu-ray folder/image first")
+            return
+        }
+        var title: Int?
+        if !automatic {
+            let minimum = kind == .dvd ? 1 : 0
+            guard let text = textPrompt("Disc title number (starting at \(minimum))", initial: String(record.discTitle ?? minimum)),
+                  let value = Int(text), value >= minimum else { return }
+            title = value
+        }
+        persistPosition(); loaded = false
+        perform { try library.setDiscTitle(record.id, title: title) }
+        play(record.id, at: 0)
+    }
+    func playBookmark(_ record: UUID, bookmark: MediaBookmark) {
+        if currentID == record, library.record(record)?.discTitle != bookmark.discTitle {
+            persistPosition(); loaded = false
+        }
+        perform { try library.setDiscTitle(record, title: bookmark.discTitle) }
+        play(record, at: bookmark.seconds)
+    }
     func seek(_ seconds: Double) {
         guard loaded, seconds.isFinite else { return }
         let target = min(max(0, seconds), max(0, duration))
-        engine?.command(["seek", String(target), "absolute+exact"]); position = target; ended = false; handledEnd = false
+        if let midi { midi.seek(target) }
+        else { engine?.command(["seek", String(target), "absolute+exact"]) }
+        position = target; ended = false; handledEnd = false
         systemMediaControls?.update(force: true)
     }
     func skip(_ seconds: Double) { seek(position + seconds) }
     func stop() { setPaused(true); seek(0); ended = false; persistPosition(); applyWindowLevel() }
-    func changeSpeed(_ value: Double) { speed = min(max(value, 0.25), 4); engine?.setProperty("speed", value: String(speed)); notify(String(format: "Speed %.2g×", speed)) }
-    func changeVolume(_ value: Double) { volume = min(max(value, 0), 100); engine?.setProperty("volume", value: String(volume)) }
-    func toggleMute() { muted.toggle(); engine?.setProperty("mute", value: muted ? "yes" : "no") }
-    func stepFrame(_ backwards: Bool = false) { setPaused(true); engine?.command([backwards ? "frame-back-step" : "frame-step"]) }
+    func changeSpeed(_ value: Double) { speed = min(max(value, 0.25), 4); midi?.rate = speed; engine?.setProperty("speed", value: String(speed)); notify(String(format: "Speed %.2g×", speed)) }
+    func changeVolume(_ value: Double) { volume = min(max(value, 0), 100); midi?.volume = muted ? 0 : volume / 100; engine?.setProperty("volume", value: String(volume)) }
+    func toggleMute() { muted.toggle(); midi?.volume = muted ? 0 : volume / 100; engine?.setProperty("mute", value: muted ? "yes" : "no") }
+    func stepFrame(_ backwards: Bool = false) { guard midi == nil else { return }; setPaused(true); engine?.command([backwards ? "frame-back-step" : "frame-step"]) }
     func adjacent(_ offset: Int) {
         guard let id = adjacentID(offset) else { return }
         play(id, at: 0)
@@ -334,9 +438,10 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func show(_ page: LibraryTab) { tab = page; sidebar = true }
     func relocate(_ record: MediaRecord) {
         let panel = NSOpenPanel(); panel.message = "Locate \(record.name)"; panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = record.discKind != nil
         guard panel.runModal() == .OK, let url = panel.url else { return }
         perform {
-            try library.relocate(record.id, to: url)
+            try library.relocate(record.id, to: record.discKind != nil ? (MediaInput.discFolder(url)?.0 ?? url) : url)
             play(record.id)
         }
     }
@@ -382,5 +487,5 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         alert.window.initialFirstResponder = input
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }; return input.stringValue
     }
-    func shutdown() { timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); engine?.shutdown(); window?.level = .normal }
+    func shutdown() { timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
 }

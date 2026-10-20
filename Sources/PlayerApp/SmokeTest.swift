@@ -8,6 +8,7 @@ import PlayerCore
     static func run(model: PlayerModel, root: URL) {
         Task { @MainActor in
             var checks: [String] = []
+            var skipped: [String] = []
             let originalFloat = model.floatEnabled
             let originalAutoplay = model.autoplay
             let originalPrompt = model.promptForBookmark
@@ -60,11 +61,44 @@ import PlayerCore
                 try check(model.window?.level == .normal && model.floatEnabled, "End of file suspends floating")
                 model.stop()
                 try check(model.window?.level == .normal, "Stop keeps normal window level")
+                let manifest = root.appendingPathComponent("hls/index.m3u8")
+                if FileManager.default.fileExists(atPath: manifest.path) {
+                    model.open([manifest])
+                    try await waitFor { model.loaded && model.current?.location.path == manifest.path && model.duration > 2 }
+                    try check(model.queue.compactMap { model.library.record($0)?.location.pathExtension }.allSatisfy { $0 != "ts" }, "HLS opens as one manifest without queueing segments")
+                    model.stop()
+                }
+                let cycle = root.appendingPathComponent("cycle.m3u")
+                try "#EXTM3U\ncycle.m3u\n".write(to: cycle, atomically: true, encoding: .utf8)
+                model.open([cycle])
+                try check(model.error?.contains("cycle") == true, "Recursive playlists report an error without overflowing the stack")
+                model.error = nil
+                let score = root.appendingPathComponent("score.mid")
+                if FileManager.default.fileExists(atPath: score.path) {
+                    model.changeVolume(0)
+                    model.open([score])
+                    if model.failed, model.error?.contains("synthesizer is unavailable") == true {
+                        skipped.append("MIDI audio component unavailable in this environment")
+                        model.error = nil
+                    } else {
+                        try await waitFor { model.loaded && model.position > 0.2 }
+                        model.setPaused(true)
+                        let position = model.position
+                        try await Task.sleep(for: .milliseconds(300))
+                        try check(abs(model.position - position) < 0.1 && model.window?.level == .normal, "MIDI pause preserves position and suspends floating")
+                        model.seek(0.5); model.addBookmark()
+                        try check(model.current?.bookmarks.last?.seconds == 0.5, "MIDI bookmarks use the same persistent library")
+                        model.setPaused(false)
+                        try await waitFor { model.position > 0.7 }
+                        try check(true, "MIDI resumes and seeks through the native synthesizer")
+                        model.stop()
+                    }
+                }
             } catch let error as Failure { failure = error.message }
             catch { failure = error.localizedDescription }
             model.floatEnabled = originalFloat; model.autoplay = originalAutoplay
             model.promptForBookmark = originalPrompt
-            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "failure": failure ?? NSNull()]
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": skipped, "failure": failure ?? NSNull()]
             if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
                 try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
             }

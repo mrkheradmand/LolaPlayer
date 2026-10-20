@@ -226,7 +226,7 @@ struct PlayerView: View {
                             if model.tab == .bookmarks {
                                 ForEach(record.bookmarks.filter { model.search.isEmpty || record.name.localizedCaseInsensitiveContains(model.search) || $0.title.localizedCaseInsensitiveContains(model.search) }) { bookmark in
                                     HStack {
-                                        Button { model.play(record.id, at: bookmark.seconds) } label: {
+                                        Button { model.playBookmark(record.id, bookmark: bookmark) } label: {
                                             HStack {
                                                 Text(timestamp(bookmark.seconds)).monospacedDigit().foregroundStyle(.blue).frame(width: 52, alignment: .leading)
                                                 Text(bookmark.title).lineLimit(1)

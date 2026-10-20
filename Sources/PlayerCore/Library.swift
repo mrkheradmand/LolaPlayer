@@ -4,6 +4,7 @@ public struct MediaBookmark: Codable, Identifiable, Equatable, Sendable {
     public let id: UUID
     public var seconds: Double
     public var title: String
+    public var discTitle: Int?
     public init(seconds: Double, title: String) {
         id = UUID(); self.seconds = max(0, seconds); self.title = title
     }
@@ -20,6 +21,9 @@ public struct MediaRecord: Codable, Identifiable, Equatable, Sendable {
     public var bookmarks: [MediaBookmark]
     /// Nil in older libraries means visible. History membership is independent of bookmarks/queue.
     public var isInHistory: Bool?
+    /// Optional so libraries written before disc support remain readable.
+    public var discKind: DiscKind?
+    public var discTitle: Int?
     public var name: String { location.isFileURL ? location.lastPathComponent : location.absoluteString }
     public init(location: URL, fileIdentity: String? = nil) {
         id = UUID(); self.location = location; self.fileIdentity = fileIdentity
@@ -90,6 +94,17 @@ public final class MediaLibrary {
         }
         return item.location
     }
+    @discardableResult public func visitDisc(_ url: URL, kind: DiscKind) throws -> UUID {
+        let id = try visit(url)
+        if let index = records.firstIndex(where: { $0.id == id }) { records[index].discKind = kind }
+        try save()
+        return id
+    }
+    public func setDiscTitle(_ id: UUID, title: Int?) throws {
+        guard let index = records.firstIndex(where: { $0.id == id }), records[index].discKind != nil else { return }
+        records[index].discTitle = title
+        try save()
+    }
     public func updatePosition(_ id: UUID, seconds: Double, duration: Double) throws {
         guard let i = records.firstIndex(where: { $0.id == id }) else { return }
         if seconds.isFinite { records[i].position = max(0, seconds) }
@@ -107,7 +122,9 @@ public final class MediaLibrary {
     }
     public func addBookmark(_ id: UUID, seconds: Double, title: String) throws {
         guard seconds.isFinite, let i = records.firstIndex(where: { $0.id == id }) else { return }
-        records[i].bookmarks.append(MediaBookmark(seconds: seconds, title: title))
+        var bookmark = MediaBookmark(seconds: seconds, title: title)
+        bookmark.discTitle = records[i].discTitle
+        records[i].bookmarks.append(bookmark)
         records[i].bookmarks.sort { $0.seconds < $1.seconds }; try save()
     }
     public func editBookmark(_ id: UUID, bookmark: UUID, title: String, seconds: Double) throws {

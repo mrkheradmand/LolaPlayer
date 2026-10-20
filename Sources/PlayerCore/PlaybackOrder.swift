@@ -20,7 +20,13 @@ public enum RepeatMode: String, CaseIterable, Sendable {
 public enum MediaFormats {
     public static let fileExtensions: Set<String> = [
         "mp4", "mkv", "mov", "avi", "webm", "mp3", "flac", "m4a", "wav", "ogg",
-        "m4v", "ts", "wmv", "flv", "mpeg", "mpg", "opus", "aac"
+        "m4v", "ts", "wmv", "flv", "mpeg", "mpg", "opus", "aac",
+        "3gp", "3g2", "f4v", "asf", "divx", "m2ts", "mts", "m2t", "vob", "evo",
+        "mxf", "dv", "y4m", "ivf", "rm", "rmvb", "ra", "mka", "oga", "ogv", "ogm", "weba",
+        "aif", "aiff", "aifc", "caf", "au", "snd", "ape", "wv", "mpc", "tta", "tak", "shn",
+        "amr", "spx", "wma", "ac3", "eac3", "dts", "dtshd", "thd", "mlp", "dsf", "dff",
+        "wtv", "dav", "bik", "smk", "vvc", "h266",
+        "mid", "midi"
     ]
     public static func files(in folder: URL) throws -> [URL] {
         try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles])
