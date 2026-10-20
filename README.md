@@ -1,16 +1,22 @@
 # Lola Player
 
+**[Download Lola Player for Mac (.dmg)](https://github.com/mrkheradmand/LolaPlayer/releases/latest/download/LolaPlayer-arm64.dmg)** · Apple Silicon · macOS 14 or later
+
+Open the DMG and drag Lola Player to Applications. The app is signed ad hoc and is not notarized; macOS may require approval in **System Settings → Privacy & Security** on first launch.
+
 ![Lola Player welcome screen](app.jpg)
 
-*Screenshot from the earlier Lumen Player build; the app is now named Lola Player.*
+*Screenshot from the app Lola Player.*
 
-Lola Player is a native macOS video and audio player with **bookmarks across files and history** and **Float on Top that follows playback**. It was built after inspecting the locally installed Elmedia Player 8.24 with REA and observing its interface.
+Lola Player is a native macOS video and audio player with **named bookmarks at any video timestamp** and **Float on Top that follows playback**. It was built after inspecting the locally installed Elmedia Player 8.24 with REA and observing its interface.
+
+> **Save a moment. Name it. Find it again.** Bookmark the selected time in any playable video and give the bookmark a meaningful name. Lola keeps bookmarks from all your videos in a separate, searchable **Bookmarks** list—even after you open another file or restart the app. Search by bookmark name or filename, then click a bookmark to reopen the video and start playback at the exact saved time.
 
 This is an independent implementation of the core free-player workflow. It does not modify Elmedia or copy its executable or artwork. It is **not an exact visual or feature-complete clone**. PRO features are intentionally excluded; remaining differences are documented below.
 
 | App information | Value |
 | --- | --- |
-| Version | 1.0, build 1 |
+| Version | 1.1.2, build 5 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | Minimum deployment target | macOS 14 |
@@ -37,7 +43,7 @@ This is an independent implementation of the core free-player workflow. It does 
 
 ## Getting started
 
-1. Open **`dist/Lola Player.app`** in Finder. You can copy the entire bundle to your Applications folder for regular use.
+1. [Download the DMG](https://github.com/mrkheradmand/LolaPlayer/releases/latest/download/LolaPlayer-arm64.dmg), open it, and drag **Lola Player** to **Applications**. Eject the disk image and open the app from Applications. For a local source build, open **`dist/Lola Player.app`** in Finder.
 2. Press **⌘O**, click **Open File…**, or drag media onto the player.
 3. Press **Space** to pause or resume.
 4. Press **⌘B** to save the current position.
@@ -52,15 +58,16 @@ When no media file is open, the welcome screen displays a generated alpine-lake 
 
 ## Features
 
-### Persistent bookmarks across files
+### Named video bookmarks: save, search, and replay exact moments
 
-Bookmarks belong to durable file records, rather than only to the currently open video.
+Save multiple moments in each video, name them for easy reference, and keep them together in the dedicated **Bookmarks** tab. Bookmarks remain attached to their source files across your library and history.
 
-- Save with **⌘B** or the bookmark button.
-- Browse **View → Show All Bookmarks** or press **⇧⌘B**.
-- Select a bookmark to reopen its source file at the saved second.
-- Edit its name and time in seconds through **… → Edit…**.
-- Delete individual bookmarks with their trash buttons, or search by filename/bookmark title.
+- **Save a selected time:** seek to the moment you want, then press **⌘B** or click the bookmark button.
+- **Give it a name:** choose **… → Edit…** to enter a descriptive name, such as “Favorite scene” or “Chapter 2 explanation.” You can also adjust its saved time in seconds.
+- **Keep every bookmark in one list:** open **View → Show All Bookmarks** or press **⇧⌘B** to browse bookmarks from all files, grouped by video.
+- **Search your saved moments:** filter the list by bookmark name or filename.
+- **Replay the exact moment:** click a bookmark to reopen its video and start playback at the saved time, even if another file is currently open.
+- Delete individual bookmarks with their trash buttons.
 - Remove every bookmark for one file using its file-row trash button or right-clicking the filename and choosing **Remove All Bookmarks for This File**.
 - Import/export bookmarked records as JSON.
 
@@ -104,19 +111,28 @@ The app uses libmpv with FFmpeg rather than relying solely on macOS system codec
 
 | Category | Documented formats or inputs |
 | --- | --- |
-| Video containers | MP4, MKV, MOV, AVI, WebM, M4V, WMV, FLV, MPEG/MPG, TS |
-| Audio files | MP3, M4A, FLAC, WAV, OGG, Opus; AAC playback depends on the engine and container |
+| Video containers | MP4, MKV, MOV, AVI, WebM, M4V, WMV, FLV, MPEG/MPG, TS; 3GP/3G2, F4V, ASF, DIVX, M2TS/MTS/M2T, VOB/EVO, MXF, DV, Y4M, IVF, RM/RMVB, OGV/OGM, WTV, DAV, BIK/SMK |
+| Audio files | MP3, M4A, FLAC, WAV, OGG, Opus, AAC; MKA, OGA, WEBA, AIF/AIFF/AIFC, CAF, AU/SND, APE, WV, MPC, TTA, TAK, SHN, AMR, SPX, WMA, AC3/EAC3, DTS/DTSHD, THD/MLP, DSF/DFF, RA |
+| MIDI | Local MID/MIDI, synthesized using the macOS General MIDI component when available; no bundled SoundFont or encoded output |
+| Newer codecs | VVC/H266 and ProRes RAW decoders are registered in the bundled FFmpeg 9.0.1 runtime, which also supplies newer AAC/USAC decoding. Specific files/profiles still need validation |
+| Disc inputs | DVD/Blu-ray folders and ISO images are routed to the corresponding disc reader if compiled into the runtime. No interactive menus or decryption |
 | Playlists | M3U and M3U8 |
 | External subtitles | SRT, ASS, SSA, VTT, SUB |
 | Network media | Direct playable HTTP/HTTPS addresses; RTSP and RTMP addresses are accepted and passed to the engine |
 
-**Verified in the visible app:** H.264 video in MP4 with AC-3 audio, and H.264 video in MKV with Opus audio. Other formats and network protocols have not all been individually tested. Live streams may not support seeking or frame stepping.
+**Previously verified in the visible app:** H.264 video in MP4 with AC-3 audio, and H.264 video in MKV with Opus audio. The 1.1.0 decoder checks also successfully decoded synthetic AIFF, CAF, AU, WV, TTA, MKA, OGA, WEBA, WMA, AC3, EAC3, DTS, THD, MLP, 3GP, F4V, ASF, M2TS, MTS, VOB, IVF, Y4M, RM, and local HLS inputs through the bundled libmpv. This is not certification of every variant. Discs, network streams and specific VVC/xHE-AAC/ProRes RAW files have not all been verified. Native MIDI transport/bookmarks passed the real-app smoke checks; physical listening and every instrument/program variant are not certified. Tracker modules are intentionally excluded. Live streams may not support seeking or frame stepping.
+
+**Playback runtime:** mpv **0.41.0** with FFmpeg **9.0.1**, imported from the official IINA 1.5.0 package supplied locally. The app bundles its own libraries and does not depend on IINA remaining installed. Registered VVC and ProRes RAW decoders are confirmed; decoder presence does not certify every profile/file or hardware path. **Help → Playback Support…** reports the actual bundled versions and optional capabilities. The separate developer FFmpeg 9.0.2 command is used only for generating test fixtures.
+
+**Disc limits:** this runtime includes Blu-ray reading, but no native DVD reader. Unencrypted Blu-ray folder/image routing and numeric title selection are implemented, with real disc validation pending. DVD folders/images report the missing reader clearly; individual VOB files play. Interactive menus and decryption are excluded.
+
+**Tracker modules:** MOD, XM, IT, S3M, MTM and UMX support was removed from this update at the user’s request. No libopenmpt dependency is bundled.
 
 Input details:
 
 - **Finder registrations are not playback restrictions.** Open… can pass other extensions to the engine. Some engine-readable formats are not registered document types.
-- **Folder import is not recursive.** It scans regular, non-hidden files directly in the folder using a media-extension allowlist, including `.opus`, `.mpg`, and `.aac`. For other engine-readable extensions, open the file individually.
-- **Local M3U/M3U8 files are parsed as lists of paths/URLs.** Relative paths resolve against the playlist folder. Full local HLS manifest semantics are not implemented by this parser. Remote media/manifest URLs go directly to libmpv.
+- **Folder import is not recursive.** It scans regular, non-hidden files directly in the folder using the expanded media-extension allowlist. Recognized `VIDEO_TS` / `BDMV` structures are treated as one disc. ISO images opened directly prompt for DVD or Blu-ray; ordinary folders remain shallow scans. Finder registration is synchronized with `MediaFormats.fileExtensions` by `scripts/sync-formats.py`.
+- **Local M3U/M3U8:** manifests containing HLS `#EXT-X-` tags go intact to libmpv, retaining segment, variant and key relationships. Ordinary playlists resolve relative/absolute paths and supported URLs; recursive cycles or nesting deeper than 16 playlists are rejected. Remote media/manifest URLs go directly to libmpv. Encrypted HLS requires accessible keys and engine support; DRM services are not supported.
 - **SUB has several formats.** Binary/paired subtitle support depends on the engine and companion files.
 - **Online media requires a playable address.** YouTube or other arbitrary video webpages are not extracted into streams.
 - DRM-protected services and legacy Flash/SWF playback are not supported workflows.
@@ -157,7 +173,7 @@ These controls never delete media from disk. History removal preserves file reco
 - **Whole Library:** cycle through all file/URL records known to Lola, including records outside the playlist or hidden from History, in natural filename order. Missing local files are skipped. This does not scan the entire Mac.
 - Folder/library modes wrap from the last item to the first and from the first to the last. Automatic transitions and manual track changes start the selected file at zero. Shuffle chooses another available item within the active scope when possible. Toggle it with the **shuffle button immediately left of Previous**; blue means enabled. The button, Playback menu, and Settings share the same shuffle setting.
 - For A–B looping, set A at the start and B at a later position. Clear/Cancel removes the loop. Opening another file clears its loop points.
-- Choose chapters from **Playback → Chapters** when present. Frame stepping pauses playback; reverse stepping depends on the source/decoder.
+- Choose chapters from **Playback → Chapters** when present. For disc records, **Playback → Choose Disc Title…** selects a DVD title (starting at 1) or Blu-ray playlist index (starting at 0). **Use Longest Disc Title** restores automatic selection. Disc bookmarks retain the selected title as well as the saved second. Frame stepping pauses playback; reverse stepping depends on the source/decoder.
 - Select embedded tracks through **Audio → Audio Track** and **Subtitles → Subtitle Track**.
 - Load external files through **Audio → Use External Audio…** or **Subtitles → Add Subtitles from File…**. You can also open/drop supported subtitles while media is loaded.
 - Press **V** to toggle subtitles. Change their size through the Subtitles menu.
@@ -317,10 +333,11 @@ dist/Lola Player.app
 
 Packaging searches in this order:
 
-1. Existing file selected by `LUMEN_MPV_LIBRARY`.
-2. `/opt/homebrew/lib/libmpv.2.dylib`.
-3. `/usr/local/lib/libmpv.2.dylib`.
-4. `/Applications/IINA.app/Contents/Frameworks/libmpv.2.dylib`.
+1. Existing file selected explicitly by `LUMEN_MPV_LIBRARY` (an invalid explicit path fails).
+2. Workspace `Runtime/Frameworks/libmpv.2.dylib`, populated by `scripts/import-runtime.py`.
+3. `/opt/homebrew/lib/libmpv.2.dylib`.
+4. `/usr/local/lib/libmpv.2.dylib`.
+5. `/Applications/IINA.app/Contents/Frameworks/libmpv.2.dylib`.
 
 Example override:
 
@@ -328,7 +345,7 @@ Example override:
 LUMEN_MPV_LIBRARY="/absolute/path/to/libmpv.2.dylib" scripts/build-app.sh
 ```
 
-The current bundle uses the open-source runtime installed with IINA and contains **59 playback libraries**. It does not need IINA to remain installed. Replacement runtimes must match the executable architecture and required APIs. Dependencies colocated with the runtime or referenced by absolute path are supported; arbitrary external `@rpath` layouts may require bundler changes.
+The bundle uses the open-source runtime from IINA 1.5.0 and contains **44 playback libraries**, packaged for arm64. It does not need IINA to remain installed. Stage a compatible newer package with `python3 scripts/import-runtime.py "/path/to/IINA.app"` (or the official IINA 1.5.0 disk image). Runtime packages are imported without modifying the installed IINA app. The build probes actual versions/decoders and replaces libraries as a complete dependency closure, removing obsolete versions. Replacement runtimes must match the executable architecture and required APIs. Dependencies colocated with the runtime or referenced by absolute path are supported; arbitrary external `@rpath` layouts may require bundler changes.
 
 Open `Package.swift` in Xcode for source inspection/debugging. A standalone development executable may need a library search path as well as `LUMEN_MPV_LIBRARY`; the packaged app provides its own `Contents/Frameworks` runpath.
 
@@ -354,11 +371,13 @@ Run:
 
 ```sh
 scripts/test.sh
+python3 -m unittest discover -s Tests -p "test_*.py"
+python3 scripts/test-format-playback.py
 ```
 
 The test script uses `.build/tests` and explicitly loads the toolchain's Swift Testing macro plugin to address the discovery issue encountered with the development toolchain.
 
-The latest recorded run passed **eighteen tests in three suites**, including additional parameterized floating-state cases. Coverage includes:
+The 1.1.0 run passed **22 tests in four Swift suites**, one Python version-sync regression test, **24 decoder/container/HLS checks**, and **15 real-app smoke checks** on mpv 0.41.0 / FFmpeg 9.0.1. Coverage includes:
 
 - Bookmarks across files and reconstruction of the library from disk.
 - Resume-position storage and repeat visits without duplicate records.
@@ -368,6 +387,8 @@ The latest recorded run passed **eighteen tests in three suites**, including add
 - History removal/emptying without losing bookmarks or queue records, persistence after relaunch, and re-adding a reopened file.
 - Compatibility with older libraries that lack an explicit history-membership flag.
 - Removing all bookmarks for one file while preserving its resume position and other files’ bookmarks.
+- Disc-folder recognition, disc-title/bookmark persistence, HLS classification, expanded folder imports, and playlist path handling.
+- Version/build consistency, newest-first changelog entries, preserved prior notes, and detection of stale README versions.
 - Existing core history-cleanup behavior.
 - Read-only, repeatable Elmedia import without duplicate bookmarks.
 - Float preference/pause combinations and inactive playback states.
@@ -381,7 +402,7 @@ codesign --verify --deep --strict "dist/Lola Player.app"
 
 ### Optional real-engine smoke test
 
-Provide a directory containing `first.mp4` and `second.mkv`, both longer than ten seconds:
+Provide an isolated directory containing `first.mp4` and `second.mkv`, both longer than ten seconds. Optional `hls/index.m3u8` and `score.mid` fixtures enable manifest and native-MIDI checks. The test reports passed checks and any unavailable-system-component skips separately:
 
 ```sh
 "dist/Lola Player.app/Contents/MacOS/LolaPlayer" \
@@ -451,12 +472,12 @@ PRO features intentionally omitted:
 Other differences from Elmedia:
 
 - A new interface/library sidebar rather than an exact visual reconstruction.
-- No Flash/SWF, dedicated Blu-ray folder/disc workflow, or DVD menu interface.
+- No Flash/SWF, interactive DVD/Blu-ray menus, or disc decryption. Disc readers must be compiled into the runtime; recognized folders/images alone do not guarantee playback.
 - No OpenSubtitles account/search integration or arbitrary webpage video extraction.
 - No detached controls/playlists, controls auto-hide mode, or full Elmedia preference system.
 - No playlist drag-reordering, custom shortcut editor, or bookmark Undo.
 - JSON bookmark exchange only; no TXT/PBF interoperability.
-- Folder-scanning and local-HLS limitations described under Supported Media.
+- Folder scans are shallow. HLS, discs and MIDI instruments have the availability/verification limits described under Supported Media; tracker modules are excluded.
 - Some playback settings are session-only.
 - No cloud synchronization, automatic updater, or installer.
 
@@ -474,3 +495,19 @@ Primary technical references:
 - [mpv](https://mpv.io/), [FFmpeg](https://ffmpeg.org/), and [libass](https://github.com/libass/libass)
 
 The generated app records runtime origin in `Contents/Resources/Runtime.txt`. Current packaging is for local use and does not assemble a complete third-party license/source distribution. Distribution would require handling the bundled components' applicable notices and source requirements. This repository currently contains no standalone license grant for the newly written application source.
+
+## Versions and release notes
+
+The current app version is read from `Resources/Info.plist`; the About window uses that metadata. [versions.md](versions.md) records added, modified and removed features, newest first. Every completed app edit gets one version/build increment (minor for features, patch for fixes); rebuilding an unchanged change set does not create another version. The new version is reported for commit messages.
+
+```sh
+python3 scripts/version.py patch --modified "Describe the completed fix"
+python3 scripts/version.py minor --added "Describe the new feature"
+python3 scripts/version.py check
+```
+
+Use only the appropriate bump command for a given change set. It updates Info.plist, the README version and prepends release notes. Packaging checks these agree and embeds the release notes. Added/Modified/Removed categories are always present.
+
+Packaging stages and verifies the entire app before replacing `dist/Lola Player.app`; previous bundles are preserved under `.build/app-previous.*`. No user data is changed by packaging. `LUMEN_ALLOW_LEGACY_RUNTIME=1 scripts/build-app.sh` is an explicit development-only fallback for testing the UI and existing formats when a newer compatible runtime is unavailable; it records the actual legacy runtime and does not enable missing decoders. No encoder, converter or transcoding interface has been added.
+
+MIDI uses Apple's system synthesizer through AVFAudio/AudioToolbox, not FluidSynth. It does not bundle proprietary sound banks or promise an entirely open-source synthesis stack. MIDI supports transport, tempo, volume/mute, A–B looping, bookmarks, repeat and Now Playing; frame stepping and video/subtitle adjustments do not apply. If the system instrument component is unavailable, opening MIDI reports an error rather than crashing. The real-app smoke run passed MIDI pause/resume, seek, bookmark and floating checks. A separate restricted-shell run also verified safe handling when the system component is unavailable. No physical-listening or exhaustive instrument test is claimed.
