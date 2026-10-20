@@ -44,24 +44,44 @@ class ReleaseTests(unittest.TestCase):
         self.calls = []
 
     def fake_gh(self, *, existing=False, published=False, upload_failure=False,
-                missing_asset=False, bad_digest=False, auth_failure=False):
-        queries = 0
+                missing_asset=False, bad_digest=False, auth_failure=False,
+                verification_failure=False):
 
         def run(args, **kwargs):
-            nonlocal queries
             self.calls.append(args)
             if args[1] == 'api':
-                queries += 1
-                if queries == 1 and auth_failure:
-                    return subprocess.CompletedProcess(args, 1, '', 'HTTP 401: Bad credentials')
-                if queries == 1 and not existing:
+                endpoint = args[2]
+                method = args[args.index('--method')+1]
+                if '/releases/tags/' in endpoint:
                     return subprocess.CompletedProcess(args, 1, '', 'HTTP 404: Not Found')
+                if auth_failure:
+                    return subprocess.CompletedProcess(args, 1, '', 'HTTP 401: Bad credentials')
                 paths = [self.dmg] if missing_asset else [self.dmg, self.checksum]
                 assets = [{'name': p.name, 'state': 'uploaded', 'size': p.stat().st_size,
                            'digest': 'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()} for p in paths]
                 if bad_digest:
                     assets[0]['digest'] = 'sha256:wrong'
-                return subprocess.CompletedProcess(args, 0, json.dumps({'draft': not published, 'assets': assets}), '')
+                release = {'id': 42, 'tag_name': 'v1.2.3', 'draft': not published, 'assets': assets}
+                if '?per_page=' in endpoint:
+                    # Matching drafts must be found even on later pages.
+                    data = [[{'id': 1, 'tag_name': 'v1.0.0', 'draft': False}], [release] if existing else []]
+                elif '/git/ref/tags/' in endpoint:
+                    data = {'ref': 'refs/tags/v1.2.3'}
+                elif method == 'POST':
+                    payload = json.loads(kwargs['input'])
+                    self.assertTrue(payload['draft'])
+                    self.assertEqual(payload['tag_name'], 'v1.2.3')
+                    data = release
+                elif endpoint.endswith('/releases/42'):
+                    if method == 'GET' and verification_failure:
+                        return subprocess.CompletedProcess(args, 1, '', 'HTTP 403: Resource not accessible by integration')
+                    if method == 'PATCH':
+                        self.assertFalse(json.loads(kwargs['input'])['draft'])
+                        release['draft'] = False
+                    data = release
+                else:
+                    self.fail(f'Unexpected GitHub API endpoint: {endpoint}')
+                return subprocess.CompletedProcess(args, 0, json.dumps(data), '')
             if args[2] == 'upload' and upload_failure:
                 raise subprocess.CalledProcessError(1, args)
             return subprocess.CompletedProcess(args, 0, '', '')
@@ -92,20 +112,23 @@ class ReleaseTests(unittest.TestCase):
     def test_new_release_publishes_after_verified_upload(self):
         self.publish()
         commands = [call[2] for call in self.calls if call[1] == 'release']
-        self.assertEqual(commands, ['create', 'upload', 'edit'])
-        self.assertIn('--draft', self.calls[1])
-        self.assertIn('--verify-tag', self.calls[1])
-        self.assertIn('--draft=false', self.calls[-1])
+        self.assertEqual(commands, ['upload'])
+        self.assertIn('/git/ref/tags/v1.2.3', self.calls[1][2])
+        self.assertIn('POST', self.calls[2])
+        self.assertIn('PATCH', self.calls[-1])
+        self.assertTrue(self.calls[-1][2].endswith('/releases/42'))
+        self.assertFalse(any('/releases/tags/' in call[2] for call in self.calls))
 
     def test_failed_upload_never_publishes_and_draft_can_be_retried(self):
         with self.assertRaises(subprocess.CalledProcessError):
             self.publish(upload_failure=True)
-        self.assertFalse(any('--draft=false' in call for call in self.calls))
+        self.assertFalse(any('PATCH' in call for call in self.calls))
         self.calls.clear()
         self.publish(existing=True)
-        self.assertFalse(any('create' in call for call in self.calls))
+        self.assertFalse(any('POST' in call for call in self.calls))
         self.assertIn('--clobber', self.calls[1])
-        self.assertIn('--draft=false', self.calls[-1])
+        self.assertIn('PATCH', self.calls[-1])
+        self.assertTrue(self.calls[-2][2].endswith('/releases/42'))
 
     def test_existing_published_release_and_auth_errors_are_untouched(self):
         for options in [{'existing': True, 'published': True}, {'auth_failure': True}]:
@@ -119,7 +142,12 @@ class ReleaseTests(unittest.TestCase):
             self.calls.clear()
             with self.assertRaises(ValueError):
                 self.publish(**options)
-            self.assertFalse(any('--draft=false' in call for call in self.calls))
+            self.assertFalse(any('PATCH' in call for call in self.calls))
+
+    def test_draft_verification_api_error_is_visible_and_never_publishes(self):
+        with self.assertRaisesRegex(RuntimeError, 'HTTP 403: Resource not accessible'):
+            self.publish(existing=True, verification_failure=True)
+        self.assertFalse(any('PATCH' in call for call in self.calls))
 
     def test_local_checksum_or_filename_mismatch_never_contacts_github(self):
         for text in ['wrong checksum', self.checksum.read_text().replace(self.dmg.name, 'another.dmg')]:

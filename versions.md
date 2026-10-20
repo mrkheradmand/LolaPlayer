@@ -1,5 +1,20 @@
 # Lola Player versions
 
+## 1.2.3 (build 11) — 2026-10-20
+
+### Added
+
+- Regression coverage for drafts absent from tag lookup, later-page draft discovery, and visible API verification failures while preserving upload and checksum protections.
+
+### Modified
+
+- Fixed draft-release verification and publication to use the numeric release ID instead of the published-release-only tag endpoint.
+- Draft retries search all release pages; release creation verifies the tag exists and preserves the returned ID. API failures now report their endpoint and GitHub error text.
+
+### Removed
+
+- None.
+
 ## 1.2.2 (build 10) — 2026-10-20
 
 ### Added
