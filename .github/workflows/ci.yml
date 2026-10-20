@@ -15,7 +15,9 @@ concurrency:
 
 jobs:
   checks:
-    runs-on: macos-26
+    runs-on: xcode-27
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.app/Contents/Developer
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7

@@ -1,5 +1,20 @@
 # Lola Player versions
 
+## 1.2.2 (build 10) — 2026-10-20
+
+### Added
+
+- Swift 6.4.x compiler guard and regression tests reject Swift 6.3.3 and other unvalidated compiler versions before CI compilation.
+
+### Modified
+
+- Pinned both GitHub workflows to the Apple Silicon xcode-27 runner and Xcode 27.0 instead of the macOS 26 default compiler that crashed in PlayerView.swift.
+- Documented the supported build toolchain and the need for a new version tag when fixing workflow or source failures.
+
+### Removed
+
+- None.
+
 ## 1.2.1 (build 9) — 2026-10-20
 
 ### Added
