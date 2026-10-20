@@ -4,11 +4,25 @@ import PlayerCore
 
 @main struct LolaApplication {
     static func main() {
+        migrateLegacyPreferences()
         let application = NSApplication.shared
         let delegate = AppDelegate()
         application.delegate = delegate
         application.setActivationPolicy(.regular)
         withExtendedLifetime(delegate) { application.run() }
+    }
+
+    private static func migrateLegacyPreferences() {
+        guard Bundle.main.bundleIdentifier == "local.lolaplayer.app",
+              !CommandLine.arguments.contains("--smoke-test") else { return }
+        let defaults = UserDefaults.standard
+        let domain = "local.lolaplayer.app"
+        var preferences = defaults.persistentDomain(forName: domain) ?? [:]
+        guard preferences["didMigrateLumenPreferences"] as? Bool != true else { return }
+        let legacy = defaults.persistentDomain(forName: "local.lumenplayer.app") ?? [:]
+        preferences = legacy.merging(preferences) { _, current in current }
+        preferences["didMigrateLumenPreferences"] = true
+        defaults.setPersistentDomain(preferences, forName: domain)
     }
 }
 

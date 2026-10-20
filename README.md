@@ -11,7 +11,7 @@ This is an independent implementation of the core free-player workflow. It does 
 | App information | Value |
 | --- | --- |
 | Version | 1.0, build 1 |
-| Bundle identifier | `local.lumenplayer.app` |
+| Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | Minimum deployment target | macOS 14 |
 | Interface | SwiftUI and AppKit |
@@ -259,12 +259,12 @@ The original installation check recovered **three files and six bookmarks**. Tha
 | Data | Location |
 | --- | --- |
 | Records, history, positions, bookmarks | `~/Library/Application Support/LumenPlayer/library.json` |
-| Preferences and playlist UUIDs | UserDefaults domain `local.lumenplayer.app` |
+| Preferences and playlist UUIDs | UserDefaults domain `local.lolaplayer.app` |
 | Window frame | AppKit window-frame autosave |
 | Build and test output | `.build/` |
 | Built application | `dist/Lola Player.app` |
 
-The application keeps its original `local.lumenplayer.app` identifier, `LumenPlayer` data directory, and `LUMEN_*` environment-variable names for compatibility with existing libraries and preferences. Renaming the app does not reset bookmarks, history, playlist membership, settings, or the saved window frame.
+The bundle identifier is `local.lolaplayer.app`. On the first normal launch, preferences and playlist IDs from the previous `local.lumenplayer.app` domain are copied into the new domain without overwriting existing Lola preferences. The old preferences remain available. The `LumenPlayer` data directory, `LUMEN_*` environment-variable names, and saved window-frame key remain compatible, preserving bookmarks, history, playlist membership, settings, and window position.
 
 Library records contain UUIDs, media locations, filesystem identity, macOS URL-bookmark data, last-opened dates, positions, durations, and bookmark names/times. Writes use atomic replacement. If decoding fails, the app preserves the original, reports the problem, and uses a separate `library-recovery-<UUID>.json` file.
 
@@ -275,13 +275,13 @@ Library records contain UUIDs, media locations, filesystem identity, macOS URL-b
 For a complete backup, quit the app and copy `library.json`. You can export preferences separately:
 
 ```sh
-defaults export local.lumenplayer.app LolaPlayer-preferences.plist
+defaults export local.lolaplayer.app LolaPlayer-preferences.plist
 ```
 
 To restore, quit Lola, keep a copy of the current data, and put the backed-up library at its original location. Restore saved preferences while the app is closed with:
 
 ```sh
-defaults import local.lumenplayer.app LolaPlayer-preferences.plist
+defaults import local.lolaplayer.app LolaPlayer-preferences.plist
 ```
 
 A bookmark export omits unbookmarked history and playlist membership; a full library/preferences backup preserves both.
