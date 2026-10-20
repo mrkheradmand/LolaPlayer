@@ -15,6 +15,12 @@ struct VideoSurface: NSViewRepresentable {
 
 struct PlayerView: View {
     @Bindable var model: PlayerModel
+    private static let welcomePhoto: NSImage? = {
+        let bundled = Bundle.main.url(forResource: "WelcomeNature", withExtension: "png")
+        let source = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().appendingPathComponent("Resources/WelcomeNature.png")
+        return NSImage(contentsOf: bundled ?? source)
+    }()
 
     var body: some View {
         HStack(spacing: 0) {
@@ -23,17 +29,18 @@ struct PlayerView: View {
                     Color.black
                     VideoSurface(model: model)
                     if model.currentID == nil {
+                        welcomeBackground
                         VStack(spacing: 16) {
-                            Image(systemName: "play.rectangle").font(.system(size: 55, weight: .ultraLight)).foregroundStyle(.white.opacity(0.4))
+                            Image(systemName: "play.rectangle").font(.system(size: 55, weight: .ultraLight)).foregroundStyle(.white.opacity(0.7))
                             Text("Lola Player").font(.system(size: 25, weight: .medium))
-                            Text("Drop a video, an audio file, or a folder").foregroundStyle(.secondary)
+                            Text("Drop a video, an audio file, or a folder").foregroundStyle(.white.opacity(0.8))
                             Button("Open File…") { model.openPanel() }.keyboardShortcut("o").controlSize(.large)
                             if let recent = model.historyRecords.first {
                                 Button { model.play(recent.id) } label: {
                                     Label("Resume \(recent.name)", systemImage: "clock.arrow.circlepath").lineLimit(1)
-                                }.buttonStyle(.plain).foregroundStyle(.secondary).padding(.top, 6)
+                                }.buttonStyle(.plain).foregroundStyle(.white.opacity(0.8)).padding(.top, 6)
                             }
-                        }.padding(40)
+                        }.padding(40).shadow(color: .black.opacity(0.5), radius: 12, y: 2)
                     }
                     if model.buffering {
                         ProgressView("Opening media…").padding(20).background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -87,6 +94,22 @@ struct PlayerView: View {
         .sheet(isPresented: $model.settingsOpen) { settings }
     }
 
+    private var welcomeBackground: some View {
+        GeometryReader { geometry in
+            ZStack {
+                if let photo = Self.welcomePhoto {
+                    Image(nsImage: photo).resizable().interpolation(.high).scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                }
+                LinearGradient(stops: [
+                    .init(color: .black.opacity(0.12), location: 0),
+                    .init(color: .black.opacity(0.48), location: 0.5),
+                    .init(color: .black.opacity(0.32), location: 1)
+                ], startPoint: .top, endPoint: .bottom)
+            }
+        }.accessibilityHidden(true).allowsHitTesting(false)
+    }
+
     private var controls: some View {
         VStack(spacing: 8) {
             HStack(spacing: 10) {
@@ -101,6 +124,9 @@ struct PlayerView: View {
                 icon(model.muted || model.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill", "Mute", action: model.toggleMute)
                 Slider(value: Binding(get: { model.volume }, set: model.changeVolume), in: 0...100).controlSize(.mini).frame(width: 80).accessibilityLabel("Volume")
                 Spacer(minLength: 5)
+                icon("shuffle", model.shuffle ? "Shuffle: On" : "Shuffle: Off") { model.shuffle.toggle() }
+                    .foregroundStyle(model.shuffle ? Color.blue : Color.secondary)
+                    .accessibilityValue(model.shuffle ? "On" : "Off")
                 icon("backward.end.fill", "Previous item") { model.adjacent(-1) }
                 icon("gobackward.10", "Back 10 seconds") { model.skip(-10) }
                 icon(model.paused || model.ended ? "play.fill" : "pause.fill", model.paused ? "Play" : "Pause", size: 23, action: model.togglePlayback)

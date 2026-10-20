@@ -6,11 +6,19 @@
 	<dict>
 		<key>Resources/AppIcon.icns</key>
 		<data>
-		AqjGtUxjsBIbyky1oy6HUPqVSdo=
+		oTg8u1KoVs4ePA57BxXEmmxAO5s=
+		</data>
+		<key>Resources/LolaPlayerIcon.icns</key>
+		<data>
+		oTg8u1KoVs4ePA57BxXEmmxAO5s=
 		</data>
 		<key>Resources/Runtime.txt</key>
 		<data>
 		sbNwQ7On2Uc+y6GuAiKqm0qONxM=
+		</data>
+		<key>Resources/WelcomeNature.png</key>
+		<data>
+		6UE9ZRVTPAlDnJdTNccqQO7PlsY=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -550,7 +558,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			iJInaecGPDKGfrlvNbSK36r9AIapPO8wRJVDTa56hoY=
+			+zBHdTRF/Iy94cZAR/5DSuKpCef/+NA7MBgXeS0YDjM=
+			</data>
+		</dict>
+		<key>Resources/LolaPlayerIcon.icns</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			+zBHdTRF/Iy94cZAR/5DSuKpCef/+NA7MBgXeS0YDjM=
 			</data>
 		</dict>
 		<key>Resources/Runtime.txt</key>
@@ -558,6 +573,13 @@
 			<key>hash2</key>
 			<data>
 			/nZ06EUcvhEfIB1dgaD4t2oel3fBqqN2h3HRpN7MM74=
+			</data>
+		</dict>
+		<key>Resources/WelcomeNature.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			oR5OFPLzoXi/ZXuaEBU6ppfEX78BAjjeEHS5e4/UhsY=
 			</data>
 		</dict>
 	</dict>

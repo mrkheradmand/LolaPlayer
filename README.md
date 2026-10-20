@@ -48,6 +48,8 @@ The packaged app includes its playback libraries. Running it does not require a 
 
 At launch, the welcome screen offers to resume the most recently opened file; playback does not start automatically until you open/select media. Closing the main window quits the app. If Lola's library is empty, supported Elmedia databases are imported automatically when available.
 
+When no media file is open, the welcome screen displays a generated alpine-lake nature photo, with a subtle dark overlay for readable controls. It fills the video area as the window resizes and disappears when a media file is opened. The photo is bundled with the app and needs no network connection. Its source asset is [Resources/WelcomeNature.png](Resources/WelcomeNature.png); the built-in image-generation prompt is recorded in [Resources/WelcomeNature.prompt.txt](Resources/WelcomeNature.prompt.txt).
+
 ## Features
 
 ### Persistent bookmarks across files
@@ -153,7 +155,7 @@ These controls never delete media from disk. History removal preserves file reco
 - **Repeat Off:** continue through the playlist without wrapping at its ends. **One File:** restart the current file when it ends; manual Previous/Next still use the playlist.
 - **Current Folder:** cycle through regular, non-hidden media files in the current file’s immediate folder, sorted naturally by filename. Unopened sibling files are registered without appearing as played in History. Folder repeat requires a local media file; network URLs do not have a folder scope.
 - **Whole Library:** cycle through all file/URL records known to Lola, including records outside the playlist or hidden from History, in natural filename order. Missing local files are skipped. This does not scan the entire Mac.
-- Folder/library modes wrap from the last item to the first and from the first to the last. Automatic transitions and manual track changes start the selected file at zero. Shuffle chooses another available item within the active scope when possible.
+- Folder/library modes wrap from the last item to the first and from the first to the last. Automatic transitions and manual track changes start the selected file at zero. Shuffle chooses another available item within the active scope when possible. Toggle it with the **shuffle button immediately left of Previous**; blue means enabled. The button, Playback menu, and Settings share the same shuffle setting.
 - For A–B looping, set A at the start and B at a later position. Clear/Cancel removes the loop. Opening another file clears its loop points.
 - Choose chapters from **Playback → Chapters** when present. Frame stepping pauses playback; reverse stepping depends on the source/decoder.
 - Select embedded tracks through **Audio → Audio Track** and **Subtitles → Subtitle Track**.
@@ -335,7 +337,8 @@ Open `Package.swift` in Xcode for source inspection/debugging. A standalone deve
 - Caches are kept under `.build/` to avoid relying on writable global caches.
 - Release debug information is disabled because the original managed environment blocked `dsymutil`; packaging does not produce a release dSYM.
 - `--disable-sandbox` applies to SwiftPM's build sandbox; it does not change macOS security settings.
-- `Resources/AppIcon.icns` is supplied. `scripts/generate-icon.swift` contains the artwork source; normal builds copy the existing icon.
+- [LolaPlayerIcon.png](Resources/LolaPlayerIcon.png) is the generated icon artwork: a luminous play symbol and cyan/violet playback ring on an indigo tile. It was created with the built-in image-generation tool; the [generation prompt](Resources/LolaPlayerIcon.prompt.txt) is preserved.
+- Each build runs `scripts/generate-icon.swift` to resize this transparent master into `Resources/AppIcon.icns`, including standard and Retina representations from 16 to 1024 pixels, then copies it into the signed app bundle.
 - `.build/`, `dist/`, and generated research fixtures are ignored by `.gitignore`.
 
 | Variable | Purpose |

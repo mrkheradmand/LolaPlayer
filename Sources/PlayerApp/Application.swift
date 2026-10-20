@@ -31,6 +31,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var playItem: NSMenuItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if let iconURL = Bundle.main.url(forResource: "LolaPlayerIcon", withExtension: "icns"),
+           let icon = NSImage(contentsOf: iconURL) {
+            NSApp.applicationIconImage = icon
+        }
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1080, height: 680), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         window.title = "Lola Player"; window.minSize = NSSize(width: 800, height: 420)
         window.appearance = NSAppearance(named: .darkAqua); window.backgroundColor = .black
@@ -68,7 +72,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func buildMenus() {
         let bar = NSMenu(); NSApp.mainMenu = bar
         let app = submenu(bar, "Lola Player")
-        item(app, "About Lola Player") { NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "Lola Player", .applicationVersion: "1.0", .credits: NSAttributedString(string: "An independent native media player.\nBuilt with Swift, AppKit, and libmpv.")]) }
+        item(app, "About Lola Player") {
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.alignment = .center
+            let credits = NSMutableAttributedString(
+                string: "Made for Mac OS with Love\n",
+                attributes: [.font: NSFont.systemFont(ofSize: 13), .paragraphStyle: paragraph]
+            )
+            let repository = "https://github.com/mrkheradmand/LolaPlayer"
+            credits.append(NSAttributedString(string: repository, attributes: [
+                .link: repository,
+                .foregroundColor: NSColor.linkColor,
+                .underlineStyle: NSUnderlineStyle.single.rawValue,
+                .font: NSFont.systemFont(ofSize: 12),
+                .paragraphStyle: paragraph
+            ]))
+            credits.append(NSAttributedString(
+                string: "\n\nAn independent native media player.\nBuilt with Swift, AppKit, and libmpv.",
+                attributes: [.font: NSFont.systemFont(ofSize: 13), .paragraphStyle: paragraph]
+            ))
+            NSApp.orderFrontStandardAboutPanel(options: [
+                .applicationName: "Lola Player", .applicationVersion: "1.0", .credits: credits
+            ])
+        }
         item(app, "Settings…", key: ",") { self.model.settingsOpen = true }
         app.addItem(.separator()); item(app, "Hide Lola Player", key: "h") { NSApp.hide(nil) }
         item(app, "Quit Lola Player", key: "q") { NSApp.terminate(nil) }
