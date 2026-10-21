@@ -26,6 +26,9 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     var volume = 100.0
     var muted = false
     private(set) var mediaOnly = false
+    private(set) var mediaAspectRatio = 0.0
+    @ObservationIgnored private var fullInterfaceSize: NSSize?
+    @ObservationIgnored private var fullInterfaceMinimum: NSSize?
     var sidebar = false
     var tab: LibraryTab = .playlist
     var search = ""
@@ -240,6 +243,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         guard engine?.engineReady == true else { pendingURLs.append(url); return }
         if !queue.contains(id) { queue.append(id) }
         perform { _ = try library.visit(url) }
+        timelinePreview.clear(); mediaAspectRatio = 0
         currentID = id; position = 0; duration = 0; loaded = false; ended = false; failed = false
         if repeatMode == .folder { refreshFolder() }
         paused = !autoplay; buffering = true; handledEnd = false; loopA = nil; loopB = nil
@@ -310,6 +314,8 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
                 engine.setProperty("speed", value: String(speed))
                 engine.setProperty("pause", value: paused ? "yes" : "no")
                 tracks = engine.tracks(); chapters = engine.chapters()
+                updateMediaGeometry()
+                prepareTimelinePreviews()
             } else if let since = loadingSince, Date().timeIntervalSince(since) > 20 {
                 pendingLocation = nil; loadingSince = nil; failed = true; buffering = false
                 error = "The media could not be opened within 20 seconds. Check the file or network address."
@@ -321,7 +327,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             if ended && !handledEnd { handledEnd = true; handleEnd() }
         }
         if ticks % 34 == 0 { persistPosition() }
-        if ticks % 10 == 0 && loaded { tracks = engine.tracks(); chapters = engine.chapters() }
+        if ticks % 10 == 0 && loaded { tracks = engine.tracks(); chapters = engine.chapters(); updateMediaGeometry(); prepareTimelinePreviews() }
         if message != nil && Date() > messageUntil { message = nil }
         applyWindowLevel()
         systemMediaControls?.update()
@@ -463,18 +469,75 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func removeFromHistory(_ record: MediaRecord) { perform { try library.removeFromHistory(record.id) } }
     func emptyHistory() { perform { try library.emptyHistory() } }
     func removeFromPlaylist(_ record: MediaRecord) { queue.removeAll { $0 == record.id } }
+    func updateMediaGeometry() {
+        guard loaded, tracks.contains(where: { $0["type"] as? String == "video" && $0["albumart"] as? Bool != true }), let engine else { return }
+        let override = engine.numberProperty("video-aspect-override")
+        let width = engine.numberProperty("dwidth"), height = engine.numberProperty("dheight")
+        let aspect = override > 0 ? override : (height > 0 ? width / height : 0)
+        guard aspect.isFinite, aspect > 0, abs(aspect - mediaAspectRatio) > 0.0001 else { return }
+        mediaAspectRatio = aspect
+        if mediaOnly { fitMediaOnlyWindow() }
+    }
+
+    func mediaOnlySize(for proposed: NSSize) -> NSSize {
+        let available = window?.screen?.visibleFrame.size ?? NSSize(width: 1600, height: 1000)
+        return MediaWindowLayout.fittedSize(width: proposed.width, aspect: mediaAspectRatio, available: available) ?? proposed
+    }
+
+    func fitMediaOnlyWindow() {
+        guard mediaOnly, let window, !window.styleMask.contains(.fullScreen), mediaAspectRatio > 0 else { return }
+        var frame = window.frame
+        let size = mediaOnlySize(for: frame.size)
+        frame.origin.y += frame.height - size.height
+        frame.size = size
+        if let visible = window.screen?.visibleFrame {
+            frame.origin.x = min(max(frame.minX, visible.minX), max(visible.minX, visible.maxX - frame.width))
+            frame.origin.y = min(max(frame.minY, visible.minY), max(visible.minY, visible.maxY - frame.height))
+        }
+        window.setFrame(frame, display: true)
+    }
+
+    func restoreInterfaceSize() {
+        guard let window, !window.styleMask.contains(.fullScreen) else { return }
+        if let minimum = fullInterfaceMinimum { window.minSize = minimum }
+        if let size = fullInterfaceSize {
+            var frame = window.frame
+            frame.origin.y += frame.height - size.height
+            frame.size = size
+            window.setFrame(frame, display: true)
+        }
+        fullInterfaceSize = nil; fullInterfaceMinimum = nil
+    }
+
+    func didExitFullScreen() {
+        if mediaOnly {
+            if fullInterfaceSize == nil { fullInterfaceSize = window?.frame.size }
+            fitMediaOnlyWindow()
+        } else { restoreInterfaceSize() }
+    }
+
     func setMediaOnly(_ enabled: Bool) {
         guard enabled != mediaOnly else { return }
+        guard let window else { mediaOnly = enabled; return }
+        let fullScreen = window.styleMask.contains(.fullScreen)
+        let originalFrame = window.frame
+        if enabled {
+            if !fullScreen { fullInterfaceSize = window.frame.size }
+            fullInterfaceMinimum = window.minSize
+            window.minSize = NSSize(width: 100, height: 64)
+        }
         mediaOnly = enabled
-        guard let window else { return }
-        let frame = window.frame
         window.titleVisibility = enabled ? .hidden : .visible
         if enabled { window.styleMask.insert(.fullSizeContentView) }
         else { window.styleMask.remove(.fullSizeContentView) }
         for button in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
             window.standardWindowButton(button)?.isHidden = enabled
         }
-        window.setFrame(frame, display: true)
+        if enabled {
+            if !fullScreen { window.setFrame(originalFrame, display: true) }
+            fitMediaOnlyWindow()
+        }
+        else if !fullScreen { restoreInterfaceSize() }
     }
 
     func show(_ page: LibraryTab) { setMediaOnly(false); tab = page; sidebar = true }
@@ -529,5 +592,5 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         alert.window.initialFirstResponder = input
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }; return input.stringValue
     }
-    func shutdown() { automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
+    func shutdown() { timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
 }

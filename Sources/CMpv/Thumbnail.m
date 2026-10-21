@@ -10,6 +10,8 @@ typedef struct { int event_id; int error; uint64_t reply; void *data; } ThumbEve
 
 @implementation LPThumbnailDecoder {
     void *_library, *_mpv;
+    NSString *_path;
+    BOOL _hasFrame;
     void *(*create)(void);
     int (*option)(void *, const char *, const char *);
     int (*initialize)(void *);
@@ -21,7 +23,7 @@ typedef struct { int event_id; int error; uint64_t reply; void *data; } ThumbEve
     void (*destroy)(void *);
 }
 // Used exclusively by the Swift decoder actor, never by the UI/render thread.
-- (NSDictionary *)frameAtPath:(NSString *)path seconds:(double)seconds library:(NSString *)library {
+- (NSDictionary *)frameAtPath:(NSString *)path seconds:(double)seconds library:(NSString *)library exact:(BOOL)exact {
     if (!isfinite(seconds) || seconds < 0) return nil;
     if (!_mpv) {
         _library = dlopen(library.fileSystemRepresentation, RTLD_NOW | RTLD_LOCAL);
@@ -45,12 +47,25 @@ typedef struct { int event_id; int error; uint64_t reply; void *data; } ThumbEve
         if (initialize(_mpv) < 0) { destroy(_mpv); _mpv = NULL; return nil; }
     }
     while (waitEvent(_mpv, 0)->event_id != 0) {}
-    NSString *start = [NSString stringWithFormat:@"start=%.3f", seconds];
-    const char *load[] = {"loadfile", path.fileSystemRepresentation, "replace", "-1", start.UTF8String, NULL};
-    if (command(_mpv, load) < 0) return nil;
+    double position = -1;
+    if (_hasFrame) property(_mpv, "time-pos", 5, &position);
+    BOOL alreadyAtFrame = _hasFrame && [_path isEqualToString:path] && fabs(position - seconds) < 0.02;
+    if (!alreadyAtFrame) {
+        int status;
+        if (_hasFrame && [_path isEqualToString:path]) {
+            NSString *target = [NSString stringWithFormat:@"%.3f", seconds];
+            const char *seek[] = {"seek", target.UTF8String, exact ? "absolute+exact" : "absolute+keyframes", NULL};
+            status = command(_mpv, seek);
+        } else {
+            NSString *start = [NSString stringWithFormat:@"start=%.3f", seconds];
+            const char *load[] = {"loadfile", path.fileSystemRepresentation, "replace", "-1", start.UTF8String, NULL};
+            status = command(_mpv, load);
+        }
+        if (status < 0) return nil;
+    }
     NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:3];
-    BOOL ready = NO;
-    while ([deadline timeIntervalSinceNow] > 0) {
+    BOOL ready = alreadyAtFrame;
+    while (!ready && [deadline timeIntervalSinceNow] > 0) {
         ThumbEvent *event = waitEvent(_mpv, 0.05);
         if (event->event_id == 21) { ready = YES; break; } // MPV_EVENT_PLAYBACK_RESTART
         if (event->event_id == 7 && event->data && ((int *)event->data)[0] == 4) break;
@@ -72,14 +87,20 @@ typedef struct { int event_id; int error; uint64_t reply; void *data; } ThumbEve
             if (width > 0 && width <= 640 && height > 0 && height <= 640 && stride >= width * 4
                 && stride <= 4096 && bytes && bytes->data && bytes->size >= stride * height) {
                 double actual = seconds; property(_mpv, "time-pos", 5, &actual);
+                if (!isfinite(actual)) actual = seconds;
                 result = @{ @"pixels": [NSData dataWithBytes:bytes->data length:stride * height],
                     @"width": @(width), @"height": @(height), @"stride": @(stride), @"time": @(actual) };
             }
         }
         freeNode(&node);
     }
-    const char *stop[] = {"stop", NULL}; command(_mpv, stop);
+    if (result) { _path = [path copy]; _hasFrame = YES; }
+    else { _path = nil; _hasFrame = NO; const char *stop[] = {"stop", NULL}; command(_mpv, stop); }
     return result;
+}
+- (void)reset {
+    _path = nil; _hasFrame = NO;
+    if (_mpv) { const char *stop[] = {"stop", NULL}; command(_mpv, stop); }
 }
 - (void)dealloc {
     if (_mpv) destroy(_mpv);

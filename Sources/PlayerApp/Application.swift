@@ -44,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var floatItem: NSMenuItem!
     var playItem: NSMenuItem!
     private var viewShortcutMonitor: Any?
+    private var fullScreenTransition = false
     private var aboutController: AboutWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -96,6 +97,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     func windowWillClose(_ notification: Notification) { aboutController?.close(); model.shutdown() }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { window.makeKeyAndOrderFront(nil); return true }
+
+    func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
+        model.mediaOnly && !fullScreenTransition && !sender.styleMask.contains(.fullScreen) ? model.mediaOnlySize(for: frameSize) : frameSize
+    }
+    func windowWillEnterFullScreen(_ notification: Notification) { fullScreenTransition = true }
+    func windowDidEnterFullScreen(_ notification: Notification) { fullScreenTransition = false }
+    func windowWillExitFullScreen(_ notification: Notification) { fullScreenTransition = true }
+    func windowDidExitFullScreen(_ notification: Notification) { fullScreenTransition = false; model.didExitFullScreen() }
 
     @discardableResult func item(_ menu: NSMenu, _ title: String, key: String = "", modifiers: NSEvent.ModifierFlags = .command, action: @escaping () -> Void) -> NSMenuItem {
         let target = MenuAction(action)

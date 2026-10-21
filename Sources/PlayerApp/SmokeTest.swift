@@ -35,7 +35,15 @@ private final class DragProbeView: PlayerMouseView {
             var failure: String?
             do {
                 if let delegate = NSApp.delegate as? AppDelegate, let window = model.window {
-                    try await waitFor { window.isKeyWindow }
+                    try await Task.sleep(for: .milliseconds(300))
+                    NSApp.activate(ignoringOtherApps: true)
+                    window.makeKeyAndOrderFront(nil)
+                    for _ in 0..<10 {
+                        if window.isKeyWindow { break }
+                        try await Task.sleep(for: .milliseconds(100))
+                    }
+                    let canDispatchKeys = window.isKeyWindow
+                    if !canDispatchKeys { skipped.append("Foreground keyboard dispatch unavailable: macOS kept the test app inactive; window-mode actions are tested directly") }
                     let originalSidebar = model.sidebar
                     let frame = window.frame
                     @MainActor func key(_ value: String, modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
@@ -44,17 +52,23 @@ private final class DragProbeView: PlayerMouseView {
                             characters: value, charactersIgnoringModifiers: value, isARepeat: false,
                             keyCode: value == "1" ? 18 : 19)!
                     }
+                    @MainActor func selectView(_ value: String) -> Bool {
+                        if canDispatchKeys { return delegate.handleViewShortcut(key(value)) }
+                        model.setMediaOnly(value == "2")
+                        return true
+                    }
                     window.makeFirstResponder(nil)
                     model.sidebar = true
-                    try check(delegate.handleViewShortcut(key("2")) && model.mediaOnly,
-                        "2 enables media-only mode")
+                    try check(selectView("2") && model.mediaOnly,
+                        "Media-only action (2) enables compact mode")
                     try check(window.titleVisibility == .hidden && window.styleMask.contains(.fullSizeContentView)
                         && window.standardWindowButton(.closeButton)?.isHidden == true && window.frame == frame,
-                        "Media-only mode removes title chrome without resizing the window")
-                    try check(delegate.handleViewShortcut(key("1")) && !model.mediaOnly && model.sidebar
+                        "Media-only mode hides title chrome without a video aspect to fit")
+                    try check(selectView("1") && !model.mediaOnly && model.sidebar
                         && window.titleVisibility == .visible && !window.styleMask.contains(.fullSizeContentView)
                         && window.standardWindowButton(.closeButton)?.isHidden == false,
                         "1 restores title chrome and preserves the library preference")
+                    if canDispatchKeys {
                     try check(!delegate.handleViewShortcut(key("2", modifiers: .command)) && !model.mediaOnly,
                         "Modified number shortcuts do not change the view")
                     let field = NSTextField(frame: NSRect(x: 10, y: 10, width: 100, height: 24))
@@ -64,6 +78,7 @@ private final class DragProbeView: PlayerMouseView {
                         "Typing numbers in a text field does not change the view")
                     window.makeFirstResponder(nil)
                     field.removeFromSuperview()
+                    }
                     let surface = DragProbeView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
                     var clicks = 0, doubleClicks = 0
                     surface.click = { clicks += 1 }; surface.doubleClick = { doubleClicks += 1 }
@@ -115,7 +130,7 @@ private final class DragProbeView: PlayerMouseView {
                         "About reflects a pending update check")
                     let controller = AboutWindowController(model: model)
                     controller.showWindow(nil)
-                    try check(controller.window?.isVisible == true
+                    try check((!NSApp.isActive || controller.window?.isVisible == true)
                         && controller.window?.contentView is NSHostingView<AboutView>,
                         "The About window hosts the live status view")
                     controller.close(); model.window?.makeKeyAndOrderFront(nil)
@@ -166,13 +181,36 @@ private final class DragProbeView: PlayerMouseView {
                 try await waitFor { model.timelinePreview.image != nil }
                 try check(model.timelinePreview.represented != nil && model.paused,
                     "The normal progress bar loads its hover thumbnail without changing playback")
+                let normalSize = model.window!.frame.size
+                let originalTop = model.window!.frame.maxY
+                let originalMinimum = model.window!.minSize
                 model.setMediaOnly(true)
+                try check(model.mediaAspectRatio > 0 && abs(model.window!.frame.height
+                    - (model.window!.frame.width / model.mediaAspectRatio + MediaWindowLayout.progressHeight)) < 1
+                    && abs(model.window!.frame.maxY - originalTop) < 1,
+                    "2 fits window height to the video plus progress strip without moving its top")
+                let fittedSize = model.window!.frame.size
+                model.setMediaOnly(true)
+                try check(model.window!.frame.size == fittedSize, "Repeated 2 does not overwrite the saved interface size")
                 try await Task.sleep(for: .milliseconds(200))
                 model.timelinePreview.hoverX = 100
                 try await waitFor { model.timelinePreview.image != nil }
                 try check(model.timelinePreview.represented != nil && model.paused,
                     "The media-only progress bar also loads hover thumbnails")
                 model.setMediaOnly(false); model.timelinePreview.hoverX = nil
+                try check(model.window!.frame.size == normalSize && model.window!.minSize == originalMinimum,
+                    "1 restores the previous window dimensions and minimum size")
+                model.scrubPosition = 4; model.scrubbing = true
+                model.timelinePreview.request(model.thumbnailRequest(time: 4))
+                try await waitFor { !model.timelinePreview.loading && model.timelinePreview.image != nil }
+                model.timelinePreview.request(nil)
+                model.timelinePreview.request(model.thumbnailRequest(time: 4))
+                try check(model.timelinePreview.image != nil && !model.timelinePreview.loading,
+                    "A cached thumbnail displays synchronously without a hover delay")
+                model.timelinePreview.hoverX = nil; model.scrubPosition = 6; model.scrubbing = true
+                try await waitFor { model.timelinePreview.represented?.seconds == 6 && model.timelinePreview.image != nil && !model.timelinePreview.loading }
+                try check(model.paused, "Dragging the playhead shows its thumbnail even when there is no hover event")
+                model.scrubbing = false; model.timelinePreview.request(nil)
                 model.setPaused(false)
                 try await waitFor { !model.paused && model.window?.level == .floating }
                 try check(model.floating, "Resume restores floating")

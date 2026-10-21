@@ -34,9 +34,9 @@ Installation instructions are also included in **Install Notes.txt** inside the 
 
 - Named, searchable bookmarks that stay saved when you close the app.
 - Float on Top during playback, full screen, and adjustable window sizes.
-- Media-only view with a progress bar (**2**); restore the full interface with **1**.
+- Media-only view (**2**) fits the window to the video and progress bar; **1** restores the previous window size and full interface.
 - Drag the player to move its window; click once to play/pause and twice for full screen.
-- Hover over the progress bar to see the time and a thumbnail for local video files.
+- Hover or drag along the progress bar to see the time and a thumbnail for local video files. Cached previews appear immediately.
 - Playlists, playback history, shuffle, repeat, and A–B looping. With **Repeat Off**, playback stops at the end of the current file, even if Shuffle is on.
 - Playback speed from **0.25× to 4×**, frame stepping, and chapter navigation.
 - Audio and subtitle selection, external subtitles, and timing adjustments.
@@ -62,7 +62,7 @@ Unencrypted Blu-ray folders and ISO images have limited support, without disc me
 
 Open a file with **⌘O** or drag it onto the player. You can also open folders and playlists.
 
-Click and hold on the media, then move the mouse to drag the window. A click without dragging plays or pauses. Hovering over the progress bar previews a moment without seeking; click or drag the bar to seek.
+Click and hold on the media, then move the mouse to drag the window. A click without dragging plays or pauses. Hovering over the progress bar previews a moment without seeking. Dragging the playhead also shows previews and seeks when released. A nearby cached image may appear first, marked with its approximate time, while the precise frame loads.
 
 | Action | Shortcut |
 | --- | --- |
@@ -91,7 +91,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.6.1, build 23 |
+| Version | 1.6.2, build 24 |
 
 
 See [release notes](versions.md) for what's changed.

@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.6.2 (build 24) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Media-only mode now fits the window to the video aspect ratio and progress strip, with previous size restored by 1. Added scrubbing previews and faster cached response through persistent decoders, progressive warmup, immediate cached fallback, and coalesced requests without hover debounce. Updated both README guides and regression checks.
+
+### Removed
+
+- None.
+
 ## 1.6.1 (build 23) — 2026-10-21
 
 ### Added

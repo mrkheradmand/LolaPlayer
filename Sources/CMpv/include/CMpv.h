@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 /// Synchronous, bounded in-memory thumbnail extraction. Call from one background actor.
 @interface LPThumbnailDecoder : NSObject
-- (nullable NSDictionary<NSString *, id> *)frameAtPath:(NSString *)path seconds:(double)seconds library:(NSString *)library;
+- (void)reset;
+- (nullable NSDictionary<NSString *, id> *)frameAtPath:(NSString *)path seconds:(double)seconds library:(NSString *)library exact:(BOOL)exact;
 @end
 NS_ASSUME_NONNULL_END
