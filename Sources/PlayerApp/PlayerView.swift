@@ -29,7 +29,7 @@ struct PlayerView: View {
                 ZStack {
                     Color.black
                     VideoSurface(model: model)
-                    if model.currentID == nil {
+                    if model.currentID == nil && !model.mediaOnly {
                         welcomeBackground
                         VStack(spacing: 16) {
                             Image(systemName: "play.rectangle").font(.system(size: 55, weight: .ultraLight)).foregroundStyle(.white.opacity(0.7))
@@ -48,7 +48,7 @@ struct PlayerView: View {
                     }
                     VStack {
                         HStack {
-                            if model.floatEnabled && model.floatStatusVisible {
+                            if !model.mediaOnly && model.floatEnabled && model.floatStatusVisible {
                                 Label(model.floating ? "Floating" : "Float on Top · paused", systemImage: model.floating ? "pin.fill" : "pin.slash")
                                     .font(.system(size: 11)).padding(.horizontal, 9).padding(.vertical, 6)
                                     .background(.black.opacity(0.65), in: Capsule()).padding(14)
@@ -56,7 +56,7 @@ struct PlayerView: View {
                             Spacer()
                         }
                         Spacer()
-                        if let message = model.message {
+                        if let message = model.message, !model.mediaOnly {
                             Text(message).font(.system(size: 13, weight: .medium)).padding(10).background(.ultraThinMaterial, in: Capsule()).padding(.bottom, 22)
                         }
                     }.allowsHitTesting(false)
@@ -71,13 +71,19 @@ struct PlayerView: View {
                     Divider()
                     Button("Open File…") { model.openPanel() }
                     Button("Show All Bookmarks") { model.show(.bookmarks) }
+                    Button(model.mediaOnly ? "Show Full Interface (1)" : "Media Only (2)") { model.setMediaOnly(!model.mediaOnly) }
                     Button("Enter Full Screen") { model.window?.toggleFullScreen(nil) }
                 }
-                controls
+                if model.mediaOnly {
+                    timeline.padding(.horizontal, 12).padding(.vertical, 4)
+                } else {
+                    controls
+                }
             }
-            if model.sidebar { libraryPanel.frame(width: 330) }
+            if model.sidebar && !model.mediaOnly { libraryPanel.frame(width: 330) }
         }
         .background(Color(nsColor: NSColor(white: 0.12, alpha: 1)))
+        .ignoresSafeArea(.container, edges: model.mediaOnly ? .top : [])
         .preferredColorScheme(.dark)
         .onDrop(of: [.fileURL, .url], isTargeted: $model.dropTarget) { providers in
             for provider in providers {
@@ -111,16 +117,20 @@ struct PlayerView: View {
         }.accessibilityHidden(true).allowsHitTesting(false)
     }
 
+    private var timeline: some View {
+        HStack(spacing: 10) {
+            if !model.mediaOnly { Text(timestamp(model.scrubbing ? model.scrubPosition : model.position)).monospacedDigit().frame(minWidth: 46, alignment: .leading) }
+            Slider(value: Binding(get: { model.scrubbing ? model.scrubPosition : model.position }, set: { model.scrubPosition = $0 }), in: 0...max(1, model.duration)) { editing in
+                if editing { model.scrubPosition = model.position; model.scrubbing = true }
+                else { model.scrubbing = false; model.seek(model.scrubPosition) }
+            }.controlSize(.mini).disabled(!model.loaded).accessibilityLabel("Timeline")
+            if !model.mediaOnly { Text(timestamp(model.duration)).monospacedDigit().frame(minWidth: 46, alignment: .trailing) }
+        }.font(.system(size: 11)).foregroundStyle(.secondary)
+    }
+
     private var controls: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 10) {
-                Text(timestamp(model.scrubbing ? model.scrubPosition : model.position)).monospacedDigit().frame(minWidth: 46, alignment: .leading)
-                Slider(value: Binding(get: { model.scrubbing ? model.scrubPosition : model.position }, set: { model.scrubPosition = $0 }), in: 0...max(1, model.duration)) { editing in
-                    if editing { model.scrubPosition = model.position; model.scrubbing = true }
-                    else { model.scrubbing = false; model.seek(model.scrubPosition) }
-                }.controlSize(.mini).disabled(!model.loaded).accessibilityLabel("Timeline")
-                Text(timestamp(model.duration)).monospacedDigit().frame(minWidth: 46, alignment: .trailing)
-            }.font(.system(size: 11)).foregroundStyle(.secondary)
+            timeline
             HStack(spacing: 14) {
                 icon(model.muted || model.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill", "Mute", action: model.toggleMute)
                 Slider(value: Binding(get: { model.volume }, set: model.changeVolume), in: 0...100).controlSize(.mini).frame(width: 80).accessibilityLabel("Volume")

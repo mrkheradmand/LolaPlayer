@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.3.0 (build 15) — 2026-10-21
+
+### Added
+
+- Media-only view: press 2 to remove the title bar, library, and bottom controls while retaining the seek bar; press 1 to restore the full interface and previous library visibility.
+
+### Modified
+
+- Added View and video context-menu actions and shortcut help; number shortcuts respect text editing, settings, and modal dialogs.
+
+### Removed
+
+- None.
+
 ## 1.2.6 (build 14) — 2026-10-21
 
 ### Added

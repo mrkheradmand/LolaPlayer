@@ -43,6 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var chapterMenu: NSMenu!
     var floatItem: NSMenuItem!
     var playItem: NSMenuItem!
+    private var viewShortcutMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if let iconURL = Bundle.main.url(forResource: "LolaPlayerIcon", withExtension: "icns"),
@@ -58,6 +59,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         model.window = window
         window.contentView = NSHostingView(rootView: PlayerView(model: model))
         model.systemMediaControls = SystemMediaControls(model: model)
+        viewShortcutMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            let handled = MainActor.assumeIsolated { self?.handleViewShortcut(event) ?? false }
+            return handled ? nil : event
+        }
         buildMenus(); window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
         if let index = CommandLine.arguments.firstIndex(of: "--smoke-test"), CommandLine.arguments.count > index + 1 {
             SmokeTest.run(model: model, root: URL(fileURLWithPath: CommandLine.arguments[index + 1])); return
@@ -70,7 +75,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
     func application(_ sender: NSApplication, open urls: [URL]) { model.open(urls); window?.makeKeyAndOrderFront(nil) }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
-    func applicationWillTerminate(_ notification: Notification) { model.shutdown() }
+    func applicationWillTerminate(_ notification: Notification) {
+        if let viewShortcutMonitor { NSEvent.removeMonitor(viewShortcutMonitor) }
+        model.shutdown()
+    }
+
+    func handleViewShortcut(_ event: NSEvent) -> Bool {
+        guard event.window === window, window.isKeyWindow, window.attachedSheet == nil,
+              NSApp.modalWindow == nil, !model.settingsOpen,
+              !(window.firstResponder is NSTextView), !(window.firstResponder is NSTextField),
+              event.modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty else { return false }
+        switch event.characters {
+        case "1": model.setMediaOnly(false)
+        case "2": model.setMediaOnly(true)
+        default: return false
+        }
+        return true
+    }
     func windowWillClose(_ notification: Notification) { model.shutdown() }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { window.makeKeyAndOrderFront(nil); return true }
 
@@ -128,6 +149,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             edit.addItem(NSMenuItem(title: title, action: NSSelectorFromString(selector), keyEquivalent: key))
         }
         let view = submenu(bar, "View"); view.delegate = self
+        item(view, "Show Full Interface (1)") { self.model.setMediaOnly(false) }
+        item(view, "Media Only (2)") { self.model.setMediaOnly(true) }
+        view.addItem(.separator())
         floatItem = item(view, "Float on Top", key: "t", modifiers: [.command, .option]) { self.model.floatEnabled.toggle() }
         item(view, "Show Playlist", key: "l") { self.model.show(.playlist) }
         item(view, "Show History", key: "h", modifiers: [.command, .shift]) { self.model.show(.history) }
@@ -201,7 +225,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         item(help, "Keyboard Shortcuts") {
             let alert = NSAlert(); alert.messageText = "Keyboard Shortcuts"
-            alert.informativeText = "Space — Play / Pause\n← / → — Seek 10 seconds\n↑ / ↓ — Volume\n⌘B — Save bookmark\n⇧⌘B — All bookmarks\n⇧⌘H — History\n⌥⌘T — Float on Top while playing\n⌘L — Playlist\n⌘O — Open file\n⌃⌘F — Full screen\n⌘[ / ⌘] — Playback speed\nE / ⇧E — Next / previous frame"
+            alert.informativeText = "1 — Show full interface\n2 — Media only with progress bar\nSpace — Play / Pause\n← / → — Seek 10 seconds\n↑ / ↓ — Volume\n⌘B — Save bookmark\n⇧⌘B — All bookmarks\n⇧⌘H — History\n⌥⌘T — Float on Top while playing\n⌘L — Playlist\n⌘O — Open file\n⌃⌘F — Full screen\n⌘[ / ⌘] — Playback speed\nE / ⇧E — Next / previous frame"
             alert.runModal()
         }
     }

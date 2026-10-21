@@ -25,6 +25,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     var speed = 1.0
     var volume = 100.0
     var muted = false
+    private(set) var mediaOnly = false
     var sidebar = false
     var tab: LibraryTab = .playlist
     var search = ""
@@ -435,7 +436,21 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func removeFromHistory(_ record: MediaRecord) { perform { try library.removeFromHistory(record.id) } }
     func emptyHistory() { perform { try library.emptyHistory() } }
     func removeFromPlaylist(_ record: MediaRecord) { queue.removeAll { $0 == record.id } }
-    func show(_ page: LibraryTab) { tab = page; sidebar = true }
+    func setMediaOnly(_ enabled: Bool) {
+        guard enabled != mediaOnly else { return }
+        mediaOnly = enabled
+        guard let window else { return }
+        let frame = window.frame
+        window.titleVisibility = enabled ? .hidden : .visible
+        if enabled { window.styleMask.insert(.fullSizeContentView) }
+        else { window.styleMask.remove(.fullSizeContentView) }
+        for button in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+            window.standardWindowButton(button)?.isHidden = enabled
+        }
+        window.setFrame(frame, display: true)
+    }
+
+    func show(_ page: LibraryTab) { setMediaOnly(false); tab = page; sidebar = true }
     func relocate(_ record: MediaRecord) {
         let panel = NSOpenPanel(); panel.message = "Locate \(record.name)"; panel.allowsMultipleSelection = false
         panel.canChooseDirectories = record.discKind != nil

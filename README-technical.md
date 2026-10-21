@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.2.6, build 14 |
+| Version | 1.3.0, build 15 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -165,6 +165,12 @@ Input details:
 - DRM-protected services and legacy Flash/SWF playback are not supported workflows.
 
 ## Using the player
+
+### Media-only view
+
+Press **2** to remove the window title bar, window buttons, library sidebar, and bottom playback controls from the visible layout. Only the media and seekable progress bar remain; the video expands into the freed space without changing the outer window frame. Press **1** to restore the full interface, including the library if it was previously open. The mode starts off each launch and does not affect playback, floating, or bookmarks.
+
+These unmodified shortcuts are ignored while editing text, in settings, or in a modal dialog. Both views are also available from the **View** menu and the video's right-click menu. Choosing a library tab from the app menu restores the full interface. The macOS system menu bar remains available.
 
 ### Opening media and the library
 

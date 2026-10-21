@@ -25,6 +25,38 @@ import PlayerCore
             }
             var failure: String?
             do {
+                if let delegate = NSApp.delegate as? AppDelegate, let window = model.window {
+                    try await waitFor { window.isKeyWindow }
+                    let originalSidebar = model.sidebar
+                    let frame = window.frame
+                    @MainActor func key(_ value: String, modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
+                        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
+                            timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                            characters: value, charactersIgnoringModifiers: value, isARepeat: false,
+                            keyCode: value == "1" ? 18 : 19)!
+                    }
+                    window.makeFirstResponder(nil)
+                    model.sidebar = true
+                    try check(delegate.handleViewShortcut(key("2")) && model.mediaOnly,
+                        "2 enables media-only mode")
+                    try check(window.titleVisibility == .hidden && window.styleMask.contains(.fullSizeContentView)
+                        && window.standardWindowButton(.closeButton)?.isHidden == true && window.frame == frame,
+                        "Media-only mode removes title chrome without resizing the window")
+                    try check(delegate.handleViewShortcut(key("1")) && !model.mediaOnly && model.sidebar
+                        && window.titleVisibility == .visible && !window.styleMask.contains(.fullSizeContentView)
+                        && window.standardWindowButton(.closeButton)?.isHidden == false,
+                        "1 restores title chrome and preserves the library preference")
+                    try check(!delegate.handleViewShortcut(key("2", modifiers: .command)) && !model.mediaOnly,
+                        "Modified number shortcuts do not change the view")
+                    let field = NSTextField(frame: NSRect(x: 10, y: 10, width: 100, height: 24))
+                    window.contentView?.addSubview(field)
+                    window.makeFirstResponder(field)
+                    try check(!delegate.handleViewShortcut(key("2")) && !model.mediaOnly,
+                        "Typing numbers in a text field does not change the view")
+                    window.makeFirstResponder(nil)
+                    field.removeFromSuperview()
+                    model.sidebar = originalSidebar
+                }
                 model.autoplay = true; model.floatEnabled = true; model.promptForBookmark = false
                 model.open([root.appendingPathComponent("first.mp4")])
                 try await waitFor { model.loaded && model.position > 0.2 && !model.paused }

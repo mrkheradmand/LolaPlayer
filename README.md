@@ -60,6 +60,8 @@ Open a file with **⌘O** or drag it onto the player. You can also open folders 
 
 | Action | Shortcut |
 | --- | --- |
+| Show full interface | 1 |
+| Media only with progress bar | 2 |
 | Play / pause | Space |
 | Bookmark the current moment | ⌘B |
 | Browse all bookmarks | ⇧⌘B |
@@ -71,7 +73,7 @@ Use the **Bookmarks** tab to name, search, and replay saved moments. The **Playl
 
 | App | Release |
 | --- | --- |
-| Version | 1.2.6, build 14 |
+| Version | 1.3.0, build 15 |
 
 See [release notes](versions.md) for what's changed.
 See [Technical README](README-technical.md) for advanced users.
