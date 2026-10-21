@@ -1,5 +1,20 @@
 # Lola Player versions
 
+## 1.9.7 (build 38) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Preserve signed bundle metadata in APFS disk images and verify the app inside the mounted image before distributing it.
+- Includes the startup, playlist, Elmedia import, background saving, and playback-event optimizations from 1.9.6.
+
+### Removed
+
+- None.
+
 ## 1.9.6 (build 37) — 2026-10-21
 
 ### Added

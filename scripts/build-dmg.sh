@@ -8,16 +8,27 @@ VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/C
 FILENAME="LolaPlayer-$VERSION-macOS-arm64.dmg"
 RELEASES="$PWD/dist/releases"
 STAGE="$(mktemp -d "$PWD/.build/dmg-stage.XXXXXX")"
-trap 'rm -rf "$STAGE"' EXIT
+MOUNTED=0
+cleanup() {
+    if (( MOUNTED )); then hdiutil detach "$STAGE/verify" >/dev/null || return; fi
+    rm -rf "$STAGE"
+}
+trap cleanup EXIT
 mkdir "$STAGE/content"
 ditto "$APP" "$STAGE/content/Lola Player.app"
 ln -s /Applications "$STAGE/content/Applications"
 cp "$PWD/Resources/Install Notes.txt" "$STAGE/content/Install Notes.txt"
 mkdir -p "$RELEASES"
-# Build HFS+ in userspace, then compress; no writable disk-image mount required.
-hdiutil makehybrid -hfs -hfs-volume-name "Lola Player $VERSION" -o "$STAGE/source.dmg" "$STAGE/content"
-hdiutil convert "$STAGE/source.dmg" -format ULMO -o "$STAGE/$FILENAME"
+# APFS preserves signed bundle metadata; makehybrid's HFS catalog synthesizes
+# FinderInfo on nested libraries and invalidates strict signature verification.
+hdiutil create -volname "Lola Player $VERSION" -srcfolder "$STAGE/content" -fs APFS -format ULMO "$STAGE/$FILENAME"
 hdiutil verify "$STAGE/$FILENAME"
+mkdir "$STAGE/verify"
+hdiutil attach -readonly -nobrowse -mountpoint "$STAGE/verify" "$STAGE/$FILENAME"
+MOUNTED=1
+codesign --verify --deep --strict "$STAGE/verify/Lola Player.app"
+hdiutil detach "$STAGE/verify"
+MOUNTED=0
 (
     cd "$STAGE"
     shasum -a 256 "$FILENAME" > SHA256SUMS.txt
