@@ -35,6 +35,8 @@ Installation instructions are also included in **Install Notes.txt** inside the 
 - Named, searchable bookmarks that stay saved when you close the app.
 - Float on Top during playback, full screen, and adjustable window sizes.
 - Media-only view with a progress bar (**2**); restore the full interface with **1**.
+- Drag the player to move its window; click once to play/pause and twice for full screen.
+- Hover over the progress bar to see the time and a thumbnail for local video files.
 - Playlists, playback history, shuffle, repeat, and A–B looping. With **Repeat Off**, playback stops at the end of the current file, even if Shuffle is on.
 - Playback speed from **0.25× to 4×**, frame stepping, and chapter navigation.
 - Audio and subtitle selection, external subtitles, and timing adjustments.
@@ -60,6 +62,8 @@ Unencrypted Blu-ray folders and ISO images have limited support, without disc me
 
 Open a file with **⌘O** or drag it onto the player. You can also open folders and playlists.
 
+Click and hold on the media, then move the mouse to drag the window. A click without dragging plays or pauses. Hovering over the progress bar previews a moment without seeking; click or drag the bar to seek.
+
 | Action | Shortcut |
 | --- | --- |
 | Show full interface | 1 |
@@ -83,7 +87,7 @@ To turn automatic checks off, uncheck **Automatically check for updates** in **L
 
 | App | Release |
 | --- | --- |
-| Version | 1.4.1, build 20 |
+| Version | 1.5.0, build 21 |
 
 
 See [release notes](versions.md) for what's changed.

@@ -83,6 +83,8 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     @ObservationIgnored var automaticUpdateTask: Task<Void, Never>?
     @ObservationIgnored var updateCheckTask: Task<Void, Never>?
     weak var window: NSWindow?
+    @ObservationIgnored let timelinePreview = TimelinePreview()
+    @ObservationIgnored private(set) var runtimeLibraryPath: String?
     @ObservationIgnored var engine: LPMpvView?
     @ObservationIgnored var timer: Timer?
     @ObservationIgnored var ticks = 0
@@ -149,6 +151,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         guard let path = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }), view.startEngine(path) else {
             error = view.engineError ?? "libmpv is missing. Run scripts/build-app.sh to bundle the playback runtime."; failed = true; return
         }
+        runtimeLibraryPath = path
         timer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }

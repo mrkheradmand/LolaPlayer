@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.4.1, build 20 |
+| Version | 1.5.0, build 21 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -45,6 +45,7 @@ This is an independent implementation of the core free-player workflow. It is **
 - [Supported media](#supported-media)
 - [Using the player](#using-the-player)
   - [Media-only view](#media-only-view)
+  - [Window dragging and timeline previews](#window-dragging-and-timeline-previews)
   - [Opening media and the library](#opening-media-and-the-library)
   - [Seeking, speed, looping, audio, and subtitles](#seeking-speed-looping-audio-and-subtitles)
   - [Settings and defaults](#settings-and-defaults)
@@ -172,6 +173,14 @@ Press **2** to remove the window title bar, window buttons, library sidebar, and
 
 These unmodified shortcuts are ignored while editing text, in settings, or in a modal dialog. Both views are also available from the **View** menu and the video's right-click menu. Choosing a library tab from the app menu restores the full interface. The macOS system menu bar remains available.
 
+### Window dragging and timeline previews
+
+Click and hold the media area, then move the pointer to drag the window, including in media-only view. Movement of at least four points starts a native window drag and suppresses play/pause for that gesture. A short click still toggles playback; a double-click toggles full screen. Single-click actions wait for the system double-click interval so a double-click does not also toggle playback. Dragging does not move a full-screen window, and controls keep their own click actions.
+
+Hover over the progress bar to see the pointer's timestamp and, for local video files, a thumbnail above the bar. This works in both normal and media-only layouts. Hovering does not seek or pause the main player; clicking and dragging the slider still seeks normally. Audio, MIDI, network sources, local HLS/playlist manifests, and disc records show a timestamp without a thumbnail when a finite duration is available. If a local video preview cannot be decoded, the card shows an unavailable icon and the time.
+
+Previews use a separate, silent libmpv decoder on a background actor. Frames are scaled to fit 320×180, requested in half-second buckets after a 180 ms hover debounce, and cached in memory (up to 64 entries or 16 MiB). The pointer timestamp remains continuous; the thumbnail represents a nearby frame. Old requests cannot overwrite the current preview, and decoding has a three-second wait limit. Changing or reloading the current media clears the cache. No thumbnail image files or app screenshots are saved. HDR color and unusual formats may differ from the main playback renderer.
+
 ### Opening media and the library
 
 Use **File → Open…** for files, folders, or playlists. Opening multiple files adds them to the queue and selects the first according to the autoplay preference. Right-click the video for common playback, bookmark, floating, and opening actions.
@@ -298,7 +307,7 @@ Shortcuts apply when focus is not inside a text field or modal dialog. Help → 
 
 Press **1** or **2** without modifier keys while the player window is active. These view shortcuts are inactive while typing, in settings, or in a modal dialog. **1** restores the title bar, playback controls, and previously visible library; **2** leaves only media and the seek bar.
 
-Click the video to play/pause; double-click to toggle full screen.
+Click the video to play/pause; double-click to toggle full screen; click, hold, and move to drag the window. Hover over the progress bar for a timestamp and local-video thumbnail.
 
 ## Importing from Elmedia
 
@@ -439,9 +448,9 @@ python3 scripts/test-format-playback.py  # Requires a built app and developer FF
 
 The test script uses `.build/tests` and explicitly loads the toolchain's Swift Testing macro plugin to address the discovery issue encountered with the development toolchain.
 
-Latest app validation (**1.4.1, build 20**, October 21, 2026) passed **29 tests in five Swift suites**, **13 Python tests**, and **25 real-app smoke checks** using mpv 0.41.0 / FFmpeg 9.0.1. Update-check tests cover numeric version comparison, stable-release filtering, malformed data, HTTP errors, and a simulated GitHub request. The public release endpoint was also reached successfully during 1.4.0 development. The app smoke run verified Repeat Off stopping with queued files and Shuffle both off and on, manual Next with Repeat Off, One File restarting, folder/library wrapping, saved update preferences, notification dismissal, suppression of automatic networking in smoke mode, media-only shortcuts, title-bar removal and restoration, preserved library visibility, modifier-key and text-editing safeguards, MP4/MKV playback, floating behavior, bookmarks, persistence, and recursive-playlist rejection. That run used the development executable with the bundled playback libraries; the release app was also built and its code signature verified. Optional HLS and MIDI fixtures were not included in that run.
+Latest app validation (**1.5.0, build 21**, October 21, 2026) passed **31 tests in six Swift suites**, **13 Python tests**, and **36 real-app smoke checks** using mpv 0.41.0 / FFmpeg 9.0.1. Update-check tests cover numeric version comparison, stable-release filtering, malformed data, HTTP errors, and a simulated GitHub request. The public release endpoint was also reached successfully during 1.4.0 development. The app smoke run verified mouse hit routing and click/drag/double-click dispatch, in-memory MP4/MKV thumbnail timestamps and playback isolation, hover-preview loading in normal and media-only views, Repeat Off stopping with queued files and Shuffle both off and on, manual Next with Repeat Off, One File restarting, folder/library wrapping, saved update preferences, notification dismissal, suppression of automatic networking in smoke mode, media-only shortcuts, title-bar removal and restoration, preserved library visibility, modifier-key and text-editing safeguards, MP4/MKV playback, floating behavior, bookmarks, persistence, and recursive-playlist rejection. That run used the development executable with the bundled playback libraries; the release app was also built and its code signature verified. Optional HLS and MIDI fixtures were not included in that run.
 
-Historical validation for **1.1.0** additionally recorded **24 decoder/container/HLS checks** and a different smoke-test set. Those broader format checks were not rerun for 1.4.1.
+Historical validation for **1.1.0** additionally recorded **24 decoder/container/HLS checks** and a different smoke-test set. Those broader format checks were not rerun for 1.5.0.
 
 Automated coverage includes:
 
@@ -458,6 +467,7 @@ Automated coverage includes:
 - Existing core history-cleanup behavior.
 - Read-only, repeatable Elmedia import without duplicate bookmarks.
 - Float preference/pause combinations and inactive playback states.
+- Progress-bar time mapping, clamping, and unknown-duration handling.
 - Update version comparisons, trusted release links, draft/prerelease filtering, invalid tags, malformed responses, HTTP failures, and request construction.
 - All four repeat selections, forward/backward wrapping boundaries, empty/single-item scopes, stable natural library ordering, and folder discovery without changing History.
 
@@ -476,7 +486,7 @@ Provide an isolated directory containing `first.mp4` and `second.mkv`, both long
   --smoke-test /absolute/path/to/fixtures
 ```
 
-The runner exercises end-of-file behavior for all four repeat modes, including Repeat Off with Shuffle and additional queued files, update-check preferences and dismissal without automatic networking, media-only shortcuts and window chrome, typing safeguards, decoding, actual window levels, pause/resume, file switching, bookmarks, persistence, and end-of-file behavior. It creates an isolated library subdirectory beside the fixtures, writes `smoke-result.json`, and exits. It temporarily changes float/autoplay/bookmark-prompt preferences and restores them on normal completion; its playlist is not persisted.
+The runner exercises click/drag/double-click routing, MP4/MKV thumbnail extraction and playback isolation, hover cards in both layouts, end-of-file behavior for all four repeat modes, including Repeat Off with Shuffle and additional queued files, update-check preferences and dismissal without automatic networking, media-only shortcuts and window chrome, typing safeguards, decoding, actual window levels, pause/resume, file switching, bookmarks, persistence, and end-of-file behavior. It creates an isolated library subdirectory beside the fixtures, writes `smoke-result.json`, and exits. It temporarily changes float/autoplay/bookmark-prompt preferences and restores them on normal completion; its playlist is not persisted.
 
 Launching the smoke runner requires a macOS graphical session and permission to launch the app. A successful automated app smoke run is recorded above; it does not replace visual inspection or certify every media format. `Research/test-media/` contains playback fixtures, not files required to use the app.
 
@@ -490,6 +500,8 @@ Sources/
     PlayerModel.swift            Playback state, settings, persistence coordination
     PlayerModel+Updates.swift    Update scheduling, preferences, and notification state
     PlayerView.swift             Video, transport controls, library, settings UI
+    PlayerMouseView.swift        Click, double-click, and native window dragging
+    TimelinePreview.swift        Hover card, thumbnail scheduling, and memory cache
     SmokeTest.swift              Optional real-engine smoke runner
     SystemMediaControls.swift    macOS media commands and Now Playing metadata
   PlayerCore/
@@ -498,8 +510,10 @@ Sources/
     PlaybackOrder.swift          Repeat modes, ordering, and folder discovery
     MediaInput.swift             HLS/playlist parsing and disc-folder recognition
     UpdateChecker.swift          GitHub release requests and numeric version comparison
+    TimelinePosition.swift       Clamped progress-bar hover-time mapping
   CMpv/
     CMpv.m                       Objective-C libmpv bridge and OpenGL renderer
+    Thumbnail.m                  Separate in-memory libmpv thumbnail decoder
     include/CMpv.h               Swift-facing playback API
   CSQLite/                       System SQLite module map/header
 Tests/PlayerCoreTests/            Swift Testing suites
@@ -607,4 +621,4 @@ Use only the appropriate bump command for a given change set. It updates `Resour
 
 Packaging stages and verifies the entire app before replacing `dist/Lola Player.app`; previous bundles are preserved under `.build/app-previous.*`. No user data is changed by packaging. `LUMEN_ALLOW_LEGACY_RUNTIME=1 scripts/build-app.sh` is an explicit development-only fallback for testing the UI and existing formats when a newer compatible runtime is unavailable; it records the actual legacy runtime and does not enable missing decoders. No encoder, converter or transcoding interface has been added.
 
-MIDI uses Apple's system synthesizer through AVFAudio/AudioToolbox, not FluidSynth. It does not bundle proprietary sound banks or promise an entirely open-source synthesis stack. MIDI supports transport, tempo, volume/mute, A–B looping, bookmarks, repeat and Now Playing; frame stepping and video/subtitle adjustments do not apply. If the system instrument component is unavailable, opening MIDI reports an error rather than crashing. Earlier MIDI-specific smoke checks passed pause/resume, seek, bookmark and floating checks; the latest 1.4.1 smoke run did not include a MIDI fixture. A separate restricted-shell run also verified safe handling when the system component is unavailable. No physical-listening or exhaustive instrument test is claimed.
+MIDI uses Apple's system synthesizer through AVFAudio/AudioToolbox, not FluidSynth. It does not bundle proprietary sound banks or promise an entirely open-source synthesis stack. MIDI supports transport, tempo, volume/mute, A–B looping, bookmarks, repeat and Now Playing; frame stepping and video/subtitle adjustments do not apply. If the system instrument component is unavailable, opening MIDI reports an error rather than crashing. Earlier MIDI-specific smoke checks passed pause/resume, seek, bookmark and floating checks; the latest 1.5.0 smoke run did not include a MIDI fixture. A separate restricted-shell run also verified safe handling when the system component is unavailable. No physical-listening or exhaustive instrument test is claimed.

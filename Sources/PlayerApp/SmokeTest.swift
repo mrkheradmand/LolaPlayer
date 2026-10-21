@@ -2,6 +2,11 @@ import AppKit
 import Foundation
 import PlayerCore
 
+private final class DragProbeView: PlayerMouseView {
+    var dragCount = 0
+    override func dragWindow(with event: NSEvent) { dragCount += 1 }
+}
+
 /// Invoked only by --smoke-test; exercises the real bundled decoder and NSWindow.
 @MainActor enum SmokeTest {
     struct Failure: Error { let message: String }
@@ -57,6 +62,33 @@ import PlayerCore
                         "Typing numbers in a text field does not change the view")
                     window.makeFirstResponder(nil)
                     field.removeFromSuperview()
+                    let surface = DragProbeView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+                    var clicks = 0, doubleClicks = 0
+                    surface.click = { clicks += 1 }; surface.doubleClick = { doubleClicks += 1 }
+                    window.contentView?.addSubview(surface)
+                    @MainActor func mouse(_ type: NSEvent.EventType, x: CGFloat, count: Int = 1) -> NSEvent {
+                        NSEvent.mouseEvent(with: type, location: NSPoint(x: x, y: 20), modifierFlags: [],
+                            timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                            eventNumber: 1, clickCount: count, pressure: 1)!
+                    }
+                    surface.mouseDown(with: mouse(.leftMouseDown, x: 20))
+                    surface.mouseDragged(with: mouse(.leftMouseDragged, x: 22))
+                    try check(surface.dragCount == 0, "Small pointer movement does not start a window drag")
+                    surface.mouseDragged(with: mouse(.leftMouseDragged, x: 30))
+                    surface.mouseUp(with: mouse(.leftMouseUp, x: 30))
+                    try await Task.sleep(for: .seconds(NSEvent.doubleClickInterval + 0.1))
+                    try check(surface.dragCount == 1 && clicks == 0, "Dragging the player starts a window drag without a playback click")
+                    surface.mouseDown(with: mouse(.leftMouseDown, x: 20))
+                    surface.mouseUp(with: mouse(.leftMouseUp, x: 20))
+                    try await Task.sleep(for: .seconds(NSEvent.doubleClickInterval + 0.1))
+                    try check(clicks == 1, "A short player click still invokes play/pause")
+                    surface.mouseDown(with: mouse(.leftMouseDown, x: 20))
+                    surface.mouseUp(with: mouse(.leftMouseUp, x: 20))
+                    surface.mouseDown(with: mouse(.leftMouseDown, x: 20, count: 2))
+                    surface.mouseUp(with: mouse(.leftMouseUp, x: 20, count: 2))
+                    try await Task.sleep(for: .seconds(NSEvent.doubleClickInterval + 0.1))
+                    try check(clicks == 1 && doubleClicks == 1, "Double-click invokes full screen without a playback click")
+                    surface.cancelClick(); window.makeFirstResponder(nil); surface.removeFromSuperview()
                     model.sidebar = originalSidebar
                 }
                 model.automaticUpdateChecks = true
@@ -76,9 +108,45 @@ import PlayerCore
                 try await waitFor { model.loaded && model.position > 0.2 && !model.paused }
                 let a = model.currentID!
                 try check(model.window?.level == .floating, "Playing MP4 floats the actual window")
+                @MainActor func mediaMouseView(in view: NSView) -> PlayerMouseView? {
+                    if let surface = view as? PlayerMouseView { return surface }
+                    for child in view.subviews { if let surface = mediaMouseView(in: child) { return surface } }
+                    return nil
+                }
+                if let content = model.window?.contentView, let surface = mediaMouseView(in: content) {
+                    let point = surface.convert(NSPoint(x: surface.bounds.midX, y: surface.bounds.midY), to: content)
+                    try check(content.hitTest(point) === surface, "The visible media area routes mouse events to the player drag/click handler")
+                } else { throw Failure(message: "Missing native player mouse surface") }
+
                 model.setPaused(true)
                 try await Task.sleep(for: .milliseconds(300))
                 try check(model.paused && model.window?.level == .normal && model.floatEnabled, "Pause suspends floating and preserves preference")
+                if let library = model.runtimeLibraryPath {
+                    let decoder = ThumbnailDecoder()
+                    let pausedPosition = model.position
+                    let first = await decoder.frame(url: root.appendingPathComponent("first.mp4"), seconds: 2, library: library)
+                    try check(first != nil && first!.width <= 320 && first!.height <= 180
+                        && abs(first!.time - 2) < 0.3 && first!.pixels.count == first!.stride * first!.height,
+                        "MP4 thumbnail contains bounded in-memory pixels at the requested time")
+                    let second = await decoder.frame(url: root.appendingPathComponent("first.mp4"), seconds: 6, library: library)
+                    try check(second != nil && abs(second!.time - 6) < 0.3,
+                        "A second thumbnail decodes the new hovered time")
+                    let mkv = await decoder.frame(url: root.appendingPathComponent("second.mkv"), seconds: 4, library: library)
+                    try check(mkv != nil && abs(mkv!.time - 4) < 0.3, "MKV thumbnails use the bundled decoder")
+                    try check(model.currentID == a && model.paused && abs(model.position - pausedPosition) < 0.2,
+                        "Thumbnail decoding does not change the main file, pause state, or playback position")
+                }
+                model.timelinePreview.hoverX = 100
+                try await waitFor { model.timelinePreview.image != nil }
+                try check(model.timelinePreview.represented != nil && model.paused,
+                    "The normal progress bar loads its hover thumbnail without changing playback")
+                model.setMediaOnly(true)
+                try await Task.sleep(for: .milliseconds(200))
+                model.timelinePreview.hoverX = 100
+                try await waitFor { model.timelinePreview.image != nil }
+                try check(model.timelinePreview.represented != nil && model.paused,
+                    "The media-only progress bar also loads hover thumbnails")
+                model.setMediaOnly(false); model.timelinePreview.hoverX = nil
                 model.setPaused(false)
                 try await waitFor { !model.paused && model.window?.level == .floating }
                 try check(model.floating, "Resume restores floating")

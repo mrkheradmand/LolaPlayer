@@ -5,8 +5,8 @@
 <key>CFBundleIdentifier</key><string>local.lolaplayer.app</string>
 <key>CFBundleName</key><string>Lola Player</string>
 <key>CFBundleDisplayName</key><string>Lola Player</string>
-<key>CFBundleVersion</key><string>20</string>
-<key>CFBundleShortVersionString</key><string>1.4.1</string>
+<key>CFBundleVersion</key><string>21</string>
+<key>CFBundleShortVersionString</key><string>1.5.0</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleIconFile</key><string>LolaPlayerIcon.icns</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>

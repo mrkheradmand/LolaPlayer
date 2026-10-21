@@ -29,6 +29,8 @@ struct PlayerView: View {
                 ZStack {
                     Color.black
                     VideoSurface(model: model)
+                    PlayerMouseSurface(click: model.togglePlayback,
+                        doubleClick: { model.window?.toggleFullScreen(nil) })
                     if model.currentID == nil && !model.mediaOnly {
                         welcomeBackground
                         VStack(spacing: 16) {
@@ -62,8 +64,6 @@ struct PlayerView: View {
                     }.allowsHitTesting(false)
                 }
                 .contentShape(Rectangle())
-                .onTapGesture(count: 2) { model.window?.toggleFullScreen(nil) }
-                .onTapGesture { model.togglePlayback() }
                 .contextMenu {
                     Button(model.paused ? "Play" : "Pause") { model.togglePlayback() }
                     Button("Bookmark Current Position") { model.addBookmark() }
@@ -125,10 +125,7 @@ struct PlayerView: View {
     private var timeline: some View {
         HStack(spacing: 10) {
             if !model.mediaOnly { Text(timestamp(model.scrubbing ? model.scrubPosition : model.position)).monospacedDigit().frame(minWidth: 46, alignment: .leading) }
-            Slider(value: Binding(get: { model.scrubbing ? model.scrubPosition : model.position }, set: { model.scrubPosition = $0 }), in: 0...max(1, model.duration)) { editing in
-                if editing { model.scrubPosition = model.position; model.scrubbing = true }
-                else { model.scrubbing = false; model.seek(model.scrubPosition) }
-            }.controlSize(.mini).disabled(!model.loaded).accessibilityLabel("Timeline")
+            PreviewSeekBar(model: model)
             if !model.mediaOnly { Text(timestamp(model.duration)).monospacedDigit().frame(minWidth: 46, alignment: .trailing) }
         }.font(.system(size: 11)).foregroundStyle(.secondary)
     }

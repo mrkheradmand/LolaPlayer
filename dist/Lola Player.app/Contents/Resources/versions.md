@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.5.0 (build 21) — 2026-10-21
+
+### Added
+
+- Drag the window from the media area while preserving single-click play/pause and double-click full screen. Progress-bar hover cards show timestamps and in-memory local-video thumbnails in normal and media-only views.
+
+### Modified
+
+- Added a separate silent thumbnail decoder, bounded memory cache, hover debounce, stale-request cancellation, and timestamp-only fallback for audio, network, MIDI, and disc inputs. Updated both README guides and added gesture, timeline-position, and real-media preview checks.
+
+### Removed
+
+- None.
+
 ## 1.4.1 (build 20) — 2026-10-21
 
 ### Added
