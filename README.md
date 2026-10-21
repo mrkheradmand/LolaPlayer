@@ -30,6 +30,8 @@ Installation instructions are also included in **Install Notes.txt** inside the 
   <img src="app-bookmark.png" alt="Lola Player bookmark list" width="950">
 </p>
 
+The app uses a flat mint-green play icon on a charcoal tile.
+
 ## Features
 
 - Named, searchable bookmarks that stay saved when you close the app.
@@ -99,7 +101,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.9.2, build 33 |
+| Version | 1.9.3, build 34 |
 
 
 See [release notes](versions.md) for what's changed.

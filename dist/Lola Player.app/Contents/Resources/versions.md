@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.9.3 (build 34) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Replaced the app icon with the selected flat mint-green play symbol and three sound-wave bars on a charcoal tile, with transparent exterior corners. Dock, Finder, and About use the same generated icon master; updated both README guides and the saved generation prompt.
+
+### Removed
+
+- None.
+
 ## 1.9.2 (build 33) — 2026-10-21
 
 ### Added

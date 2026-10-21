@@ -432,7 +432,7 @@ Open `Package.swift` in Xcode for source inspection/debugging. A standalone deve
 - Caches are kept under `.build/` to avoid relying on writable global caches.
 - Release debug information is disabled because the original managed environment blocked `dsymutil`; packaging does not produce a release dSYM.
 - `--disable-sandbox` applies to SwiftPM's build sandbox; it does not change macOS security settings.
-- [LolaPlayerIcon.png](Resources/LolaPlayerIcon.png) is the generated icon artwork: a luminous play symbol and cyan/violet playback ring on an indigo tile. It was created with the built-in image-generation tool; the [generation prompt](Resources/LolaPlayerIcon.prompt.txt) is preserved.
+- [LolaPlayerIcon.png](Resources/LolaPlayerIcon.png) is the generated icon artwork: a flat mint-green play symbol and three sound-wave bars on a charcoal rounded-square tile with transparent exterior corners. It was created with the built-in image-generation tool; the [generation prompt](Resources/LolaPlayerIcon.prompt.txt) is preserved.
 - Each build runs `scripts/generate-icon.swift` to resize this transparent master into `Resources/AppIcon.icns`, including standard and Retina representations from 16 to 1024 pixels, then copies it into the signed app bundle.
 - `.build/`, `Runtime/Frameworks/`, and `dist/releases/` are ignored by Git. The packaged app under `dist/Lola Player.app` and fixtures under `Research/test-media/` are tracked. Other `Research/` files are ignored.
 
