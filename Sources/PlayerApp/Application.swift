@@ -44,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var floatItem: NSMenuItem!
     var playItem: NSMenuItem!
     private var viewShortcutMonitor: Any?
+    private var aboutController: AboutWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if let iconURL = Bundle.main.url(forResource: "LolaPlayerIcon", withExtension: "icns"),
@@ -93,7 +94,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         return true
     }
-    func windowWillClose(_ notification: Notification) { model.shutdown() }
+    func windowWillClose(_ notification: Notification) { aboutController?.close(); model.shutdown() }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { window.makeKeyAndOrderFront(nil); return true }
 
     @discardableResult func item(_ menu: NSMenu, _ title: String, key: String = "", modifiers: NSEvent.ModifierFlags = .command, action: @escaping () -> Void) -> NSMenuItem {
@@ -105,34 +106,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let entry = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         let menu = NSMenu(title: title); entry.submenu = menu; parent.addItem(entry); return menu
     }
+    func showAbout() {
+        if aboutController == nil { aboutController = AboutWindowController(model: model) }
+        aboutController?.showWindow(nil)
+        aboutController?.window?.makeKeyAndOrderFront(nil)
+        if model.automaticUpdateChecks && !CommandLine.arguments.contains("--smoke-test") {
+            model.checkForUpdates(manual: false)
+        }
+    }
+
     func buildMenus() {
         let bar = NSMenu(); NSApp.mainMenu = bar
         let app = submenu(bar, "Lola Player")
-        item(app, "About Lola Player") {
-            let paragraph = NSMutableParagraphStyle()
-            paragraph.alignment = .center
-            let credits = NSMutableAttributedString(
-                string: "Made for Mac OS with Love\n",
-                attributes: [.font: NSFont.systemFont(ofSize: 13), .paragraphStyle: paragraph]
-            )
-            let repository = "https://github.com/mrkheradmand/LolaPlayer"
-            credits.append(NSAttributedString(string: repository, attributes: [
-                .link: repository,
-                .foregroundColor: NSColor.linkColor,
-                .underlineStyle: NSUnderlineStyle.single.rawValue,
-                .font: NSFont.systemFont(ofSize: 12),
-                .paragraphStyle: paragraph
-            ]))
-            credits.append(NSAttributedString(
-                string: "\n\nAn independent native media player.\nBuilt with Swift, AppKit, and libmpv.",
-                attributes: [.font: NSFont.systemFont(ofSize: 13), .paragraphStyle: paragraph]
-            ))
-            NSApp.orderFrontStandardAboutPanel(options: [
-                .applicationName: "Lola Player",
-                .applicationVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Development",
-                .credits: credits
-            ])
-        }
+        item(app, "About Lola Player") { self.showAbout() }
         item(app, "Check for Updates…") {
             self.model.settingsOpen = true
             self.model.checkForUpdates()
@@ -148,7 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         file.addItem(.separator()); item(file, "Save Playlist…", key: "s") { self.model.savePlaylist() }
         item(file, "Clear Playlist") { self.model.queue = [] }
         item(file, "Show in Finder") { if let url = self.model.current?.location, url.isFileURL { NSWorkspace.shared.activateFileViewerSelecting([url]) } }
-        file.addItem(.separator()); item(file, "Close Window", key: "w") { self.window.performClose(nil) }
+        file.addItem(.separator()); item(file, "Close Window", key: "w") { NSApp.keyWindow?.performClose(nil) }
         let edit = submenu(bar, "Edit")
         for (title, key, selector) in [("Cut", "x", "cut:"), ("Copy", "c", "copy:"), ("Paste", "v", "paste:"), ("Select All", "a", "selectAll:")] {
             edit.addItem(NSMenuItem(title: title, action: NSSelectorFromString(selector), keyEquivalent: key))

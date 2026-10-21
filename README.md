@@ -81,13 +81,17 @@ Use the **Bookmarks** tab to name, search, and replay saved moments. The **Playl
 
 Lola checks for new releases when it opens and once a day while running. When an update is available, click **View Release** in the notice to open the download page.
 
-To turn automatic checks off, uncheck **Automatically check for updates** in **Lola Player → Settings…**. You can still choose **Lola Player → Check for Updates…** at any time. Updates are downloaded and installed manually.
+To turn automatic checks off, uncheck **Automatically check for updates** in **Lola Player → Settings…**. You can still choose **Lola Player → Check for Updates…** at any time. **About Lola Player** also shows **Latest Version** or **New version available!** beside the version. Click the new-version message to open its release page, or use **Check for Updates…** in About. Updates are downloaded and installed manually.
+
+## License
+
+Lola Player’s original code and documentation are available under the [MIT License](LICENSE). Copyright © 2026 J Kheradmand. Bundled playback libraries retain their own licenses.
 
 ## Version
 
 | App | Release |
 | --- | --- |
-| Version | 1.5.0, build 21 |
+| Version | 1.6.1, build 23 |
 
 
 See [release notes](versions.md) for what's changed.

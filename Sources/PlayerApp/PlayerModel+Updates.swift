@@ -21,9 +21,11 @@ extension PlayerModel {
     func checkForUpdates(manual: Bool = true) {
         guard updateCheckTask == nil else { return }
         guard let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String else {
+            updateAvailability = .failed
             updateCheckStatus = "Build the app bundle to check for updates."
             return
         }
+        updateAvailability = .checking
         updateCheckStatus = "Checking GitHub for updates…"
         updateCheckTask = Task { [weak self] in
             let configuration = URLSessionConfiguration.ephemeral
@@ -36,16 +38,19 @@ extension PlayerModel {
                 try Task.checkCancellation()
                 guard let self, manual || self.automaticUpdateChecks else { return }
                 if let update {
+                    self.updateAvailability = .available(update)
                     self.updateCheckStatus = "Lola Player \(update.version) is available."
                     if manual || UserDefaults.standard.string(forKey: "dismissedUpdateVersion") != update.version {
                         self.availableUpdate = update
                     }
                 } else {
                     self.availableUpdate = nil
+                    self.updateAvailability = .current
                     self.updateCheckStatus = "You’re up to date."
                 }
             } catch {
                 guard !Task.isCancelled else { return }
+                self?.updateAvailability = .failed
                 self?.updateCheckStatus = "Couldn’t check for updates. \(error.localizedDescription)"
             }
         }

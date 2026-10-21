@@ -4,6 +4,10 @@
 <dict>
 	<key>files</key>
 	<dict>
+		<key>Resources/LICENSE</key>
+		<data>
+		VL37QmwswA0zl2gLFZfx/2O/vRs=
+		</data>
 		<key>Resources/LolaPlayerIcon.icns</key>
 		<data>
 		oTg8u1KoVs4ePA57BxXEmmxAO5s=
@@ -22,7 +26,7 @@
 		</data>
 		<key>Resources/versions.md</key>
 		<data>
-		qZXwpIdz7pyP70GxpqAlUlywlLE=
+		EY3mDUTWSDwM8VaNiG9LE1tkklY=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -423,6 +427,13 @@
 			<key>requirement</key>
 			<string>cdhash H"34697e5e742a703a5605f10575d424d470da4864"</string>
 		</dict>
+		<key>Resources/LICENSE</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			G3ff59Q7GJ1k0xoVmINBR7gLbk5eTscS3A0t1O7BYqY=
+			</data>
+		</dict>
 		<key>Resources/LolaPlayerIcon.icns</key>
 		<dict>
 			<key>hash2</key>
@@ -455,7 +466,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			gMmu4cBniFjHh4lz/jHLILZUwLzFtHUfO6mMcDEKRIk=
+			Qu0g4G8/LDaDsXcWf5VaPp7V3kf/GgRpsBN9lE1PFMY=
 			</data>
 		</dict>
 	</dict>

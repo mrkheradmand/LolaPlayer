@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import PlayerCore
+import SwiftUI
 
 private final class DragProbeView: PlayerMouseView {
     var dragCount = 0
@@ -17,6 +18,7 @@ private final class DragProbeView: PlayerMouseView {
             let originalFloat = model.floatEnabled
             let originalAutoplay = model.autoplay
             let originalPrompt = model.promptForBookmark
+            let originalUpdateAvailability = model.updateAvailability
             let originalUpdates = UserDefaults.standard.object(forKey: "automaticUpdateChecks")
             let originalDismissedUpdate = UserDefaults.standard.object(forKey: "dismissedUpdateVersion")
             func check(_ condition: Bool, _ name: String) throws {
@@ -95,6 +97,30 @@ private final class DragProbeView: PlayerMouseView {
                 try check(model.automaticUpdateTask == nil, "Smoke mode suppresses automatic update networking")
                 let releaseData = Data(#"{"tag_name":"v999.0.0","draft":false,"prerelease":false}"#.utf8)
                 model.availableUpdate = try UpdateChecker.update(from: releaseData, statusCode: 200, currentVersion: "1.0.0")
+                if let release = model.availableUpdate {
+                    let about = AboutView(model: model)
+                    model.updateAvailability = .current
+                    try check(about.versionLine == "\(about.versionText) Latest Version",
+                        "About shows Latest Version beside the version after a successful current check")
+                    model.updateAvailability = .available(release)
+                    model.dismissUpdate()
+                    try check(about.versionLine == "\(about.versionText) New version available!"
+                        && model.updateAvailability == .available(release),
+                        "About retains the newer-release status after its banner is dismissed")
+                    model.updateAvailability = .failed
+                    try check(!about.versionLine.contains("Latest Version") && about.versionLine.contains("Couldn’t check"),
+                        "An update failure is not labeled Latest Version in About")
+                    model.updateAvailability = .checking
+                    try check(about.versionLine.contains("Checking for updates"),
+                        "About reflects a pending update check")
+                    let controller = AboutWindowController(model: model)
+                    controller.showWindow(nil)
+                    try check(controller.window?.isVisible == true
+                        && controller.window?.contentView is NSHostingView<AboutView>,
+                        "The About window hosts the live status view")
+                    controller.close(); model.window?.makeKeyAndOrderFront(nil)
+                    model.updateAvailability = .notChecked
+                }
                 model.dismissUpdate()
                 try check(model.availableUpdate == nil && UserDefaults.standard.string(forKey: "dismissedUpdateVersion") == "999.0.0",
                     "Dismissing an update remembers its version")
@@ -240,6 +266,7 @@ private final class DragProbeView: PlayerMouseView {
             model.floatEnabled = originalFloat; model.autoplay = originalAutoplay
             model.promptForBookmark = originalPrompt
             model.automaticUpdateChecks = originalUpdates as? Bool ?? true
+            model.updateAvailability = originalUpdateAvailability
             UserDefaults.standard.set(originalUpdates, forKey: "automaticUpdateChecks")
             UserDefaults.standard.set(originalDismissedUpdate, forKey: "dismissedUpdateVersion")
             let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": skipped, "failure": failure ?? NSNull()]

@@ -1,5 +1,33 @@
 # Lola Player versions
 
+## 1.6.1 (build 23) — 2026-10-21
+
+### Added
+
+- MIT License for original Lola Player code and documentation, copyright 2026 J Kheradmand.
+
+### Modified
+
+- About displays Copyright © 2026 J Kheradmand and a MIT License link. App packaging includes the license, bundle metadata includes the copyright, and both README guides explain license scope.
+
+### Removed
+
+- None.
+
+## 1.6.0 (build 22) — 2026-10-21
+
+### Added
+
+- Live update status beside the version/build in About: Latest Version or a clickable New version available! release link, plus a manual Check for Updates button.
+
+### Modified
+
+- Replaced the static About panel with an observable panel retaining the app icon and credits. Shared update-result state survives banner dismissal, distinguishes pending/failed/unchecked checks, and respects automatic-check preferences when About opens. Updated both README guides and added About status and app checks.
+
+### Removed
+
+- None.
+
 ## 1.5.0 (build 21) — 2026-10-21
 
 ### Added

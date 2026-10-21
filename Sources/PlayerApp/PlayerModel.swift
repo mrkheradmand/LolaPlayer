@@ -72,12 +72,14 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             UserDefaults.standard.set(automaticUpdateChecks, forKey: "automaticUpdateChecks")
             if !automaticUpdateChecks {
                 updateCheckTask?.cancel()
+                if updateAvailability == .checking { updateAvailability = .notChecked }
                 availableUpdate = nil
                 updateCheckStatus = "Automatic update checks are off."
             }
             startAutomaticUpdateChecks()
         }
     }
+    var updateAvailability: UpdateAvailability = .notChecked
     var availableUpdate: ReleaseUpdate?
     var updateCheckStatus = ""
     @ObservationIgnored var automaticUpdateTask: Task<Void, Never>?
