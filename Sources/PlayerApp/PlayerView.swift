@@ -15,7 +15,6 @@ struct VideoSurface: NSViewRepresentable {
 
 struct PlayerView: View {
     @Bindable var model: PlayerModel
-    @FocusState private var searchFocused: Bool
     private static let welcomePhoto: NSImage? = {
         let bundled = Bundle.main.url(forResource: "WelcomeNature", withExtension: "png")
         let source = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
@@ -29,8 +28,8 @@ struct PlayerView: View {
                 ZStack {
                     Color.black
                     VideoSurface(model: model)
-                    PlayerMouseSurface(click: model.togglePlayback,
-                        doubleClick: { model.window?.toggleFullScreen(nil) })
+                    PlayerMouseSurface(click: model.togglePlaybackFromVideo,
+                        doubleClick: { model.window?.toggleFullScreen(nil) }, scrollVolume: model.adjustVolumeByScroll)
                     if model.currentID == nil && !model.mediaOnly {
                         welcomeBackground
                         VStack(spacing: 16) {
@@ -58,11 +57,12 @@ struct PlayerView: View {
                             Spacer()
                         }
                         Spacer()
-                        if let message = model.message, !model.mediaOnly {
+                        if let message = model.message, !model.mediaOnly || model.messageInMediaOnly {
                             Text(message).font(.system(size: 13, weight: .medium)).padding(10).background(.ultraThinMaterial, in: Capsule()).padding(.bottom, 22)
                         }
                     }.allowsHitTesting(false)
                 }
+                .overlay { PlaybackClickFeedbackView(feedback: model.playbackClickFeedback) }
                 .contentShape(Rectangle())
                 .contextMenu {
                     Button(model.paused ? "Play" : "Pause") { model.togglePlayback() }
@@ -80,7 +80,6 @@ struct PlayerView: View {
                     controls
                 }
             }
-            if model.sidebar && !model.mediaOnly { libraryPanel.frame(width: 330) }
         }
         .background(Color(nsColor: NSColor(white: 0.12, alpha: 1)))
         .ignoresSafeArea(.container, edges: model.mediaOnly ? .top : [])
@@ -171,7 +170,6 @@ struct PlayerView: View {
                 icon("slider.horizontal.3", "Playback settings") { model.settingsOpen = true }
                 icon("list.bullet", "Show playlist and history") { model.sidebar.toggle() }
             }
-            Text(model.current?.name ?? "No media loaded").font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
         }.padding(.horizontal, 18).padding(.vertical, 12)
     }
 
@@ -180,125 +178,6 @@ struct PlayerView: View {
             .buttonStyle(.plain).help(label).accessibilityLabel(label)
     }
 
-    private var libraryPanel: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Library").font(.headline)
-                Spacer()
-                icon("plus", "Open files") { model.openPanel() }
-                icon("xmark", "Close library") { model.sidebar = false }
-            }.padding(16)
-            Picker("Library", selection: $model.tab) { ForEach(LibraryTab.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 12)
-            TextField("Search files and bookmarks", text: $model.search)
-                .textFieldStyle(.roundedBorder)
-                .focused($searchFocused)
-                .background(SearchFocusDismissal(isFocused: searchFocused) { searchFocused = false })
-                .padding(12)
-            Divider()
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 4) {
-                    if displayedRecords.isEmpty {
-                        VStack(spacing: 10) {
-                            Image(systemName: model.tab == .bookmarks ? "bookmark" : "list.bullet").font(.title2)
-                            Text(model.search.isEmpty ? (model.tab == .bookmarks ? "No saved bookmarks" : "No files here yet") : "No results").font(.headline)
-                            Text(model.tab == .bookmarks ? "Press ⌘B to save a moment. Bookmarks stay with every file in your history." : "Open media to start your library.").font(.caption).multilineTextAlignment(.center)
-                        }.foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(30)
-                    }
-                    ForEach(displayedRecords) { record in
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack(spacing: 0) {
-                              Button { model.play(record.id) } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: record.id == model.currentID ? "waveform" : "play.rectangle").foregroundStyle(record.id == model.currentID ? .blue : .secondary)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(record.name).font(.system(size: 12, weight: .medium)).lineLimit(2).multilineTextAlignment(.leading)
-                                        Text("\(timestamp(record.position)) / \(timestamp(record.duration)) · \(record.bookmarks.count) bookmarks").font(.system(size: 10)).foregroundStyle(.secondary)
-                                    }
-                                    Spacer(minLength: 0)
-                                }.padding(10).frame(maxWidth: .infinity, alignment: .leading).background(record.id == model.currentID ? Color.blue.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 6))
-                              }.buttonStyle(.plain).help(record.location.path)
-                              Button(role: .destructive) {
-                                  switch model.tab {
-                                  case .playlist: model.removeFromPlaylist(record)
-                                  case .history: model.removeFromHistory(record)
-                                  case .bookmarks: model.removeAllBookmarks(record)
-                                  }
-                              } label: { Image(systemName: "trash").frame(width: 28, height: 32) }
-                                  .buttonStyle(.plain).foregroundStyle(.secondary).padding(.trailing, 8)
-                                  .help(fileRemovalLabel(record))
-                                  .accessibilityLabel(fileRemovalLabel(record))
-                            }
-                            .contextMenu {
-                                Button("Play") { model.play(record.id) }
-                                Button("Add to Playlist") { if !model.queue.contains(record.id) { model.queue.append(record.id) } }
-                                if record.location.isFileURL {
-                                    Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.library.resolve(record.id) ?? record.location]) }
-                                    Button("Relocate File…") { model.relocate(record) }
-                                }
-                                Divider()
-                                if model.tab == .playlist { Button("Remove from Playlist", role: .destructive) { model.removeFromPlaylist(record) } }
-                                if model.tab == .history { Button("Remove from History", role: .destructive) { model.removeFromHistory(record) } }
-                                if model.tab == .bookmarks { Button("Remove All Bookmarks for This File", role: .destructive) { model.removeAllBookmarks(record) } }
-                            }
-                            if model.tab == .bookmarks {
-                                ForEach(record.bookmarks.filter { model.search.isEmpty || record.name.localizedCaseInsensitiveContains(model.search) || $0.title.localizedCaseInsensitiveContains(model.search) }) { bookmark in
-                                    HStack {
-                                        Button { model.playBookmark(record.id, bookmark: bookmark) } label: {
-                                            HStack {
-                                                Text(timestamp(bookmark.seconds)).monospacedDigit().foregroundStyle(.blue).frame(width: 52, alignment: .leading)
-                                                Text(bookmark.title).lineLimit(1)
-                                                Spacer()
-                                            }.font(.system(size: 11))
-                                        }.buttonStyle(.plain).help("Open \(record.name) at \(timestamp(bookmark.seconds))")
-                                        Menu {
-                                            Button("Edit…") { model.editBookmark(record, bookmark) }
-                                            Button("Delete Bookmark", role: .destructive) { model.removeBookmark(record, bookmark) }
-                                        } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).fixedSize()
-                                        Button(role: .destructive) { model.removeBookmark(record, bookmark) } label: {
-                                            Image(systemName: "trash").frame(width: 22, height: 24)
-                                        }.buttonStyle(.plain).foregroundStyle(.secondary)
-                                            .help("Delete bookmark at \(timestamp(bookmark.seconds))")
-                                            .accessibilityLabel("Delete bookmark at \(timestamp(bookmark.seconds)) from \(record.name)")
-                                    }.padding(.leading, 39).padding(.trailing, 12).padding(.vertical, 6)
-                                    .contextMenu {
-                                        Button("Edit…") { model.editBookmark(record, bookmark) }
-                                        Button("Delete Bookmark", role: .destructive) { model.removeBookmark(record, bookmark) }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }.padding(6)
-            }
-            Divider()
-            HStack {
-                Text("\(displayedRecords.count) files").font(.caption).foregroundStyle(.secondary)
-                Spacer()
-                if model.tab == .bookmarks { Button("Export…") { model.exportBookmarks() } }
-                if model.tab == .playlist { Button("Empty Playlist", role: .destructive) { model.queue = [] }.disabled(model.queue.isEmpty) }
-                if model.tab == .history { Button("Empty History", role: .destructive) { model.emptyHistory() }.disabled(model.historyRecords.isEmpty) }
-            }.padding(12)
-        }.background(Color(nsColor: .controlBackgroundColor))
-    }
-    private var displayedRecords: [MediaRecord] {
-        let records: [MediaRecord]
-        switch model.tab {
-        case .playlist: records = model.queue.compactMap { model.library.record($0) }
-        case .history: records = model.historyRecords
-        case .bookmarks: records = model.records
-        }
-        return records.filter { record in
-            (model.tab != .bookmarks || !record.bookmarks.isEmpty) &&
-            (model.search.isEmpty || record.name.localizedCaseInsensitiveContains(model.search) || record.bookmarks.contains { $0.title.localizedCaseInsensitiveContains(model.search) })
-        }
-    }
-    private func fileRemovalLabel(_ record: MediaRecord) -> String {
-        switch model.tab {
-        case .playlist: "Remove \(record.name) from Playlist"
-        case .history: "Remove \(record.name) from History"
-        case .bookmarks: "Remove all bookmarks for \(record.name)"
-        }
-    }
     private var updateNotice: some View {
         HStack(spacing: 12) {
             Image(systemName: "arrow.down.circle.fill").foregroundStyle(.blue)
@@ -311,50 +190,4 @@ struct PlayerView: View {
     }
 
 
-}
-
-/// Observes clicks without consuming them, including clicks on native video and controls.
-private struct SearchFocusDismissal: NSViewRepresentable {
-    let isFocused: Bool
-    let dismiss: () -> Void
-
-    func makeNSView(context: Context) -> ClickObserver { ClickObserver() }
-
-    func updateNSView(_ view: ClickObserver, context: Context) {
-        view.isFocused = isFocused
-        view.dismiss = dismiss
-    }
-
-    static func dismantleNSView(_ view: ClickObserver, coordinator: ()) {
-        view.stopObserving()
-    }
-
-    final class ClickObserver: NSView {
-        var isFocused = false
-        var dismiss: (() -> Void)?
-        private var monitor: Any?
-
-        override func hitTest(_ point: NSPoint) -> NSView? { nil }
-
-        override func viewDidMoveToWindow() {
-            super.viewDidMoveToWindow()
-            stopObserving()
-            guard window != nil else { return }
-            monitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] event in
-                MainActor.assumeIsolated {
-                    guard let self, self.isFocused, let window = self.window,
-                          event.window === window,
-                          !self.bounds.contains(self.convert(event.locationInWindow, from: nil)) else { return }
-                    window.makeFirstResponder(nil)
-                    self.dismiss?()
-                }
-                return event
-            }
-        }
-
-        func stopObserving() {
-            if let monitor { NSEvent.removeMonitor(monitor) }
-            monitor = nil
-        }
-    }
 }

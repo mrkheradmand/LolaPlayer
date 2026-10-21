@@ -32,6 +32,34 @@ final class MenuAction: NSObject {
     @objc func invoke(_ sender: Any?) { callback() }
 }
 
+/// App menu shortcuts must never handle another application’s keyboard input.
+nonisolated final class PlayerMenu: NSMenu {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let appIsFrontmost = MainActor.assumeIsolated { (NSApp.delegate as? AppDelegate)?.isPlayerAppFrontmost == true }
+        guard appIsFrontmost else { return false }
+        let characters = event.characters
+        let modifiers = event.modifierFlags.rawValue
+        let windowNumber = event.windowNumber
+        if ["1", "2", " "].contains(characters ?? ""),
+           event.modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty {
+            return MainActor.assumeIsolated {
+                (NSApp.delegate as? AppDelegate)?.handleViewShortcut(characters: characters,
+                    modifiers: NSEvent.ModifierFlags(rawValue: modifiers), windowNumber: windowNumber) ?? false
+            }
+        }
+        return super.performKeyEquivalent(with: event)
+    }
+}
+
+/// Handle player shortcuts before SwiftUI or the video responder consumes plain key presses.
+final class PlayerWindow: NSWindow {
+    var viewShortcut: ((NSEvent) -> Bool)?
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .keyDown, viewShortcut?(event) == true { return }
+        super.sendEvent(event)
+    }
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDelegate {
     let model = PlayerModel()
     var window: NSWindow!
@@ -42,8 +70,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var subtitleMenu: NSMenu!
     var chapterMenu: NSMenu!
     var floatItem: NSMenuItem!
+    var rememberWindowItem: NSMenuItem!
+    private(set) var libraryController: LibraryWindowController?
+    var isFullScreenTransitioning: Bool { fullScreenTransition }
+    var isPlayerAppFrontmost: Bool {
+        NSApp.isActive && NSWorkspace.shared.frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier
+    }
     var playItem: NSMenuItem!
-    private var viewShortcutMonitor: Any?
     private var fullScreenTransition = false
     private var aboutController: AboutWindowController?
 
@@ -52,18 +85,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
            let icon = NSImage(contentsOf: iconURL) {
             NSApp.applicationIconImage = icon
         }
-        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1080, height: 680), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+        window = PlayerWindow(contentRect: NSRect(x: 0, y: 0, width: 1080, height: 680), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         window.title = "Lola Player"; window.minSize = NSSize(width: 800, height: 420)
         window.appearance = NSAppearance(named: .darkAqua); window.backgroundColor = .black
         window.titlebarAppearsTransparent = true; window.isReleasedWhenClosed = false
         window.collectionBehavior = [.fullScreenPrimary]; window.delegate = self
-        window.setFrameAutosaveName("LumenPlayerMainWindow"); window.center()
+        window.center()
+        if model.rememberWindowGeometry, !CommandLine.arguments.contains("--smoke-test"),
+           let saved = UserDefaults.standard.string(forKey: "playerWindowFrame"),
+           let frame = WindowPlacement.restored(NSRectFromString(saved), screens: NSScreen.screens.map(\.visibleFrame), minimum: window.minSize) {
+            window.setFrame(frame, display: true)
+        }
         model.window = window
+        libraryController = LibraryWindowController(model: model)
+        model.libraryWindowChanged = { [weak self] in
+            guard let self, !self.fullScreenTransition else { return }; self.libraryController?.sync()
+        }
+        model.revealLibrary = { [weak self] in
+            guard let self, !self.fullScreenTransition else { return }; self.libraryController?.present()
+        }
         window.contentView = NSHostingView(rootView: PlayerView(model: model))
         model.systemMediaControls = SystemMediaControls(model: model)
-        viewShortcutMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            let handled = MainActor.assumeIsolated { self?.handleViewShortcut(event) ?? false }
-            return handled ? nil : event
+        (window as? PlayerWindow)?.viewShortcut = { [weak self] event in
+            self?.handleViewShortcut(event) ?? false
         }
         buildMenus(); window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
         if let index = CommandLine.arguments.firstIndex(of: "--smoke-test"), CommandLine.arguments.count > index + 1 {
@@ -79,32 +123,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func application(_ sender: NSApplication, open urls: [URL]) { model.open(urls); window?.makeKeyAndOrderFront(nil) }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
     func applicationWillTerminate(_ notification: Notification) {
-        if let viewShortcutMonitor { NSEvent.removeMonitor(viewShortcutMonitor) }
         model.shutdown()
     }
 
     func handleViewShortcut(_ event: NSEvent) -> Bool {
-        guard event.window === window, window.isKeyWindow, window.attachedSheet == nil,
+        handleViewShortcut(characters: event.characters, modifiers: event.modifierFlags, windowNumber: event.windowNumber)
+    }
+    func handleViewShortcut(characters: String?, modifiers: NSEvent.ModifierFlags, windowNumber: Int) -> Bool {
+        let targetsPlayer = windowNumber == window.windowNumber || (windowNumber == 0 && NSApp.keyWindow === window)
+        guard isPlayerAppFrontmost, targetsPlayer, window.isKeyWindow, window.attachedSheet == nil,
               NSApp.modalWindow == nil, !model.settingsOpen,
               !(window.firstResponder is NSTextView), !(window.firstResponder is NSTextField),
-              event.modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty else { return false }
-        switch event.characters {
+              modifiers.intersection([.command, .control, .option, .shift]).isEmpty else { return false }
+        switch characters {
         case "1": model.setMediaOnly(false)
         case "2": model.setMediaOnly(true)
+        case " ":
+            guard model.loaded else { return false }
+            model.togglePlayback()
         default: return false
         }
         return true
     }
-    func windowWillClose(_ notification: Notification) { aboutController?.close(); model.shutdown() }
+    func windowWillClose(_ notification: Notification) { model.saveWindowGeometry(); model.sidebar = false; aboutController?.close(); model.shutdown() }
+    func windowDidMove(_ notification: Notification) { model.saveWindowGeometry() }
+    func windowDidResize(_ notification: Notification) { model.saveWindowGeometry() }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { window.makeKeyAndOrderFront(nil); return true }
 
     func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
         model.mediaOnly && !fullScreenTransition && !sender.styleMask.contains(.fullScreen) ? model.mediaOnlySize(for: frameSize) : frameSize
     }
-    func windowWillEnterFullScreen(_ notification: Notification) { fullScreenTransition = true }
-    func windowDidEnterFullScreen(_ notification: Notification) { fullScreenTransition = false }
-    func windowWillExitFullScreen(_ notification: Notification) { fullScreenTransition = true }
-    func windowDidExitFullScreen(_ notification: Notification) { fullScreenTransition = false; model.didExitFullScreen() }
+    func windowWillEnterFullScreen(_ notification: Notification) { model.saveWindowGeometry(); fullScreenTransition = true; libraryController?.hideForFullScreenTransition() }
+    func windowDidEnterFullScreen(_ notification: Notification) { fullScreenTransition = false; libraryController?.sync(reposition: true) }
+    func windowWillExitFullScreen(_ notification: Notification) { fullScreenTransition = true; libraryController?.hideForFullScreenTransition() }
+    func windowDidExitFullScreen(_ notification: Notification) { fullScreenTransition = false; model.didExitFullScreen(); libraryController?.sync(reposition: true); model.saveWindowGeometry() }
 
     @discardableResult func item(_ menu: NSMenu, _ title: String, key: String = "", modifiers: NSEvent.ModifierFlags = .command, action: @escaping () -> Void) -> NSMenuItem {
         let target = MenuAction(action)
@@ -125,7 +177,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     }
 
     func buildMenus() {
-        let bar = NSMenu(); NSApp.mainMenu = bar
+        let bar = PlayerMenu(); NSApp.mainMenu = bar
         let app = submenu(bar, "Lola Player")
         item(app, "About Lola Player") { self.showAbout() }
         item(app, "Settings…", key: ",") { self.model.settingsOpen = true }
@@ -145,9 +197,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             edit.addItem(NSMenuItem(title: title, action: NSSelectorFromString(selector), keyEquivalent: key))
         }
         let view = submenu(bar, "View"); view.delegate = self
-        item(view, "Show Full Interface (1)") { self.model.setMediaOnly(false) }
-        item(view, "Media Only (2)") { self.model.setMediaOnly(true) }
+        item(view, "Show Full Interface", key: "1", modifiers: []) { self.model.setMediaOnly(false) }
+        item(view, "Media Only", key: "2", modifiers: []) { self.model.setMediaOnly(true) }
         view.addItem(.separator())
+        rememberWindowItem = item(view, "Remember Window Position and Size") { self.model.rememberWindowGeometry.toggle() }
         floatItem = item(view, "Float on Top", key: "t", modifiers: [.command, .option]) { self.model.floatEnabled.toggle() }
         item(view, "Show Playlist", key: "l") { self.model.show(.playlist) }
         item(view, "Show History", key: "h", modifiers: [.command, .shift]) { self.model.show(.history) }
@@ -226,7 +279,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
     }
     func menuNeedsUpdate(_ menu: NSMenu) {
-        floatItem?.state = model.floatEnabled ? .on : .off; playItem?.title = model.paused ? "Play" : "Pause"
+        floatItem?.state = model.floatEnabled ? .on : .off; rememberWindowItem?.state = model.rememberWindowGeometry ? .on : .off; playItem?.title = model.paused ? "Play" : "Pause"
         if menu === recentMenu {
             menu.removeAllItems()
             for record in model.historyRecords.prefix(30) { item(menu, record.name) { self.model.play(record.id) } }

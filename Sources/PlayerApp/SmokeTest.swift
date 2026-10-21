@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import CoreGraphics
 import PlayerCore
 import SwiftUI
 
@@ -18,6 +19,7 @@ private final class DragProbeView: PlayerMouseView {
             let originalFloat = model.floatEnabled
             let originalAutoplay = model.autoplay
             let originalPrompt = model.promptForBookmark
+            let originalRememberWindow = model.rememberWindowGeometry
             let originalUpdateAvailability = model.updateAvailability
             let originalUpdates = UserDefaults.standard.object(forKey: "automaticUpdateChecks")
             let originalDismissedUpdate = UserDefaults.standard.object(forKey: "dismissedUpdateVersion")
@@ -39,10 +41,10 @@ private final class DragProbeView: PlayerMouseView {
                     NSApp.activate(ignoringOtherApps: true)
                     window.makeKeyAndOrderFront(nil)
                     for _ in 0..<10 {
-                        if window.isKeyWindow { break }
+                        if window.isKeyWindow && delegate.isPlayerAppFrontmost { break }
                         try await Task.sleep(for: .milliseconds(100))
                     }
-                    let canDispatchKeys = window.isKeyWindow
+                    let canDispatchKeys = window.isKeyWindow && delegate.isPlayerAppFrontmost
                     if !canDispatchKeys { skipped.append("Foreground keyboard dispatch unavailable: macOS kept the test app inactive; window-mode actions are tested directly") }
                     let originalSidebar = model.sidebar
                     let contentTop = window.convertToScreen(window.contentLayoutRect).maxY
@@ -76,8 +78,22 @@ private final class DragProbeView: PlayerMouseView {
                     window.makeFirstResponder(field)
                     try check(!delegate.handleViewShortcut(key("2")) && !model.mediaOnly,
                         "Typing numbers in a text field does not change the view")
+                    try check(NSApp.mainMenu?.performKeyEquivalent(with: key("2")) == false && !model.mediaOnly,
+                        "Real menu key equivalents also preserve number entry in text fields")
                     window.makeFirstResponder(nil)
                     field.removeFromSuperview()
+                    }
+                    if canDispatchKeys {
+                        window.sendEvent(key("2"))
+                        try check(model.mediaOnly, "Direct player-window key dispatch handles 2 before the video responder")
+                        window.sendEvent(key("1"))
+                        try check(!model.mediaOnly, "Direct player-window key dispatch handles 1 before the video responder")
+                        let noSource = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                            windowNumber: 0, context: nil, characters: "2", charactersIgnoringModifiers: "2", isARepeat: false, keyCode: 19)!
+                        try check(NSApp.mainMenu?.performKeyEquivalent(with: noSource) == true && model.mediaOnly,
+                            "Number key events with no source window target the current key player")
+                        NSApp.sendEvent(key("1"))
+                        try check(!model.mediaOnly, "Application-level key dispatch restores the full interface")
                     }
                     let surface = DragProbeView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
                     var clicks = 0, doubleClicks = 0
@@ -106,6 +122,27 @@ private final class DragProbeView: PlayerMouseView {
                     try await Task.sleep(for: .seconds(NSEvent.doubleClickInterval + 0.1))
                     try check(clicks == 1 && doubleClicks == 1, "Double-click invokes full screen without a playback click")
                     surface.cancelClick(); window.makeFirstResponder(nil); surface.removeFromSuperview()
+                    let playerFrame = window.frame
+                    model.show(.playlist)
+                    guard let libraryWindow = delegate.libraryController?.window else { throw Failure(message: "Missing detached library window") }
+                    try check(libraryWindow !== window && libraryWindow.isVisible && window.frame == playerFrame,
+                        "Library opens in a separate window without resizing the player")
+                    try check(libraryWindow.collectionBehavior.contains(.fullScreenAuxiliary), "Library supports the player full-screen Space")
+                    for tab in LibraryTab.allCases {
+                        model.show(tab)
+                        libraryWindow.contentView?.layoutSubtreeIfNeeded()
+                        try check(model.tab == tab && libraryWindow.frame.width >= 380 && window.frame == playerFrame,
+                            "Detached \(tab.rawValue) layout keeps the player unchanged")
+                    }
+                    libraryWindow.performClose(nil)
+                    try check(!model.sidebar && !libraryWindow.isVisible, "Closing Library clears visibility without closing the player")
+                    let viewMenu = NSApp.mainMenu?.items.first(where: { $0.title == "View" })?.submenu
+                    try check(viewMenu?.items[0].title == "Show Full Interface" && viewMenu?.items[0].keyEquivalent == "1"
+                        && viewMenu?.items[0].keyEquivalentModifierMask.isEmpty == true
+                        && viewMenu?.items[1].title == "Media Only" && viewMenu?.items[1].keyEquivalent == "2"
+                        && viewMenu?.items[1].keyEquivalentModifierMask.isEmpty == true,
+                        "View shows unmodified 1/2 shortcuts in the shortcut column")
+                    try check(delegate.rememberWindowItem.title == "Remember Window Position and Size", "View includes the window-geometry preference")
                     model.sidebar = originalSidebar
                 }
                 model.automaticUpdateChecks = true
@@ -133,6 +170,22 @@ private final class DragProbeView: PlayerMouseView {
                     try check((!NSApp.isActive || controller.window?.isVisible == true)
                         && controller.window?.contentView is NSHostingView<AboutView>,
                         "The About window hosts the live status view")
+                    controller.window?.makeKeyAndOrderFront(nil)
+                    let aboutWasKey = controller.window?.isKeyWindow == true
+                    model.window?.makeKeyAndOrderFront(nil)
+                    if aboutWasKey {
+                        try await Task.sleep(for: .milliseconds(100))
+                        try check(controller.window?.isVisible == false, "Returning to the player dismisses About")
+                    } else {
+                        controller.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification, object: controller.window))
+                        try check(controller.window?.isVisible == false, "About dismisses when its key focus is lost")
+                    }
+                    controller.showWindow(nil)
+                    controller.applicationDidResignActive(Notification(name: NSApplication.didResignActiveNotification, object: NSApp))
+                    try check(controller.window?.isVisible == false && controller.window?.hidesOnDeactivate == false,
+                        "App deactivation closes About rather than leaving a hidden auto-restoring panel")
+                    controller.showWindow(nil)
+                    try check(controller.window?.isVisible == true, "About can still be explicitly reopened after dismissal")
                     controller.close()
                     for page in SettingsPage.allCases {
                         let host = NSHostingView(rootView: SettingsView(model: model, initialPage: page))
@@ -155,6 +208,36 @@ private final class DragProbeView: PlayerMouseView {
                 model.autoplay = true; model.floatEnabled = true; model.promptForBookmark = false
                 model.open([root.appendingPathComponent("first.mp4")])
                 try await waitFor { model.loaded && model.position > 0.2 && !model.paused }
+                if let delegate = NSApp.delegate as? AppDelegate, let window = model.window {
+                    @MainActor func space(_ number: Int = 0) -> NSEvent {
+                        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                            windowNumber: number, context: nil, characters: " ", charactersIgnoringModifiers: " ",
+                            isARepeat: false, keyCode: 49)!
+                    }
+                    if let finder = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").first {
+                        finder.activate(options: [.activateIgnoringOtherApps])
+                        try await waitFor { NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.finder" }
+                        let position = model.position
+                        try check(NSApp.mainMenu?.performKeyEquivalent(with: space()) == false && !model.paused,
+                            "With Finder frontmost, Lola menu refuses Space and leaves playback running")
+                        try check(!delegate.handleViewShortcut(space(window.windowNumber)) && !model.paused,
+                            "Even a Space event naming the player cannot control background Lola")
+                        try await Task.sleep(for: .milliseconds(300))
+                        try check(!model.paused && model.position >= position, "Finder focus does not pause or stop playback")
+                    }
+                    NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil)
+                    try await waitFor { delegate.isPlayerAppFrontmost && window.isKeyWindow }
+                    window.makeFirstResponder(nil)
+                    window.sendEvent(space(window.windowNumber))
+                    try check(model.paused, "Space still pauses when the player is active")
+                    window.sendEvent(space(window.windowNumber))
+                    try check(!model.paused, "Space still resumes when the player is active")
+                    let field = NSTextField(frame: NSRect(x: 10, y: 10, width: 100, height: 24))
+                    window.contentView?.addSubview(field); window.makeFirstResponder(field)
+                    try check(NSApp.mainMenu?.performKeyEquivalent(with: space(window.windowNumber)) == false && !model.paused,
+                        "Space is reserved for text entry while a field is being edited")
+                    window.makeFirstResponder(nil); field.removeFromSuperview()
+                }
                 let a = model.currentID!
                 try check(model.window?.level == .floating, "Playing MP4 floats the actual window")
                 @MainActor func mediaMouseView(in view: NSView) -> PlayerMouseView? {
@@ -165,6 +248,91 @@ private final class DragProbeView: PlayerMouseView {
                 if let content = model.window?.contentView, let surface = mediaMouseView(in: content) {
                     let point = surface.convert(NSPoint(x: surface.bounds.midX, y: surface.bounds.midY), to: content)
                     try check(content.hitTest(point) === surface, "The visible media area routes mouse events to the player drag/click handler")
+                    if let delegate = NSApp.delegate as? AppDelegate, let window = model.window {
+                        model.show(.playlist)
+                        if window.isKeyWindow == false && NSApp.isActive {
+                            let source = delegate.libraryController!.window!
+                            let typing = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                                windowNumber: source.windowNumber, context: nil, characters: "2", charactersIgnoringModifiers: "2", isARepeat: false, keyCode: 19)!
+                            try check(NSApp.mainMenu?.performKeyEquivalent(with: typing) == false && !model.mediaOnly,
+                                "Typing 2 in the detached Library does not change the player layout")
+                        }
+                        model.sidebar = false
+                    }
+                    (NSApp.delegate as? AppDelegate)?.showAbout()
+                    let location = surface.convert(NSPoint(x: surface.bounds.midX, y: surface.bounds.midY), to: nil)
+                    for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                        let event = NSEvent.mouseEvent(with: type, location: location, modifierFlags: [], timestamp: 0,
+                            windowNumber: model.window!.windowNumber, context: nil, eventNumber: 1, clickCount: 1, pressure: 1)!
+                        if type == .leftMouseDown { surface.mouseDown(with: event) } else { surface.mouseUp(with: event) }
+                    }
+                    try await waitFor { model.paused }
+                    try check(model.playbackClickFeedback.symbol == "pause.fill", "Video click shows a centered pause confirmation state")
+                    try await waitFor { model.playbackClickFeedback.symbol == nil }
+                    try check(model.playbackClickFeedback.opacity == 0, "Video-click confirmation clears after its short fade")
+                    model.togglePlaybackFromVideo()
+                    try check(!model.paused && model.playbackClickFeedback.symbol == "play.fill", "Resuming by video click shows the play confirmation state")
+                    model.togglePlaybackFromVideo()
+                    try check(model.paused && model.playbackClickFeedback.symbol == "pause.fill", "A newer click replaces the previous confirmation")
+                    try await waitFor { model.playbackClickFeedback.symbol == nil }
+                    model.togglePlayback(); model.togglePlayback()
+                    try check(model.playbackClickFeedback.symbol == nil && model.paused, "Other playback commands do not trigger click animation")
+                    NSApp.activate(ignoringOtherApps: true)
+                    model.window?.makeKeyAndOrderFront(nil)
+                    try await waitFor { (NSApp.delegate as? AppDelegate)?.isPlayerAppFrontmost == true && model.window?.isKeyWindow == true }
+                    if model.window?.isKeyWindow == true {
+                        let window = model.window!
+                        @MainActor func number(_ value: String) -> NSEvent {
+                            NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                                windowNumber: window.windowNumber, context: nil, characters: value,
+                                charactersIgnoringModifiers: value, isARepeat: false, keyCode: value == "1" ? 18 : 19)!
+                        }
+                        window.sendEvent(number("2"))
+                        try check(model.mediaOnly, "After clicking the playing video, 2 hides its controls")
+                        window.sendEvent(number("1"))
+                        try check(!model.mediaOnly, "After clicking the playing video, 1 restores its controls")
+                        @MainActor func wheel(_ y: Int32, x: Int32 = 0) -> NSEvent {
+                            NSEvent(cgEvent: CGEvent(scrollWheelEvent2Source: nil, units: .line, wheelCount: 2,
+                                wheel1: y, wheel2: x, wheel3: 0)!)!
+                        }
+                        NSApp.activate(ignoringOtherApps: true)
+                        window.makeKeyAndOrderFront(nil)
+                        try await waitFor { NSApp.isActive && window.isKeyWindow }
+                        let oldVolume = model.volume
+                        model.changeVolume(50)
+                        surface.scrollWheel(with: wheel(1))
+                        try check(model.volume == 55 && model.paused, "Scrolling up over active video raises volume without changing playback")
+                        surface.scrollWheel(with: wheel(-1))
+                        try check(model.volume == 50, "Scrolling down over active video lowers volume")
+                        surface.scrollWheel(with: wheel(1, x: 10))
+                        try check(model.volume == 50, "Horizontal video scrolling leaves volume unchanged")
+                        model.changeVolume(99); surface.scrollWheel(with: wheel(1))
+                        try check(model.volume == 100, "Scroll volume cannot exceed 100 percent")
+                        model.changeVolume(1); surface.scrollWheel(with: wheel(-1))
+                        try check(model.volume == 0, "Scroll volume cannot go below zero")
+                        model.settingsOpen = true
+                        surface.scrollWheel(with: wheel(1))
+                        try check(model.volume == 0, "Open Settings prevents player scroll volume changes")
+                        model.settingsOpen = false
+                        model.setMediaOnly(true)
+                        surface.scrollWheel(with: wheel(1))
+                        try check(model.volume == 5 && model.messageInMediaOnly && model.message?.contains("5%") == true,
+                            "Media-only scrolling changes volume and shows temporary percentage feedback")
+                        model.setMediaOnly(false)
+                        model.show(.playlist)
+                        surface.scrollWheel(with: wheel(1))
+                        try check(model.volume == 5, "Library focus prevents video scroll volume changes")
+                        model.sidebar = false; window.makeKeyAndOrderFront(nil)
+                        let wasMuted = model.muted
+                        if !wasMuted { model.toggleMute() }
+                        surface.scrollWheel(with: wheel(1))
+                        try check(model.volume == 10 && model.muted, "Scroll volume preserves an explicit mute selection")
+                        if !wasMuted { model.toggleMute() }
+                        model.changeVolume(oldVolume)
+
+                    }
+                    try check(!NSApp.windows.contains(where: { $0.title == "About Lola Player" && $0.isVisible }),
+                        "Clicking the actual player pauses playback and does not reveal the cached About window")
                 } else { throw Failure(message: "Missing native player mouse surface") }
 
                 model.setPaused(true)
@@ -198,12 +366,32 @@ private final class DragProbeView: PlayerMouseView {
                 let originalFrame = model.window!.frame
                 let originalTop = model.window!.convertToScreen(model.window!.contentLayoutRect).maxY
                 let originalMinimum = model.window!.minSize
+                let geometryDomain = "local.lolaplayer.geometry-test.\(UUID().uuidString)"
+                let geometryDefaults = UserDefaults(suiteName: geometryDomain)!
+                defer { geometryDefaults.removePersistentDomain(forName: geometryDomain) }
+                model.rememberWindowGeometry = true
+                model.saveWindowGeometry(to: geometryDefaults)
+                try check(geometryDefaults.string(forKey: "playerWindowFrame").map(NSRectFromString) == originalFrame,
+                    "Remember Window writes the current position and dimensions")
+                model.rememberWindowGeometry = false
+                geometryDefaults.removeObject(forKey: "playerWindowFrame")
+                model.saveWindowGeometry(to: geometryDefaults)
+                try check(geometryDefaults.object(forKey: "playerWindowFrame") == nil, "Turning off Remember Window stops geometry storage")
+                model.rememberWindowGeometry = true
                 model.setMediaOnly(true)
                 try check(model.mediaAspectRatio > 0 && abs(model.window!.frame.height
                     - (model.window!.frame.width / model.mediaAspectRatio + MediaWindowLayout.progressHeight)) < 1
                     && abs(model.window!.frame.maxY - originalTop) < 1,
                     "2 fits window height to the video plus progress strip without moving the media top")
                 let fittedSize = model.window!.frame.size
+                model.saveWindowGeometry(to: geometryDefaults)
+                try check(geometryDefaults.string(forKey: "playerWindowFrame").map(NSRectFromString) == originalFrame,
+                    "Media-only mode saves the full-interface size and stable position for the next launch")
+                let libraryWasOpen = model.sidebar
+                model.show(.bookmarks)
+                try check(model.mediaOnly && model.window!.frame.size == fittedSize,
+                    "Opening detached bookmarks preserves media-only mode and player size")
+                model.sidebar = libraryWasOpen
                 model.setMediaOnly(true)
                 try check(model.window!.frame.size == fittedSize, "Repeated 2 does not overwrite the saved interface size")
                 try await Task.sleep(for: .milliseconds(200))
@@ -225,6 +413,23 @@ private final class DragProbeView: PlayerMouseView {
                 }
                 try check(model.window!.frame == originalFrame, "Repeated 1/2 toggles do not make the window drift upward")
                 try check(abs(videoTop() - originalVideoTop) < 1, "Restoring the title bar leaves the actual video surface at its original height")
+                if let delegate = NSApp.delegate as? AppDelegate, let window = model.window, NSApp.isActive {
+                    let wasOpen = model.sidebar
+                    model.sidebar = true
+                    window.makeKeyAndOrderFront(nil)
+                    window.toggleFullScreen(nil)
+                    try await waitFor { window.styleMask.contains(.fullScreen) && !delegate.isFullScreenTransitioning }
+                    try await waitFor { delegate.libraryController?.window?.isVisible == true }
+                    let panel = delegate.libraryController!.window!
+                    let screen = window.screen!.frame
+                    try check(panel.parent === window && abs(panel.frame.maxX - (screen.maxX - 24)) < 2
+                        && abs(panel.frame.midY - screen.midY) < 2,
+                        "Full-screen Library floats at the actual player screen right-center")
+                    window.toggleFullScreen(nil)
+                    try await waitFor { !window.styleMask.contains(.fullScreen) && !delegate.isFullScreenTransitioning }
+                    try check(panel.parent == nil && panel.isVisible, "Leaving full screen restores the independent Library panel")
+                    model.sidebar = wasOpen
+                } else { skipped.append("Native full-screen transition checks require an active app; placement math is covered by unit tests") }
                 model.scrubPosition = 4; model.scrubbing = true
                 model.timelinePreview.request(model.thumbnailRequest(time: 4))
                 try await waitFor { !model.timelinePreview.loading && model.timelinePreview.image != nil }
@@ -328,6 +533,7 @@ private final class DragProbeView: PlayerMouseView {
             catch { failure = error.localizedDescription }
             model.floatEnabled = originalFloat; model.autoplay = originalAutoplay
             model.promptForBookmark = originalPrompt
+            model.rememberWindowGeometry = originalRememberWindow
             model.automaticUpdateChecks = originalUpdates as? Bool ?? true
             model.updateAvailability = originalUpdateAvailability
             UserDefaults.standard.set(originalUpdates, forKey: "automaticUpdateChecks")

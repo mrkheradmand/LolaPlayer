@@ -30,11 +30,23 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     @ObservationIgnored private var fullInterfaceSize: NSSize?
     @ObservationIgnored private var fullInterfaceMinimum: NSSize?
     @ObservationIgnored private var fullInterfaceTitleHeight: CGFloat = 0
-    var sidebar = false
+    var sidebar = false { didSet { libraryWindowChanged?() } }
+    @ObservationIgnored var libraryWindowChanged: (() -> Void)?
+    @ObservationIgnored var revealLibrary: (() -> Void)?
+    @ObservationIgnored private var changingInterface = false
+    var rememberWindowGeometry = UserDefaults.standard.object(forKey: "rememberWindowGeometry") as? Bool ?? true {
+        didSet {
+            guard !CommandLine.arguments.contains("--smoke-test") else { return }
+            UserDefaults.standard.set(rememberWindowGeometry, forKey: "rememberWindowGeometry")
+            if rememberWindowGeometry { saveWindowGeometry() }
+            else { UserDefaults.standard.removeObject(forKey: "playerWindowFrame") }
+        }
+    }
     var tab: LibraryTab = .playlist
     var search = ""
     var error: String?
     var message: String?
+    var messageInMediaOnly = false
     var floatStatusVisible = false
     var tracks: [[String: Any]] = []
     var chapters: [[String: Any]] = []
@@ -90,6 +102,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     @ObservationIgnored var updateCheckTask: Task<Void, Never>?
     weak var window: NSWindow?
     @ObservationIgnored let timelinePreview = TimelinePreview()
+    @ObservationIgnored let playbackClickFeedback = PlaybackClickFeedback()
     @ObservationIgnored private(set) var runtimeLibraryPath: String?
     @ObservationIgnored var engine: LPMpvView?
     @ObservationIgnored var timer: Timer?
@@ -168,7 +181,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func perform(_ operation: () throws -> Void) {
         do { try operation(); revision += 1 } catch { self.error = error.localizedDescription }
     }
-    func notify(_ text: String) { message = text; messageUntil = Date().addingTimeInterval(2.5) }
+    func notify(_ text: String, inMediaOnly: Bool = false) { message = text; messageInMediaOnly = inMediaOnly; messageUntil = Date().addingTimeInterval(2.5) }
     func persistPosition() {
         guard let id = currentID, loaded else { return }
         perform { try library.updatePosition(id, seconds: ended ? 0 : position, duration: duration) }
@@ -244,7 +257,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         guard engine?.engineReady == true else { pendingURLs.append(url); return }
         if !queue.contains(id) { queue.append(id) }
         perform { _ = try library.visit(url) }
-        timelinePreview.clear(); mediaAspectRatio = 0
+        playbackClickFeedback.clear(); timelinePreview.clear(); mediaAspectRatio = 0
         currentID = id; position = 0; duration = 0; loaded = false; ended = false; failed = false
         if repeatMode == .folder { refreshFolder() }
         paused = !autoplay; buffering = true; handledEnd = false; loopA = nil; loopB = nil
@@ -346,6 +359,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             }
         }
         lastFloatingState = active
+        libraryWindowChanged?()
     }
     func setPaused(_ value: Bool) {
         guard loaded else { return }
@@ -359,6 +373,11 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         if value { persistPosition() }
     }
     func togglePlayback() { setPaused(!paused) }
+    func togglePlaybackFromVideo() {
+        let previous = paused
+        togglePlayback()
+        if paused != previous { playbackClickFeedback.show(paused: paused) }
+    }
     func chooseDiscTitle(automatic: Bool = false) {
         guard let record = current, let kind = record.discKind else {
             notify("Open a DVD or Blu-ray folder/image first")
@@ -394,6 +413,13 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func stop() { setPaused(true); seek(0); ended = false; persistPosition(); applyWindowLevel() }
     func changeSpeed(_ value: Double) { speed = min(max(value, 0.25), 4); midi?.rate = speed; engine?.setProperty("speed", value: String(speed)); notify(String(format: "Speed %.2g×", speed)) }
     func changeVolume(_ value: Double) { volume = min(max(value, 0), 100); midi?.volume = muted ? 0 : volume / 100; engine?.setProperty("volume", value: String(volume)) }
+    func adjustVolumeByScroll(_ delta: Double) {
+        guard delta.isFinite, NSApp.isActive, window?.isKeyWindow == true, !settingsOpen,
+              window?.attachedSheet == nil, NSApp.modalWindow == nil else { return }
+        let previous = volume
+        changeVolume(volume + delta)
+        if volume != previous { notify("Volume \(Int(volume.rounded()))%" + (muted ? " · Muted" : ""), inMediaOnly: true) }
+    }
     func toggleMute() { muted.toggle(); midi?.volume = muted ? 0 : volume / 100; engine?.setProperty("mute", value: muted ? "yes" : "no") }
     func stepFrame(_ backwards: Bool = false) { guard midi == nil else { return }; setPaused(true); engine?.command([backwards ? "frame-back-step" : "frame-step"]) }
     func adjacent(_ offset: Int) {
@@ -522,6 +548,8 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         guard let window else { mediaOnly = enabled; return }
         let fullScreen = window.styleMask.contains(.fullScreen)
         let originalFrame = window.frame
+        changingInterface = true
+        defer { changingInterface = false; saveWindowGeometry() }
         if enabled {
             if !fullScreen {
                 fullInterfaceSize = originalFrame.size
@@ -549,7 +577,20 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         else if !fullScreen { restoreInterfaceSize(top: originalFrame.maxY + fullInterfaceTitleHeight) }
     }
 
-    func show(_ page: LibraryTab) { setMediaOnly(false); tab = page; sidebar = true }
+    func show(_ page: LibraryTab) { tab = page; sidebar = true; revealLibrary?() }
+
+    func saveWindowGeometry(to defaults: UserDefaults = .standard) {
+        guard rememberWindowGeometry, !changingInterface, let window,
+              !window.styleMask.contains(.fullScreen),
+              (NSApp.delegate as? AppDelegate)?.isFullScreenTransitioning != true,
+              (!CommandLine.arguments.contains("--smoke-test") || defaults !== UserDefaults.standard) else { return }
+        var frame = window.frame
+        if mediaOnly, let size = fullInterfaceSize {
+            frame.origin.y = frame.maxY + fullInterfaceTitleHeight - size.height
+            frame.size = size
+        }
+        defaults.set(NSStringFromRect(frame), forKey: "playerWindowFrame")
+    }
     func relocate(_ record: MediaRecord) {
         let panel = NSOpenPanel(); panel.message = "Locate \(record.name)"; panel.allowsMultipleSelection = false
         panel.canChooseDirectories = record.discKind != nil
@@ -601,5 +642,5 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         alert.window.initialFirstResponder = input
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }; return input.stringValue
     }
-    func shutdown() { timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
+    func shutdown() { playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
 }

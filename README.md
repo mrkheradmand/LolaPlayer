@@ -33,11 +33,13 @@ Installation instructions are also included in **Install Notes.txt** inside the 
 ## Features
 
 - Named, searchable bookmarks that stay saved when you close the app.
-- Float on Top during playback, full screen, and adjustable window sizes.
+- Float on Top during playback, full screen, and adjustable window sizes. **View → Remember Window Position and Size** restores your window when you reopen the app.
 - Media-only view (**2**) fits the window to the video and progress bar without moving the media upward; **1** restores the previous window size and full interface.
 - Drag the player to move its window; click once to play/pause and twice for full screen.
 - Hover or drag along the progress bar to see the time and a thumbnail for local video files. Cached previews appear immediately.
+- A separate, resizable library window for playlists, history, and bookmarks. It opens beside the player when space allows and floats at the right-center in full screen.
 - Playlists, playback history, shuffle, repeat, and A–B looping. With **Repeat Off**, playback stops at the end of the current file, even if Shuffle is on.
+- Scroll up or down over the active video to raise or lower volume. A mouse wheel changes it in 5% steps; trackpad scrolling offers finer control.
 - Playback speed from **0.25× to 4×**, frame stepping, and chapter navigation.
 - Audio and subtitle selection, external subtitles, and timing adjustments.
 - Mac media keys and Now Playing controls.
@@ -62,7 +64,9 @@ Unencrypted Blu-ray folders and ISO images have limited support, without disc me
 
 Open a file with **⌘O** or drag it onto the player. You can also open folders and playlists.
 
-Click and hold on the media, then move the mouse to drag the window. A click without dragging plays or pauses. Hovering over the progress bar previews a moment without seeking. Dragging the playhead also shows previews and seeks when released. A nearby cached image may appear first, marked with its approximate time, while the precise frame loads.
+The compact bottom controls show the timeline and playback buttons; the filename is in the title bar and Library.
+
+Click and hold on the media, then move the mouse to drag the window. A click without dragging plays or pauses and briefly shows a matching icon in the center, which fades away over one second (shorter with Reduce Motion). Hovering over the progress bar previews a moment without seeking. Dragging the playhead also shows previews and seeks when released. A nearby cached image may appear first, marked with its approximate time, while the precise frame loads.
 
 | Action | Shortcut |
 | --- | --- |
@@ -73,9 +77,11 @@ Click and hold on the media, then move the mouse to drag the window. A click wit
 | Browse all bookmarks | ⇧⌘B |
 | Toggle Float on Top | ⌥⌘T |
 
-Press **1** or **2** while the player is active and you aren’t typing in a text box.
+Space plays/pauses only when Lola’s player window is active; it stays available to Finder for Quick Look when Finder is active. Dedicated Mac media keys still work separately.
 
-Use the **Bookmarks** tab to name, search, and replay saved moments. The **Playlist** and **History** tabs help you return to your media.
+Press **1** or **2** while the player window is active and you aren’t typing in a text box. Click the video to return keyboard control from Library or About.
+
+Use the **Bookmarks** tab to name, search, and replay saved moments. The **Playlist** and **History** tabs help you return to your media. Click anywhere inside a tab button, including its padding, to switch lists. Open the library with **⌘L**, history with **⇧⌘H**, or bookmarks with **⇧⌘B**; the player keeps its current size.
 
 Settings (**⌘,**) groups your preferences into **General**, **Playback**, and **Bookmarks**. Changes apply immediately.
 
@@ -83,7 +89,7 @@ Settings (**⌘,**) groups your preferences into **General**, **Playback**, and 
 
 Lola checks for new releases when it opens and once a day while running. When an update is available, click **View Release** in the notice to open the download page.
 
-To turn automatic checks off, uncheck **Automatically check for updates** in **Lola Player → About Lola Player**. Use **Check for Updates…** in About to check manually at any time. **About Lola Player** also shows **Latest Version** or **New version available!** beside the version. Click the new-version message to open its release page. Updates are downloaded and installed manually.
+To turn automatic checks off, uncheck **Automatically check for updates** in **Lola Player → About Lola Player**. Use **Check for Updates…** in About to check manually at any time. **About Lola Player** also shows **Latest Version** or **New version available!** beside the version. Click the new-version message to open its release page. Updates are downloaded and installed manually. About closes when you return to the player or switch apps; open it again from the app menu.
 
 ## License
 
@@ -93,7 +99,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.6.3, build 25 |
+| Version | 1.9.2, build 33 |
 
 
 See [release notes](versions.md) for what's changed.

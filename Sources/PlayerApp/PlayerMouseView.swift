@@ -1,14 +1,17 @@
 import AppKit
 import SwiftUI
+import PlayerCore
 
 struct PlayerMouseSurface: NSViewRepresentable {
     let click: () -> Void
     let doubleClick: () -> Void
+    let scrollVolume: (Double) -> Void
 
     func makeNSView(context: Context) -> PlayerMouseView { PlayerMouseView() }
     func updateNSView(_ view: PlayerMouseView, context: Context) {
         view.click = click
         view.doubleClick = doubleClick
+        view.scrollVolume = scrollVolume
     }
     static func dismantleNSView(_ view: PlayerMouseView, coordinator: ()) { view.cancelClick() }
 }
@@ -16,6 +19,7 @@ struct PlayerMouseSurface: NSViewRepresentable {
 class PlayerMouseView: NSView {
     var click: (() -> Void)?
     var doubleClick: (() -> Void)?
+    var scrollVolume: ((Double) -> Void)?
     private var down: NSEvent?
     private var dragged = false
     private var pendingClick: DispatchWorkItem?
@@ -23,6 +27,7 @@ class PlayerMouseView: NSView {
     override var acceptsFirstResponder: Bool { true }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     override func mouseDown(with event: NSEvent) {
+        window?.makeKeyAndOrderFront(nil)
         window?.makeFirstResponder(self)
         if event.clickCount > 1 { cancelClick() }
         down = event
@@ -53,6 +58,13 @@ class PlayerMouseView: NSView {
             pendingClick = work
             DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval, execute: work)
         }
+    }
+    override func scrollWheel(with event: NSEvent) {
+        guard NSApp.isActive, window?.isKeyWindow == true else { return }
+        let delta = ScrollVolume.adjustment(x: event.scrollingDeltaX, y: event.scrollingDeltaY,
+            precise: event.hasPreciseScrollingDeltas, inverted: event.isDirectionInvertedFromDevice,
+            momentum: !event.momentumPhase.isEmpty)
+        if delta != 0 { scrollVolume?(delta) }
     }
     override func rightMouseDown(with event: NSEvent) {
         cancelClick()

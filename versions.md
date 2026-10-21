@@ -1,5 +1,117 @@
 # Lola Player versions
 
+## 1.9.2 (build 33) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Extended the centered video-click play/pause icon fade from 180 ms to one second; retained the 120 ms Reduce Motion fade, immediate feedback replacement, and cancellation. Updated both README guides.
+
+### Removed
+
+- None.
+
+## 1.9.1 (build 32) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Restricted Space playback and app menu key equivalents to foreground Lola, with player-window focus and text-entry/modal guards for Space, 1, and 2. Background keyboard events cannot toggle playback even if they name the player window. Dedicated system media-key/Now Playing handling remains unchanged. Updated both README guides and Finder-foreground native regression checks.
+
+### Removed
+
+- None.
+
+## 1.9.0 (build 31) — 2026-10-21
+
+### Added
+
+- Centered play/pause confirmation icon for a successful single click on the media. Appears immediately, then fades out quickly using opacity only; supports normal, media-only, and full-screen playback and Reduced Motion.
+
+### Modified
+
+- New video clicks replace pending feedback cleanly. Keyboard/menu/control playback actions, dragging, and double-clicking do not trigger the click icon. Feedback does not intercept input or affect layout; both README guides and native regression checks updated.
+
+### Removed
+
+- None.
+
+## 1.8.1 (build 30) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Made the full Playlist, History, and Bookmarks tab button areas clickable, including empty padded space around the icon and text. Updated both README guides.
+
+### Removed
+
+- None.
+
+## 1.8.0 (build 29) — 2026-10-21
+
+### Added
+
+- Scroll-wheel volume control over the active player media area: wheel up/down changes volume by 5 percent; precise trackpad scrolling offers finer adjustment. Temporary volume percentage feedback also appears in media-only mode.
+
+### Modified
+
+- Kept volume bounded to 0–100 percent and preserved mute selection. Horizontal and momentum gestures, inactive player windows, and Settings/modal dialogs do not adjust player volume. Library and Settings scrolling retain their existing behavior. The bottom control area now uses only the timeline and transport rows, reclaiming the filename row’s height; both README guides and regression checks updated.
+
+### Removed
+
+- Duplicate filename footer beneath playback controls and its reserved row height; filenames remain in the title bar and Library.
+
+## 1.7.2 (build 28) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Fixed unmodified 1/2 keyboard shortcuts through direct player-window key dispatch and proper fallback for key events without a source window. Clicking the video explicitly returns keyboard focus to the player after auxiliary windows. Preserved View-menu shortcut display and text-entry/modifier safeguards; updated both README guides and native dispatch regression checks.
+
+### Removed
+
+- None.
+
+## 1.7.1 (build 27) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Fixed About unexpectedly reappearing when clicking the player or pausing playback. About now closes when it loses keyboard focus or the app becomes inactive, instead of remaining hidden for automatic restoration. About remains explicitly reopenable from the app menu. Updated both README guides and native regression checks.
+
+### Removed
+
+- None.
+
+## 1.7.0 (build 26) — 2026-10-21
+
+### Added
+
+- Detached, resizable Library window with automatic placement beside the player, free-space fallback across displays, and a right-center floating panel in full screen. Remember Window Position and Size option in View, enabled by default, with safe restoration across display changes.
+
+### Modified
+
+- Redesigned Playlist, History, and Bookmarks with category navigation, grouped file cards, clearer metadata, timestamp badges, and search focus handling across windows. Show Full Interface and Media Only display real unmodified 1 and 2 shortcuts in the View menu shortcut column while protecting text input. Opening Library preserves player dimensions and media-only mode; both README guides and checks updated.
+
+### Removed
+
+- Embedded library sidebar that reduced the player media area, and numeric shortcut hints embedded in View menu titles.
+
 ## 1.6.3 (build 25) — 2026-10-21
 
 ### Added

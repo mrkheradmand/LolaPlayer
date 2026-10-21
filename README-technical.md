@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.6.3, build 25 |
+| Version | 1.9.1, build 32 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -169,13 +169,13 @@ Input details:
 
 ### Media-only view
 
-Press **2** to remove the window title bar, window buttons, library sidebar, and bottom playback controls from the visible layout. Only the media and seekable progress bar remain. The window fits the video’s display aspect ratio plus the 24-point progress strip, removing player-generated letterboxing from the old window shape. The media’s top edge stays at the same screen position when the title bar is hidden or restored, avoiding cumulative upward movement; portrait videos also narrow to fit the screen. Compact resizing preserves that aspect ratio. Press **1** to restore the saved window size, title bar, controls, minimum-size constraints, and previously open library. Full-screen windows keep their full-screen bounds; fitting/restoration applies when leaving full screen. Embedded black bars in a video file are not cropped. The mode starts off each launch and does not affect playback, floating, or bookmarks.
+Press **2** to remove the window title bar, window buttons, and bottom playback controls from the visible layout. Only the media and seekable progress bar remain. The window fits the video’s display aspect ratio plus the 24-point progress strip, removing player-generated letterboxing from the old window shape. The media’s top edge stays at the same screen position when the title bar is hidden or restored, avoiding cumulative upward movement; portrait videos also narrow to fit the screen. Compact resizing preserves that aspect ratio. Press **1** to restore the saved window size, title bar, controls, and minimum-size constraints. The detached Library remains independently available in either mode. Full-screen windows keep their full-screen bounds; fitting/restoration applies when leaving full screen. Embedded black bars in a video file are not cropped. The mode starts off each launch and does not affect playback, floating, or bookmarks.
 
-These unmodified shortcuts are ignored while editing text, in settings, or in a modal dialog. Both views are also available from the **View** menu and the video's right-click menu. Choosing a library tab from the app menu restores the full interface. The macOS system menu bar remains available.
+These unmodified shortcuts are ignored while editing text, in settings, or in a modal dialog. Both views are also available from the **View** menu and the video's right-click menu. Opening Library preserves media-only mode and the player’s dimensions. The View menu shows 1 and 2 in its shortcut column, with no modifier key required; the shortcuts apply only to the main player window. The player handles Space and these view keys directly at window event dispatch, before the video/SwiftUI responder can consume them. Menu key equivalents use the same guarded handler. Events without an explicit source window use the current key window; events from Library or other auxiliary windows cannot change player mode. Clicking the video explicitly restores keyboard focus to the player. The macOS system menu bar remains available.
 
 ### Window dragging and timeline previews
 
-Click and hold the media area, then move the pointer to drag the window, including in media-only view. Movement of at least four points starts a native window drag and suppresses play/pause for that gesture. A short click still toggles playback; a double-click toggles full screen. Single-click actions wait for the system double-click interval so a double-click does not also toggle playback. Dragging does not move a full-screen window, and controls keep their own click actions.
+Click and hold the media area, then move the pointer to drag the window, including in media-only view. Movement of at least four points starts a native window drag and suppresses play/pause for that gesture. A short click still toggles playback; a double-click toggles full screen. A successful video click briefly shows the resulting play/pause symbol in the media’s center. It appears immediately, holds for 100 ms, and fades with an opacity-only one-second strong ease-out curve (120 ms with Reduce Motion). The overlay works in normal, media-only, and full-screen layouts, does not affect layout or hit testing, and is hidden from accessibility to avoid duplicate control announcements. Repeated clicks replace previous feedback and cancel stale cleanup. Dragging, double-clicks, keyboard/menu commands, and transport-button actions do not trigger it. Loading another file and shutting down clear pending feedback. Single-click actions wait for the system double-click interval so a double-click does not also toggle playback. Dragging does not move a full-screen window, and controls keep their own click actions.
 
 Hover over the progress bar or drag its playhead to see the selected timestamp and, for local video files, a thumbnail above the bar. This works in both normal and media-only layouts. Hovering does not seek or pause the main player. During dragging, the preview follows the scrub position independently of hover events; releasing the slider commits the seek. Audio, MIDI, network sources, local HLS/playlist manifests, and disc records show a timestamp without a thumbnail when a finite duration is available. If a local video preview cannot be decoded, the card shows an unavailable icon and the time.
 
@@ -185,11 +185,17 @@ Previews use persistent, silent libmpv decoders on background actors: one serves
 
 Use **File → Open…** for files, folders, or playlists. Opening multiple files adds them to the queue and selects the first according to the autoplay preference. Right-click the video for common playback, bookmark, floating, and opening actions.
 
-| Sidebar tab | Purpose |
+| Library tab | Purpose |
 | --- | --- |
 | Playlist | Current queue, retained between normal launches |
 | History | All file/URL records, ordered by most recent opening |
 | Bookmarks | All bookmarked records, grouped by file |
+
+The **Library** is a separate, resizable native panel with Playlist, History, and Bookmarks navigation, grouped file cards, a highlighted current file, and timestamp badges for bookmarks. Each navigation button’s hit area covers its full width and padded height, including empty space around the icon and label. Open it with the player’s list button, **⌘L**, **⇧⌘H**, or **⇧⌘B**. Closing it leaves playback running and does not close the player.
+
+On opening, Library prefers a 12-point gap to the player’s right. If space is unavailable, it checks the left, below, above, and other connected displays for an unobstructed position. If every available region is occupied by the player, it stays within screen bounds and overlaps at the upper right. You can move and resize it independently. In full screen it becomes an auxiliary floating panel at the right-center of the player’s screen, 24 points from the edge, and hides when the app is inactive. Entering or leaving full screen repositions the open panel. Opening Library does not shrink the player or reveal hidden playback controls.
+
+**View → Remember Window Position and Size** is enabled by default. Normal window moves and resizes save the frame in UserDefaults (`playerWindowFrame`); the choice is saved as `rememberWindowGeometry`. On launch, a saved frame is restored to its connected display and constrained to usable screen bounds. If a display has disappeared, the frame moves onto an available display. Turning the option off clears the saved frame; the next launch uses the default centered window. Media-only mode saves the corresponding full-interface size and position; full-screen and intermediate transition frames do not replace the normal frame.
 
 File-entry context menus offer **Play**, **Add to Playlist**, and, for local files, **Show in Finder** and **Relocate File…**. Each row has a trash button for its current tab:
 
@@ -199,7 +205,7 @@ File-entry context menus offer **Play**, **Add to Playlist**, and, for local fil
 | History | Remove that file from History and Open Recent | **Empty History** clears all visible history |
 | Bookmarks | Remove all bookmarks for that file | **Export…** |
 
-The library search field releases keyboard focus when you click elsewhere in the player, including the video, controls, tabs, rows, and blank space. Its blue focus border disappears without clearing the search or consuming the click. Clicking inside the field or using keyboard navigation can focus it again.
+The library search field releases keyboard focus when you click elsewhere in Library or another app window, including the video, controls, tabs, rows, and blank space. Its blue focus border disappears without clearing the search or consuming the click. Clicking inside the field or using keyboard navigation can focus it again.
 
 Individual bookmarks also have their own trash buttons. Right-click a filename in Bookmarks to choose **Remove All Bookmarks for This File**. Empty actions apply to the entire list, even while a search is active.
 
@@ -208,6 +214,10 @@ These controls never delete media from disk. History removal preserves file reco
 **File → Open Recent** lists up to 30 files and links to full history. **File → Save Playlist…** writes an M3U list of locations; it does not copy media or export bookmarks.
 
 ### Seeking, speed, looping, audio, and subtitles
+
+The normal bottom control area has only the timeline and transport/volume rows. The duplicate filename footer and its row height have been removed, giving that space back to the media area without changing the saved window frame. The filename remains in the title bar, Library, and Now Playing metadata.
+
+Scroll vertically over the media area while the player window is active to adjust volume: physical wheel-up raises it and wheel-down lowers it, independent of the macOS natural-scrolling setting. Wheel events use 5-percentage-point steps; precise trackpad events use finer proportional changes, capped at 5 points per event. Volume stays within 0–100%. A brief percentage overlay appears in both normal and media-only layouts. Explicit mute remains enabled until you unmute. Horizontal-dominant scrolling and trackpad momentum are ignored. The handler lives on the video mouse surface, so Library, Settings, controls, and other windows keep their own scrolling; inactive player windows, Settings sheets, and modal dialogs cannot adjust player volume. Scrolling does not pause, seek, drag, or change keyboard focus.
 
 - Drag the timeline, use the ten-second skip controls, or choose **Playback → Jump to Time…**. Times accept seconds or colon-separated values, such as `90`, `01:30`, or `01:02:30`.
 - The speed button toggles between 1× and 1.5×. Settings provides more speeds; keyboard shortcuts adjust by 0.1×.
@@ -236,6 +246,7 @@ Open **Lola Player → Settings…**, press **⌘,**, or click the playback-sett
 | Play automatically when opening media | On | Yes |
 | Ask for a name when adding a bookmark | Off | Yes |
 | Automatically check for updates (About) | On | Yes |
+| Remember Window Position and Size (View) | On | Yes |
 | Playback speed | 1× | No |
 | Repeat | Off | No |
 | Shuffle | Off | No |
@@ -257,6 +268,8 @@ Start playing media in Lola so macOS can select it as the Now Playing app. Comma
 
 If your function row is configured to use standard F1–F12 keys, use **Fn/Globe + F7/F8/F9** to send the media actions. On a Touch Bar Mac, use the corresponding media controls. macOS decides which media app receives these commands; another player or browser may own them until Lola starts playing again. No global key interception or Accessibility/Input Monitoring permission request is implemented.
 
+Finder regression checks deliver synthetic keyboard events to Lola while Finder is actually frontmost. A separately launched Quick Look preview did not pause playback during investigation. Physical Space was not injected into Finder because event-posting access was unavailable; no new system permission was requested.
+
 The integration is built against Apple's public framework. Verification of actual hardware presses is distinct from compiling/testing the application: the automated test suite does not simulate the MacBook's physical keyboard or certify routing when other media apps are active.
 
 References: [MPRemoteCommandCenter](https://developer.apple.com/documentation/mediaplayer/mpremotecommandcenter), [MPNowPlayingInfoCenter](https://developer.apple.com/documentation/mediaplayer/mpnowplayinginfocenter).
@@ -269,13 +282,13 @@ The checker uses GitHub’s [latest published release API](https://docs.github.c
 
 A newer release displays a persistent in-app notice, including in media-only view. **View Release** opens that release’s page in the browser; the app constructs links for this repository and does not automatically download, replace, or install anything. Dismissing a notice remembers that version in `dismissedUpdateVersion` and suppresses further automatic notices for it; a manual check can show it again. No system-notification permission is required. The notice stays in the player; Settings contains no update controls or notices.
 
-**About Lola Player** displays `Version <version> (<build>)` followed by **Latest Version** after a successful check with no newer release, or a clickable **New version available!** link when a newer release exists. Its status updates live through the shared checker and remains available after the main notice is dismissed. Pending, unchecked, and failed checks have distinct labels and never claim the installed version is latest. **Check for Updates…** in About runs a manual check. The automatic-check checkbox is also in About; there is no separate Check for Updates app-menu command. The custom About panel retains the app icon, credits, and repository link and reads version/build from the running bundle.
+**About Lola Player** displays `Version <version> (<build>)` followed by **Latest Version** after a successful check with no newer release, or a clickable **New version available!** link when a newer release exists. Its status updates live through the shared checker and remains available after the main notice is dismissed. Pending, unchecked, and failed checks have distinct labels and never claim the installed version is latest. **Check for Updates…** in About runs a manual check. The automatic-check checkbox is also in About; there is no separate Check for Updates app-menu command. The custom About panel retains the app icon, credits, and repository link and reads version/build from the running bundle. It closes when it loses key focus or the app becomes inactive, rather than using hide-on-deactivate restoration. Returning to the player or changing playback/window level cannot reopen the dismissed panel; choose About from the app menu to open it again.
 
 Requests use an ephemeral session with no app-provided credentials or cookies. GitHub receives a normal HTTPS request and a User-Agent containing the app version; media files, library records, and bookmarks are not sent. Normal playback does not depend on successful update checks. Smoke-test launches suppress automatic checks.
 
 ## Keyboard shortcuts
 
-Shortcuts apply when focus is not inside a text field or modal dialog. Help → Keyboard Shortcuts offers a shorter reference.
+Space, 1, and 2 require Lola to be the active, frontmost application and its player window to have key focus, with no text editing, Settings sheet, or modal dialog. The menu rejects keyboard equivalents while another app is frontmost, including source-less events or events incorrectly naming the player. Finder keeps Space for Quick Look. Other shortcuts apply when focus is not inside a text field or modal dialog. Dedicated system media commands remain independent and can still control background playback when macOS routes them to Lola. Help → Keyboard Shortcuts offers a shorter reference.
 
 | Action | Shortcut |
 | --- | --- |
@@ -336,7 +349,7 @@ The original installation check recovered **three files and six bookmarks**. Tha
 | Data | Location |
 | --- | --- |
 | Records, history, positions, bookmarks | `~/Library/Application Support/LumenPlayer/library.json` |
-| Preferences, playlist UUIDs, and dismissed-update version | UserDefaults domain `local.lolaplayer.app` |
+| Preferences, player window frame, playlist UUIDs, and dismissed-update version | UserDefaults domain `local.lolaplayer.app` |
 | Window frame | AppKit window-frame autosave |
 | Build and test output | `.build/` |
 | Built application | `dist/Lola Player.app` |
@@ -450,11 +463,11 @@ python3 scripts/test-format-playback.py  # Requires a built app and developer FF
 
 The test script uses `.build/tests` and explicitly loads the toolchain's Swift Testing macro plugin to address the discovery issue encountered with the development toolchain.
 
-Latest app validation (**1.6.3, build 25**, October 21, 2026) passed **38 tests in eight Swift suites**, **13 Python tests**, and **52 real-app smoke checks** using mpv 0.41.0 / FFmpeg 9.0.1. Update-check tests cover numeric version comparison, stable-release filtering, malformed data, HTTP errors, and a simulated GitHub request. The public release endpoint was also reached successfully during 1.4.0 development. The app smoke run verified About status and panel creation, mouse click/drag/double-click dispatch, in-memory MP4/MKV thumbnail timestamps and playback isolation, immediate cached previews, scrubbing previews without hover, media-only window fitting, unchanged video-surface screen position, twelve repeated view-mode toggles without window drift, restoration of the prior size/minimum, layout of all three Settings pages, About-only manual update access, title-bar removal and restoration, preserved library visibility, repeat modes and queued playback, saved update preferences, notification dismissal, suppression of automatic networking in smoke mode, MP4/MKV playback, floating behavior, bookmarks, persistence, and recursive-playlist rejection. macOS kept the test app inactive, so foreground keyboard dispatch (including modifier and text-editing safeguards) was recorded as unavailable; media-only actions were exercised directly. That run used the development executable with the bundled playback libraries. Optional HLS and MIDI fixtures were not included in that run.
+Latest app validation (**1.9.1, build 32**, October 21, 2026) passed **46 tests in ten Swift suites**, **13 Python tests**, and **100 real-app smoke checks** using mpv 0.41.0 / FFmpeg 9.0.1. Update-check tests cover numeric version comparison, stable-release filtering, malformed data, HTTP errors, and a simulated GitHub request. The public release endpoint was also reached successfully during 1.4.0 development. The app smoke run verified rejection of Space through menu/player dispatch with Finder frontmost, uninterrupted background playback, active-player Space pause/resume, Space text-entry protection, video-click pause/play confirmation, timed fade cleanup, replacement of pending feedback, no click animation from other playback commands, About status and panel creation, dismissal on key-focus loss/app deactivation, explicit reopening, actual player-click pausing without revealing cached About, mouse click/drag/double-click dispatch, in-memory MP4/MKV thumbnail timestamps and playback isolation, immediate cached previews, scrubbing previews without hover, media-only window fitting, unchanged video-surface screen position, twelve repeated view-mode toggles without window drift, restoration of the prior size/minimum, layout of all three Settings pages, About-only manual update access, title-bar removal and restoration, detached Library lifecycle and tab layouts without player resizing, View shortcut-column values, geometry preference and storage (including media-only normalization), preserved library visibility, repeat modes and queued playback, saved update preferences, notification dismissal, suppression of automatic networking in smoke mode, MP4/MKV playback, floating behavior, bookmarks, persistence, and recursive-playlist rejection. Direct player-window and application-level 1/2 key dispatch, source-less menu key events, keyboard focus after clicking playing video, auxiliary-window isolation, modifier/text-editing safeguards, and real menu key-equivalent protection for number entry passed in this run. New checks verified wheel-up/down volume changes on the actual video surface, 0–100% bounds, horizontal-scroll filtering, Settings/Library focus protection, mute preservation, and media-only percentage feedback. Native full-screen right-center Library placement and restoration to an independent panel also passed; no checks were skipped. Full-screen placement math remains covered by unit tests. Unit tests also cover multi-monitor placement, disconnected displays, saved-frame restoration, and full-screen placement math. That run used the development executable with the bundled playback libraries. Optional HLS and MIDI fixtures were not included in that run.
 
 Version **1.6.1 (build 23)** added licensing and About text; license inclusion and app signing are also checked by the packaging workflow.
 
-Historical validation for **1.1.0** additionally recorded **24 decoder/container/HLS checks** and a different smoke-test set. Those broader format checks were not rerun for 1.6.3.
+Historical validation for **1.1.0** additionally recorded **24 decoder/container/HLS checks** and a different smoke-test set. Those broader format checks were not rerun for 1.9.1.
 
 Automated coverage includes:
 
@@ -491,7 +504,7 @@ Provide an isolated directory containing `first.mp4` and `second.mkv`, both long
   --smoke-test /absolute/path/to/fixtures
 ```
 
-The runner exercises all three Settings page layouts, repeated view-mode changes without media/window drift, the About panel and live update-result labels, click/drag/double-click routing, MP4/MKV thumbnail extraction and playback isolation, hover cards in both layouts, end-of-file behavior for all four repeat modes, including Repeat Off with Shuffle and additional queued files, update-check preferences and dismissal without automatic networking, media-only shortcuts and window chrome, typing safeguards, decoding, actual window levels, pause/resume, file switching, bookmarks, persistence, and end-of-file behavior. It creates an isolated library subdirectory beside the fixtures, writes `smoke-result.json`, and exits. It temporarily changes float/autoplay/bookmark-prompt preferences and restores them on normal completion; its playlist is not persisted.
+The runner exercises the detached Library lifecycle and tab layouts, full-screen panel placement, window-geometry storage, actual View menu shortcuts, all three Settings page layouts, repeated view-mode changes without media/window drift, the About panel and live update-result labels, click/drag/double-click routing, MP4/MKV thumbnail extraction and playback isolation, hover cards in both layouts, end-of-file behavior for all four repeat modes, including Repeat Off with Shuffle and additional queued files, update-check preferences and dismissal without automatic networking, media-only shortcuts and window chrome, typing safeguards, decoding, actual window levels, pause/resume, file switching, bookmarks, persistence, and end-of-file behavior. It creates an isolated library subdirectory beside the fixtures, writes `smoke-result.json`, and exits. It temporarily changes float/autoplay/bookmark-prompt preferences and restores them on normal completion; its playlist is not persisted.
 
 Launching the smoke runner requires a macOS graphical session and permission to launch the app. A successful automated app smoke run is recorded above; it does not replace visual inspection or certify every media format. `Research/test-media/` contains playback fixtures, not files required to use the app.
 
@@ -505,7 +518,10 @@ Sources/
     AboutWindow.swift            About panel with live release status and link
     PlayerModel.swift            Playback state, settings, persistence coordination
     PlayerModel+Updates.swift    Update scheduling, preferences, and notification state
-    PlayerView.swift             Video, transport controls, library, settings UI
+    PlayerView.swift             Video and transport controls
+    PlaybackClickFeedback.swift  Centered click-confirmation overlay and cancellable fade
+    LibraryView.swift            Detached Library navigation, cards, search, and bookmark actions
+    LibraryWindow.swift          Native panel lifecycle and full-screen placement
     SettingsView.swift           Sidebar settings pages and grouped preference controls
     PlayerMouseView.swift        Click, double-click, and native window dragging
     TimelinePreview.swift        Hover card, thumbnail scheduling, and memory cache
@@ -518,7 +534,9 @@ Sources/
     MediaInput.swift             HLS/playlist parsing and disc-folder recognition
     UpdateChecker.swift          GitHub release requests and numeric version comparison
     UpdateAvailability.swift     Check-result states and About status labels
+    ScrollVolume.swift           Wheel/trackpad normalization and gesture filtering
     TimelinePosition.swift       Hover/scrub mapping and progressive warmup positions
+    WindowPlacement.swift        Library placement and safe saved-window restoration
     MediaWindowLayout.swift      Aspect-fitted compact-window geometry
   CMpv/
     CMpv.m                       Objective-C libmpv bridge and OpenGL renderer
@@ -568,7 +586,7 @@ PRO features intentionally omitted:
 
 Other differences from Elmedia:
 
-- A new interface/library sidebar rather than an exact visual reconstruction.
+- A new interface with a detached Library window rather than an exact visual reconstruction.
 - No Flash/SWF, interactive DVD/Blu-ray menus, or disc decryption. Disc readers must be compiled into the runtime; recognized folders/images alone do not guarantee playback.
 - No OpenSubtitles account/search integration or arbitrary webpage video extraction.
 - No detached controls/playlists, controls auto-hide mode, or full Elmedia preference system.
@@ -630,4 +648,4 @@ Use only the appropriate bump command for a given change set. It updates `Resour
 
 Packaging stages and verifies the entire app before replacing `dist/Lola Player.app`; previous bundles are preserved under `.build/app-previous.*`. No user data is changed by packaging. `LUMEN_ALLOW_LEGACY_RUNTIME=1 scripts/build-app.sh` is an explicit development-only fallback for testing the UI and existing formats when a newer compatible runtime is unavailable; it records the actual legacy runtime and does not enable missing decoders. No encoder, converter or transcoding interface has been added.
 
-MIDI uses Apple's system synthesizer through AVFAudio/AudioToolbox, not FluidSynth. It does not bundle proprietary sound banks or promise an entirely open-source synthesis stack. MIDI supports transport, tempo, volume/mute, A–B looping, bookmarks, repeat and Now Playing; frame stepping and video/subtitle adjustments do not apply. If the system instrument component is unavailable, opening MIDI reports an error rather than crashing. Earlier MIDI-specific smoke checks passed pause/resume, seek, bookmark and floating checks; the latest 1.6.3 smoke run did not include a MIDI fixture. A separate restricted-shell run also verified safe handling when the system component is unavailable. No physical-listening or exhaustive instrument test is claimed.
+MIDI uses Apple's system synthesizer through AVFAudio/AudioToolbox, not FluidSynth. It does not bundle proprietary sound banks or promise an entirely open-source synthesis stack. MIDI supports transport, tempo, volume/mute, A–B looping, bookmarks, repeat and Now Playing; frame stepping and video/subtitle adjustments do not apply. If the system instrument component is unavailable, opening MIDI reports an error rather than crashing. Earlier MIDI-specific smoke checks passed pause/resume, seek, bookmark and floating checks; the latest 1.9.1 smoke run did not include a MIDI fixture. A separate restricted-shell run also verified safe handling when the system component is unavailable. No physical-listening or exhaustive instrument test is claimed.

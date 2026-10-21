@@ -2,22 +2,29 @@ import AppKit
 import SwiftUI
 import PlayerCore
 
-final class AboutWindowController: NSWindowController {
+final class AboutWindowController: NSWindowController, NSWindowDelegate {
     init(model: PlayerModel) {
         let window = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 560, height: 480),
             styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.isFloatingPanel = true
         window.level = .floating
-        window.hidesOnDeactivate = true
+        // Close on focus/app changes instead of leaving an automatically restored hidden panel.
+        window.hidesOnDeactivate = false
         window.title = "About Lola Player"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
         super.init(window: window)
+        window.delegate = self
+        NotificationCenter.default.addObserver(self, selector: #selector(applicationDidResignActive(_:)),
+            name: NSApplication.didResignActiveNotification, object: NSApp)
         window.contentView = NSHostingView(rootView: AboutView(model: model))
         window.center()
     }
     required init?(coder: NSCoder) { nil }
+    func windowDidResignKey(_ notification: Notification) { close() }
+    @objc func applicationDidResignActive(_ notification: Notification) { close() }
+    deinit { NotificationCenter.default.removeObserver(self) }
 }
 
 struct AboutView: View {
