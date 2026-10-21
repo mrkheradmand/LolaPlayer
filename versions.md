@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.2.4 (build 12) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Shortened the README for everyday users, keeping installation and macOS security-alert instructions, app features, supported file types, and essential controls.
+
+### Removed
+
+- Removed developer build, testing, release automation, and internal implementation details from the README.
+
 ## 1.2.3 (build 11) — 2026-10-20
 
 ### Added
