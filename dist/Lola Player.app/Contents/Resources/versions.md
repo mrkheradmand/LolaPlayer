@@ -1,5 +1,33 @@
 # Lola Player versions
 
+## 1.9.5 (build 36) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Aligned preference switches to the right edge of every card across General, Playback, and Bookmarks settings, retaining accessible labels and descriptions.
+
+### Removed
+
+- None.
+
+## 1.9.4 (build 35) — 2026-10-21
+
+### Added
+
+- Focused development check commands, filtered Swift test support, and a content-verified playback runtime cache with an explicit bypass.
+
+### Modified
+
+- Added concise Codex workflow instructions, file map, fresh-session handoff, and project-local low-reasoning/Standard preferences with smaller tool and skill context. Version synchronization now updates and validates both README files. Final app signing and strict verification remain required.
+
+### Removed
+
+- None.
+
 ## 1.9.3 (build 34) — 2026-10-21
 
 ### Added

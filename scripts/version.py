@@ -24,8 +24,9 @@ def main():
         heading = re.search(r'^## ([0-9.]+) \(build (\d+)\)', notes, re.M)
         if not heading or heading.groups() != (version, build):
             raise SystemExit('Version metadata and newest versions.md entry disagree')
-        if f'| Version | {version}, build {build} |' not in (ROOT/'README.md').read_text():
-            raise SystemExit('README version is out of date')
+        for filename in ['README.md', 'README-technical.md']:
+            if f'| Version | {version}, build {build} |' not in (ROOT/filename).read_text():
+                raise SystemExit(f'{filename} version is out of date')
         print(f'Lola Player {version} (build {build})')
         return
     if not any([args.added, args.modified, args.removed]):
@@ -43,8 +44,9 @@ def main():
     for key, value in [('CFBundleShortVersionString', version), ('CFBundleVersion', build)]:
         text = re.sub(r'(<key>'+key+r'</key>\s*<string>)[^<]+', lambda m: m[1]+value, text)
     INFO.write_text(text)
-    readme = ROOT/'README.md'
-    readme.write_text(re.sub(r'\| Version \|[^\n]+', f'| Version | {version}, build {build} |', readme.read_text()))
+    for filename in ['README.md', 'README-technical.md']:
+        readme = ROOT/filename
+        readme.write_text(re.sub(r'\| Version \|[^\n]+', f'| Version | {version}, build {build} |', readme.read_text()))
     entry = f'## {version} (build {build}) — {datetime.now().astimezone():%Y-%m-%d}\n\n'
     for category in ['Added', 'Modified', 'Removed']:
         entry += f'### {category}\n\n'

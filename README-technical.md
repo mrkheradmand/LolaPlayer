@@ -13,7 +13,7 @@ xattr -dr com.apple.quarantine "/Applications/Lola Player.app"
 These instructions are also included in **Install Notes.txt** inside the DMG.
 
 <p align="center">
-  <img src="app.png" alt="Lola Player welcome screen">
+  <img src="Resources/app.png" alt="Lola Player welcome screen">
 </p>
 
 *Screenshot from the app Lola Player.*
@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.9.1, build 32 |
+| Version | 1.9.5, build 36 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -37,37 +37,39 @@ This is an independent implementation of the core free-player workflow. It is **
 
 ## Contents
 
-- [Getting started](#getting-started)
-- [Features](#features)
-  - [Named video bookmarks: save, search, and replay exact moments](#named-video-bookmarks-save-search-and-replay-exact-moments)
-  - [Playback-aware Float on Top](#playback-aware-float-on-top)
-  - [Other playback controls](#other-playback-controls)
-- [Supported media](#supported-media)
-- [Using the player](#using-the-player)
-  - [Media-only view](#media-only-view)
-  - [Window dragging and timeline previews](#window-dragging-and-timeline-previews)
-  - [Opening media and the library](#opening-media-and-the-library)
-  - [Seeking, speed, looping, audio, and subtitles](#seeking-speed-looping-audio-and-subtitles)
-  - [Settings and defaults](#settings-and-defaults)
-  - [MacBook media buttons and Now Playing](#macbook-media-buttons-and-now-playing)
-- [Updates](#updates)
-- [Keyboard shortcuts](#keyboard-shortcuts)
-- [Importing from Elmedia](#importing-from-elmedia)
-- [Data, preferences, and backups](#data-preferences-and-backups)
-  - [Export and restore](#export-and-restore)
-  - [Local and network behavior](#local-and-network-behavior)
-- [Building from source](#building-from-source)
-  - [Requirements](#requirements)
-  - [Build the bundle](#build-the-bundle)
-  - [Build details and environment variables](#build-details-and-environment-variables)
-- [Testing and verification](#testing-and-verification)
-  - [Optional real-engine smoke test](#optional-real-engine-smoke-test)
-- [Project structure](#project-structure)
-- [Troubleshooting](#troubleshooting)
-- [Limitations and excluded features](#limitations-and-excluded-features)
-- [Dependencies and provenance](#dependencies-and-provenance)
-- [Automatic GitHub releases](#automatic-github-releases)
-- [Versions and release notes](#versions-and-release-notes)
+- [Lola Player](#lola-player)
+  - [Contents](#contents)
+  - [Getting started](#getting-started)
+  - [Features](#features)
+    - [Named video bookmarks: save, search, and replay exact moments](#named-video-bookmarks-save-search-and-replay-exact-moments)
+    - [Playback-aware Float on Top](#playback-aware-float-on-top)
+    - [Other playback controls](#other-playback-controls)
+  - [Supported media](#supported-media)
+  - [Using the player](#using-the-player)
+    - [Media-only view](#media-only-view)
+    - [Window dragging and timeline previews](#window-dragging-and-timeline-previews)
+    - [Opening media and the library](#opening-media-and-the-library)
+    - [Seeking, speed, looping, audio, and subtitles](#seeking-speed-looping-audio-and-subtitles)
+    - [Settings and defaults](#settings-and-defaults)
+    - [MacBook media buttons and Now Playing](#macbook-media-buttons-and-now-playing)
+  - [Updates](#updates)
+  - [Keyboard shortcuts](#keyboard-shortcuts)
+  - [Importing from Elmedia](#importing-from-elmedia)
+  - [Data, preferences, and backups](#data-preferences-and-backups)
+    - [Export and restore](#export-and-restore)
+    - [Local and network behavior](#local-and-network-behavior)
+  - [Building from source](#building-from-source)
+    - [Requirements](#requirements)
+    - [Build the bundle](#build-the-bundle)
+    - [Build details and environment variables](#build-details-and-environment-variables)
+  - [Testing and verification](#testing-and-verification)
+    - [Optional real-engine smoke test](#optional-real-engine-smoke-test)
+  - [Project structure](#project-structure)
+  - [Troubleshooting](#troubleshooting)
+  - [Limitations and excluded features](#limitations-and-excluded-features)
+  - [Dependencies and provenance](#dependencies-and-provenance)
+  - [Automatic GitHub releases](#automatic-github-releases)
+  - [Versions and release notes](#versions-and-release-notes)
 
 ## Getting started
 
@@ -237,7 +239,7 @@ The engine attempts to find matching external subtitles automatically. Opening s
 
 ### Settings and defaults
 
-Open **Lola Player → Settings…**, press **⌘,**, or click the playback-settings button. The settings sheet uses a sidebar with **General**, **Playback**, and **Bookmarks** pages, grouped cards, descriptive switch rows, and a scrollable content area. Changes apply immediately; use **Done**, the close button, or Escape to dismiss it. General contains window and opening-media preferences; Playback contains speed, repeat, shuffle, synchronization, and A–B looping; Bookmarks contains naming and library actions. Update controls live in About.
+Open **Lola Player → Settings…**, press **⌘,**, or click the playback-settings button. The settings sheet uses a sidebar with **General**, **Playback**, and **Bookmarks** pages, grouped cards, descriptive switch rows with consistently right-aligned switches on every page, and a scrollable content area. Changes apply immediately; use **Done**, the close button, or Escape to dismiss it. General contains window and opening-media preferences; Playback contains speed, repeat, shuffle, synchronization, and A–B looping; Bookmarks contains naming and library actions. Update controls live in About.
 
 | Setting | Initial default | Saved between launches? |
 | --- | --- | --- |
@@ -395,6 +397,8 @@ The application code has no account, telemetry, cloud-sync, or purchasing integr
 No third-party Swift packages are downloaded. SQLite and UI/graphics frameworks come from the SDK. The documented system requirement is macOS 27 or later. The package deployment target and bundle minimum remain macOS 14, which does not establish tested support on older systems; building requires a compatible Swift toolchain and macOS SDK. The existing bundle was checked on the development Mac, not across every OS version.
 
 ### Build the bundle
+
+For focused development, use `zsh scripts/check.sh metadata`, `core --filter Suite`, or `ui`. Use `release` for full CI checks and one app package. Runtime packaging reuses a content-verified cache when its source libraries, build helpers, and toolchain match; the final app is always signed and verified. Set `LOLA_RUNTIME_CACHE=0` for a fresh runtime inspection.
 
 From the project root:
 

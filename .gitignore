@@ -11,3 +11,5 @@ dist/releases/
 .vscode/
 DeveloperDocs/
 dist/releases/old/
+/.codex/
+docs/

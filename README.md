@@ -9,7 +9,7 @@ A Player with **named bookmarks at any video timestamp** and **Float on Top that
 **[Download Lola Player for Mac](https://github.com/mrkheradmand/LolaPlayer/releases/latest)** · Apple Silicon · macOS 27 or later
 
 <p align="center">
-  <img src="app.png" alt="Lola Player welcome screen" width="950">
+  <img src="Resources/app.png" alt="Lola Player welcome screen" width="950">
 </p>
 
 ## Install
@@ -27,7 +27,7 @@ xattr -dr com.apple.quarantine "/Applications/Lola Player.app"
 Installation instructions are also included in **Install Notes.txt** inside the disk image. No extra playback software is needed.
 
 <p align="center">
-  <img src="app-bookmark.png" alt="Lola Player bookmark list" width="950">
+  <img src="Resources/app-bookmark.png" alt="Lola Player bookmark list" width="950">
 </p>
 
 The app uses a flat mint-green play icon on a charcoal tile.
@@ -85,7 +85,7 @@ Press **1** or **2** while the player window is active and you aren’t typing i
 
 Use the **Bookmarks** tab to name, search, and replay saved moments. The **Playlist** and **History** tabs help you return to your media. Click anywhere inside a tab button, including its padding, to switch lists. Open the library with **⌘L**, history with **⇧⌘H**, or bookmarks with **⇧⌘B**; the player keeps its current size.
 
-Settings (**⌘,**) groups your preferences into **General**, **Playback**, and **Bookmarks**. Changes apply immediately.
+Settings (**⌘,**) groups your preferences into **General**, **Playback**, and **Bookmarks**. Switches align along the right edge of each settings card. Changes apply immediately.
 
 ## Updates
 
@@ -101,7 +101,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.9.3, build 34 |
+| Version | 1.9.5, build 36 |
 
 
 See [release notes](versions.md) for what's changed.

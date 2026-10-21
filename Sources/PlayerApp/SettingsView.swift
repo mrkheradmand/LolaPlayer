@@ -162,12 +162,16 @@ struct SettingsView: View {
         }
     }
     private func preference(_ title: String, detail: String, value: Binding<Bool>) -> some View {
-        Toggle(isOn: value) {
+        HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.system(size: 13, weight: .medium))
                 Text(detail).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-        }.toggleStyle(.switch).controlSize(.small)
+            Spacer(minLength: 0)
+            Toggle(title, isOn: value)
+                .labelsHidden().toggleStyle(.switch).controlSize(.small)
+                .accessibilityHint(detail)
+        }.frame(maxWidth: .infinity, alignment: .leading)
     }
     private func setting<Control: View>(_ title: String, @ViewBuilder control: () -> Control) -> some View {
         HStack {
