@@ -34,6 +34,8 @@ The app uses a flat mint-green play icon on a charcoal tile.
 
 ## Features
 
+The menu and player window open before your library and playback engine finish loading.
+
 - Named, searchable bookmarks that stay saved when you close the app.
 - Float on Top during playback, full screen, and adjustable window sizes. **View → Remember Window Position and Size** restores your window when you reopen the app.
 - Media-only view (**2**) fits the window to the video and progress bar without moving the media upward; **1** restores the previous window size and full interface.
@@ -101,7 +103,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.9.5, build 36 |
+| Version | 1.9.6, build 37 |
 
 
 See [release notes](versions.md) for what's changed.

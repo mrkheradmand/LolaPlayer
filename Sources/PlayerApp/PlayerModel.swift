@@ -131,38 +131,69 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     var historyRecords: [MediaRecord] { _ = revision; return library.history }
     var floating: Bool { PlaybackPolicy.shouldFloat(enabled: floatEnabled, loaded: loaded, paused: paused, buffering: buffering, ended: ended, failed: failed) }
 
+    private(set) var libraryReady = false
+    @ObservationIgnored private var shuttingDown = false
+    @ObservationIgnored private var importing = false
+
     init() {
         let smokeIndex = CommandLine.arguments.firstIndex(of: "--smoke-test")
         let smokeRoot = smokeIndex.flatMap { index in CommandLine.arguments.count > index + 1 ? URL(fileURLWithPath: CommandLine.arguments[index + 1]).appendingPathComponent("library-\(UUID().uuidString)") : nil }
         let root = smokeRoot ?? ProcessInfo.processInfo.environment["LUMEN_DATA_DIR"].map { URL(fileURLWithPath: $0) }
             ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LumenPlayer")
-        let url = root.appendingPathComponent("library.json")
-        do { library = try MediaLibrary(fileURL: url) }
-        catch {
-            // Keep the original intact so a malformed database can be recovered.
-            library = try! MediaLibrary(fileURL: root.appendingPathComponent("library-recovery-\(UUID().uuidString).json"))
-            self.error = "Could not read your library. The original file is preserved at \(url.path). \(error.localizedDescription)"
-        }
-        if smokeRoot == nil, library.records.isEmpty {
-            importElmedia()
-        }
-        if smokeRoot == nil {
-            let stored = UserDefaults.standard.stringArray(forKey: "playlist")
-            queue = stored.map { $0.compactMap(UUID.init(uuidString:)).filter { library.record($0) != nil } } ?? library.recent.reversed().map(\.id)
-        }
+        library = MediaLibrary(fileURL: root.appendingPathComponent("library.json"), records: [])
     }
 
-    func importElmedia() {
+    func loadLibrary() async {
+        let url = library.fileURL
+        let result = await Task.detached {
+            Result { try MediaLibrary(fileURL: url).records }
+        }.value
+        guard !shuttingDown else { return }
+        switch result {
+        case .success(let records): library = MediaLibrary(fileURL: url, records: records)
+        case .failure(let problem):
+            library = MediaLibrary(fileURL: url.deletingLastPathComponent().appendingPathComponent("library-recovery-\(UUID().uuidString).json"), records: [])
+            error = "Could not read your library. The original file is preserved at \(url.path). \(problem.localizedDescription)"
+        }
+        library.enableBackgroundSaving()
+        if !CommandLine.arguments.contains("--smoke-test") {
+            let known = Set(library.records.map(\.id))
+            let stored = UserDefaults.standard.stringArray(forKey: "playlist")
+            queue = stored.map { $0.compactMap(UUID.init(uuidString:)).filter { known.contains($0) } } ?? library.recent.reversed().map(\.id)
+        }
+        libraryReady = true
+    }
+
+    func importElmedia(automatic: Bool = false) {
+        guard libraryReady, !importing, !shuttingDown else { return }
+        if automatic && (!library.records.isEmpty || UserDefaults.standard.bool(forKey: "didAttemptElmediaImport")) { return }
+        importing = true
         let source = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/Elmedia Player")
-        guard FileManager.default.fileExists(atPath: source.path) else { return }
-        perform {
-            let result = try library.importElmedia(from: source)
-            if result.files > 0 || result.bookmarks > 0 { notify("Imported \(result.files) Elmedia files and \(result.bookmarks) bookmarks"); sidebar = true; tab = .bookmarks }
+        // Import into an isolated snapshot, then merge on the UI actor so user edits survive.
+        Task {
+            let result = await Task.detached {
+                Result { () throws -> [MediaRecord] in
+                    let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("lola-import-\(UUID().uuidString).json")
+                    defer { try? FileManager.default.removeItem(at: temporary) }
+                    let imported = MediaLibrary(fileURL: temporary, records: [])
+                    if FileManager.default.fileExists(atPath: source.path) { _ = try imported.importElmedia(from: source) }
+                    return imported.records
+                }
+            }.value
+            importing = false
+            guard !shuttingDown else { return }
+            switch result {
+            case .success(let records):
+                perform { try library.mergeImported(records) }
+                if automatic { UserDefaults.standard.set(true, forKey: "didAttemptElmediaImport") }
+                if !records.isEmpty { notify("Imported Elmedia library"); show(.bookmarks) }
+            case .failure(let problem): error = problem.localizedDescription
+            }
         }
     }
 
     func attach(_ view: LPMpvView) {
-        guard engine == nil else { return }
+        guard engine == nil, !shuttingDown else { return }
         engine = view
         let bundled = Bundle.main.bundleURL.appendingPathComponent("Contents/Frameworks/libmpv.2.dylib").path
         let candidates = [ProcessInfo.processInfo.environment["LUMEN_MPV_LIBRARY"], bundled,
@@ -187,7 +218,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         perform { try library.updatePosition(id, seconds: ended ? 0 : position, duration: duration) }
     }
     func open(_ urls: [URL]) {
-        guard engine?.engineReady == true else { pendingURLs += urls; return }
+        guard libraryReady, engine?.engineReady == true else { pendingURLs += urls; return }
         var ids: [UUID] = []
         for url in urls {
             if url.pathExtension.lowercased() == "m3u" || url.pathExtension.lowercased() == "m3u8", url.isFileURL {
@@ -299,6 +330,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
 
     func tick() {
         guard let engine, engine.engineReady else { return }
+        if let problem = library.takeSaveError() { error = "Could not save library: \(problem)" }
         ticks += 1
         if let midi {
             position = midi.position
@@ -642,5 +674,5 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         alert.window.initialFirstResponder = input
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }; return input.stringValue
     }
-    func shutdown() { playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
+    func shutdown() { shuttingDown = true; playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); do { try library.flush() } catch { NSLog("Library save failed: %@", error.localizedDescription) }; midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
 }

@@ -135,3 +135,47 @@ struct LibraryTests {
         #expect(!PlaybackPolicy.shouldFloat(enabled: true, loaded: reason != 0, paused: false, buffering: reason == 1, ended: reason == 2, failed: reason == 3))
     }
 }
+
+struct LibraryPersistenceTests {
+    @Test func backgroundWritesFlushLatestSnapshotAndPreserveBookmarks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = MediaLibrary(fileURL: root.appendingPathComponent("library.json"), records: [])
+        library.enableBackgroundSaving()
+        let id = try library.visit(root.appendingPathComponent("movie.mp4"))
+        try library.addBookmark(id, seconds: 12, title: "Keep")
+        for second in 1...50 { try library.updatePosition(id, seconds: Double(second), duration: 100) }
+        try library.flush()
+        let reopened = try MediaLibrary(fileURL: library.fileURL)
+        #expect(reopened.record(id)?.position == 50)
+        #expect(reopened.record(id)?.bookmarks.first?.title == "Keep")
+    }
+    @Test func backgroundWriteFailureCanBeRetriedWithoutLosingSnapshot() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data().write(to: root) // Parent is a file, so the first write must fail.
+        let library = MediaLibrary(fileURL: root.appendingPathComponent("library.json"), records: [])
+        library.enableBackgroundSaving()
+        let id = try library.visit(URL(string: "https://example.com/movie.mp4")!)
+        #expect(throws: (any Error).self) { try library.flush() }
+        #expect(library.takeSaveError() != nil)
+        try FileManager.default.removeItem(at: root)
+        try library.flush()
+        #expect(try MediaLibrary(fileURL: library.fileURL).record(id) != nil)
+    }
+    @Test func importMergePreservesEditsAndDoesNotDuplicateBookmarks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let library = MediaLibrary(fileURL: root.appendingPathComponent("library.json"), records: [])
+        let url = URL(string: "https://example.com/movie.mp4")!
+        let id = try library.visit(url)
+        try library.addBookmark(id, seconds: 12, title: "Edited locally")
+        try library.updatePosition(id, seconds: 42, duration: 100)
+        var incoming = MediaRecord(location: url)
+        incoming.bookmarks = [MediaBookmark(seconds: 12, title: "Old title"), MediaBookmark(seconds: 20, title: "Imported")]
+        try library.mergeImported([incoming]); try library.mergeImported([incoming])
+        #expect(library.records.count == 1)
+        #expect(library.record(id)?.position == 42)
+        #expect(library.record(id)?.bookmarks.map(\.title) == ["Edited locally", "Imported"])
+    }
+}

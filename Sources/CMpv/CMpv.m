@@ -11,6 +11,7 @@ typedef struct { int fbo, w, h, internal_format; } GLFBO;
 typedef struct Node Node;
 typedef struct { int num; Node *values; char **keys; } NodeList;
 struct Node { union { char *string; int flag; int64_t int64; double number; NodeList *list; void *bytes; } u; int format; };
+typedef struct { const char *name; int format; void *data; } PropertyEvent;
 typedef struct { int event_id; int error; uint64_t reply_userdata; void *data; } Event;
 
 @interface LPMpvView () {
@@ -19,6 +20,8 @@ typedef struct { int event_id; int error; uint64_t reply_userdata; void *data; }
     int (*option)(mpv_handle *, const char *, const char *);
     int (*commandAsync)(mpv_handle *, uint64_t, const char **);
     int (*property)(mpv_handle *, const char *, int, void *);
+    int (*observe)(mpv_handle *, uint64_t, const char *, int);
+    NSMutableDictionary<NSString *, id> *_observed;
     int (*setAsync)(mpv_handle *, uint64_t, const char *, int, void *);
     void (*freeMemory)(void *); void (*freeNode)(Node *); void (*destroy)(mpv_handle *);
     Event *(*waitEvent)(mpv_handle *, double); const char *(*errorString)(int);
@@ -67,7 +70,7 @@ static id foundationNode(Node n) {
     NSOpenGLPixelFormat *format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
     self = [super initWithFrame:frame pixelFormat:format];
     if (self) {
-        self.wantsBestResolutionOpenGLSurface = YES; _errors = [NSMutableArray array];
+        self.wantsBestResolutionOpenGLSurface = YES; _errors = [NSMutableArray array]; _observed = [NSMutableDictionary dictionary];
         _renderQueue = dispatch_queue_create("local.lolaplayer.render", DISPATCH_QUEUE_SERIAL);
     }
     return self;
@@ -76,6 +79,7 @@ static id foundationNode(Node n) {
     _library = dlopen(libraryPath.fileSystemRepresentation, RTLD_NOW | RTLD_LOCAL);
     if (!_library) { self.engineError = @(dlerror()); return NO; }
 #define LOAD(field, symbol) field = dlsym(_library, symbol); if (!field) { self.engineError = @"The libmpv runtime is missing a required API."; return NO; }
+    LOAD(observe,"mpv_observe_property");
     LOAD(create,"mpv_create"); LOAD(initialize,"mpv_initialize"); LOAD(option,"mpv_set_option_string");
     LOAD(commandAsync,"mpv_command_async"); LOAD(property,"mpv_get_property"); LOAD(setAsync,"mpv_set_property_async");
     LOAD(freeMemory,"mpv_free"); LOAD(freeNode,"mpv_free_node_contents"); LOAD(destroy,"mpv_terminate_destroy");
@@ -91,6 +95,12 @@ static id foundationNode(Node n) {
     option(_mpv,"audio-client-name","Lola Player"); option(_mpv,"ytdl","no");
     int result = initialize(_mpv);
     if (result < 0) { self.engineError = @(errorString(result)); return NO; }
+    for (NSString *name in @[@"time-pos", @"duration", @"dwidth", @"dheight", @"video-aspect-override"])
+        observe(_mpv, 0, name.UTF8String, 5);
+    for (NSString *name in @[@"pause", @"eof-reached", @"paused-for-cache", @"idle-active"])
+        observe(_mpv, 0, name.UTF8String, 3);
+    observe(_mpv, 0, "path", 1);
+    observe(_mpv, 0, "track-list", 6); observe(_mpv, 0, "chapter-list", 6);
     _renderGL = self.openGLContext;
     if (!_renderGL) { self.engineError = @"OpenGL context unavailable."; return NO; }
     __block int renderResult;
@@ -143,29 +153,33 @@ static id foundationNode(Node n) {
     int result = setAsync(_mpv, 0, name.UTF8String, 1, &text);
     if (result < 0) [_errors addObject:@(errorString(result))];
 }
+// Property-change payloads are copied while draining events; getters never wait on mpv.
 - (NSString *)stringProperty:(NSString *)name {
-    if (!_mpv) return nil; char *value = NULL;
-    if (property(_mpv, name.UTF8String, 1, &value) < 0 || !value) return nil;
-    NSString *s = @(value); freeMemory(value); return s;
+    id value = _observed[name]; return [value isKindOfClass:NSString.class] ? value : nil;
 }
 - (double)numberProperty:(NSString *)name {
-    double value = 0; if (_mpv) property(_mpv, name.UTF8String, 5, &value); return value;
+    id value = _observed[name]; return [value isKindOfClass:NSNumber.class] ? [value doubleValue] : 0;
 }
 - (BOOL)flagProperty:(NSString *)name {
-    int value = 0; if (_mpv) property(_mpv, name.UTF8String, 3, &value); return value != 0;
+    id value = _observed[name]; return [value isKindOfClass:NSNumber.class] ? [value boolValue] : NO;
 }
-- (NSArray *)nodeArray:(NSString *)name {
-    if (!_mpv) return @[]; Node node = {0};
-    if (property(_mpv, name.UTF8String, 6, &node) < 0) return @[];
-    id value = foundationNode(node); freeNode(&node);
-    return [value isKindOfClass:NSArray.class] ? value : @[];
-}
-- (NSArray *)tracks { return [self nodeArray:@"track-list"]; }
-- (NSArray *)chapters { return [self nodeArray:@"chapter-list"]; }
+- (NSArray *)tracks { id value = _observed[@"track-list"]; return [value isKindOfClass:NSArray.class] ? value : @[]; }
+- (NSArray *)chapters { id value = _observed[@"chapter-list"]; return [value isKindOfClass:NSArray.class] ? value : @[]; }
 - (NSArray<NSString *> *)drainErrors {
     if (_mpv) {
         Event *event;
         while ((event = waitEvent(_mpv, 0))->event_id != 0) {
+            if (event->event_id == 22 && event->data) { // MPV_EVENT_PROPERTY_CHANGE
+                PropertyEvent *change = event->data;
+                NSString *name = @(change->name); id value = nil;
+                if (change->data) {
+                    if (change->format == 1) { char *text = *(char **)change->data; if (text) value = @(text); }
+                    else if (change->format == 3) value = @(*(int *)change->data != 0);
+                    else if (change->format == 5) value = @(*(double *)change->data);
+                    else if (change->format == 6) value = foundationNode(*(Node *)change->data);
+                }
+                if (value) _observed[name] = value; else [_observed removeObjectForKey:name];
+            }
             if (event->event_id == 6) self.fileLoaded = NO;
             if (event->event_id == 8) self.fileLoaded = YES;
             if (event->error < 0) [_errors addObject:@(errorString(event->error))];

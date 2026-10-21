@@ -41,6 +41,22 @@ public struct PlaybackPolicy {
 public final class MediaLibrary {
     public private(set) var records: [MediaRecord] = []
     public let fileURL: URL
+    private var batchDepth = 0
+    private var writer: LibraryWriter?
+    public init(fileURL: URL, records: [MediaRecord]) {
+        self.fileURL = fileURL; self.records = records
+    }
+    public func enableBackgroundSaving() { writer = LibraryWriter(url: fileURL) }
+    public func flush() throws { try writer?.flush() }
+    public func takeSaveError() -> String? { writer?.takeError() }
+    public func batchUpdates<T>(_ operation: () throws -> T) throws -> T {
+        batchDepth += 1
+        do {
+            let result = try operation(); batchDepth -= 1; try save(); return result
+        } catch {
+            batchDepth = max(0, batchDepth - 1); try? save(); throw error
+        }
+    }
     public init(fileURL: URL) throws {
         self.fileURL = fileURL
         if FileManager.default.fileExists(atPath: fileURL.path) {
@@ -151,7 +167,21 @@ public final class MediaLibrary {
     public func clearUnbookmarkedHistory() throws {
         records.removeAll { $0.bookmarks.isEmpty }; try save()
     }
+    public func mergeImported(_ imported: [MediaRecord]) throws {
+        for incoming in imported {
+            if let index = records.firstIndex(where: { $0.location == incoming.location }) {
+                for mark in incoming.bookmarks where !records[index].bookmarks.contains(where: { abs($0.seconds - mark.seconds) < 0.001 }) {
+                    records[index].bookmarks.append(mark)
+                }
+                records[index].bookmarks.sort { $0.seconds < $1.seconds }
+            } else { records.append(incoming) }
+        }
+        try save()
+    }
+
     public func save() throws {
+        guard batchDepth == 0 else { return }
+        if let writer { writer.submit(records); return }
         try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try encoder.encode(records).write(to: fileURL, options: .atomic)
@@ -162,4 +192,42 @@ public func timestamp(_ seconds: Double) -> String {
     guard seconds.isFinite else { return "00:00" }
     let s = Int(max(0, seconds))
     return s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, (s / 60) % 60, s % 60) : String(format: "%02d:%02d", s / 60, s % 60)
+}
+
+/// Owns only immutable snapshots; all file writes run in order away from the UI.
+private final class LibraryWriter: @unchecked Sendable {
+    private let queue = DispatchQueue(label: "local.lolaplayer.library-save")
+    private let lock = NSLock()
+    private let url: URL
+    private var pending: [MediaRecord]?
+    private var failure: String?
+    init(url: URL) { self.url = url }
+    func submit(_ records: [MediaRecord]) {
+        lock.lock(); pending = records; lock.unlock()
+        queue.asyncAfter(deadline: .now() + 0.25) { self.writePending() }
+    }
+    private func writePending() {
+        lock.lock(); let snapshot = pending; pending = nil; lock.unlock()
+        guard let snapshot else { return }
+        do {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            try encoder.encode(snapshot).write(to: url, options: .atomic)
+            lock.lock(); failure = nil; lock.unlock()
+        } catch {
+            lock.lock()
+            if pending == nil { pending = snapshot }
+            failure = error.localizedDescription
+            lock.unlock()
+        }
+    }
+    func flush() throws {
+        queue.sync { writePending() }
+        lock.lock(); let message = pending == nil ? nil : (failure ?? "Library changes could not be saved."); lock.unlock()
+        if let message { throw NSError(domain: "LolaLibrary", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }
+    }
+    func takeError() -> String? {
+        lock.lock(); defer { lock.unlock() }
+        let message = failure; failure = nil; return message
+    }
 }

@@ -1,5 +1,21 @@
 # Lola Player versions
 
+## 1.9.6 (build 37) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Present menus and the player window before background library loading; defer playback initialization and create the Library panel on demand.
+- Restore playlists with indexed membership checks and batch asynchronous Elmedia imports without replacing existing edits.
+- Coalesce atomic library saves off the UI thread, flush on quit, and cache playback properties from libmpv events.
+
+### Removed
+
+- None.
+
 ## 1.9.5 (build 36) — 2026-10-21
 
 ### Added

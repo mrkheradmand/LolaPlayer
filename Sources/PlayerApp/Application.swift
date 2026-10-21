@@ -26,10 +26,12 @@ import PlayerCore
     }
 }
 
-final class MenuAction: NSObject {
+final class MenuAction: NSObject, NSMenuItemValidation {
     let callback: () -> Void
+    var available: () -> Bool = { true }
     init(_ callback: @escaping () -> Void) { self.callback = callback }
-    @objc func invoke(_ sender: Any?) { callback() }
+    @objc func invoke(_ sender: Any?) { if available() { callback() } }
+    @objc func validateMenuItem(_ menuItem: NSMenuItem) -> Bool { available() }
 }
 
 /// App menu shortcuts must never handle another application’s keyboard input.
@@ -72,6 +74,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var floatItem: NSMenuItem!
     var rememberWindowItem: NSMenuItem!
     private(set) var libraryController: LibraryWindowController?
+    private func ensureLibraryController() {
+        if libraryController == nil { libraryController = LibraryWindowController(model: model) }
+    }
     var isFullScreenTransitioning: Bool { fullScreenTransition }
     var isPlayerAppFrontmost: Bool {
         NSApp.isActive && NSWorkspace.shared.frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier
@@ -81,6 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     private var aboutController: AboutWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        buildMenus()
         if let iconURL = Bundle.main.url(forResource: "LolaPlayerIcon", withExtension: "icns"),
            let icon = NSImage(contentsOf: iconURL) {
             NSApp.applicationIconImage = icon
@@ -97,19 +103,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             window.setFrame(frame, display: true)
         }
         model.window = window
-        libraryController = LibraryWindowController(model: model)
         model.libraryWindowChanged = { [weak self] in
-            guard let self, !self.fullScreenTransition else { return }; self.libraryController?.sync()
+            guard let self, !self.fullScreenTransition else { return }; if self.model.sidebar { self.ensureLibraryController() }; self.libraryController?.sync()
         }
         model.revealLibrary = { [weak self] in
-            guard let self, !self.fullScreenTransition else { return }; self.libraryController?.present()
+            guard let self, !self.fullScreenTransition else { return }; self.ensureLibraryController(); self.libraryController?.present()
         }
-        window.contentView = NSHostingView(rootView: PlayerView(model: model))
-        model.systemMediaControls = SystemMediaControls(model: model)
         (window as? PlayerWindow)?.viewShortcut = { [weak self] event in
             self?.handleViewShortcut(event) ?? false
         }
-        buildMenus(); window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
+        Task {
+        await model.loadLibrary()
+        guard model.libraryReady else { return }
+        window.contentView = NSHostingView(rootView: PlayerView(model: model))
+        model.systemMediaControls = SystemMediaControls(model: model)
+        if model.sidebar { ensureLibraryController(); libraryController?.sync() }
+        if !CommandLine.arguments.contains("--smoke-test") { model.importElmedia(automatic: true) }
         if let index = CommandLine.arguments.firstIndex(of: "--smoke-test"), CommandLine.arguments.count > index + 1 {
             SmokeTest.run(model: model, root: URL(fileURLWithPath: CommandLine.arguments[index + 1])); return
         }
@@ -119,9 +129,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             return URL(fileURLWithPath: value)
         }
         if !arguments.isEmpty { model.open(arguments) }
+        }
     }
     func application(_ sender: NSApplication, open urls: [URL]) { model.open(urls); window?.makeKeyAndOrderFront(nil) }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        model.persistPosition()
+        do { try model.library.flush(); return .terminateNow }
+        catch {
+            let alert = NSAlert(); alert.messageText = "Could not save your library"
+            alert.informativeText = error.localizedDescription; alert.runModal()
+            return .terminateCancel
+        }
+    }
     func applicationWillTerminate(_ notification: Notification) {
         model.shutdown()
     }
@@ -160,6 +180,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     @discardableResult func item(_ menu: NSMenu, _ title: String, key: String = "", modifiers: NSEvent.ModifierFlags = .command, action: @escaping () -> Void) -> NSMenuItem {
         let target = MenuAction(action)
+        if !["Quit Lola Player", "Hide Lola Player", "Close Window"].contains(title) {
+            target.available = { [weak self] in self?.model.libraryReady == true }
+        }
         let entry = NSMenuItem(title: title, action: #selector(MenuAction.invoke(_:)), keyEquivalent: key)
         entry.keyEquivalentModifierMask = modifiers; entry.target = target; entry.representedObject = target; menu.addItem(entry); return entry
     }

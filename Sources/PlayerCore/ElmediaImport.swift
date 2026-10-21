@@ -10,6 +10,7 @@ public extension MediaLibrary {
     /// Opens only the two observed 8.24 schemas, with SQLITE_OPEN_READONLY.
     /// Keyed archives are decoded with an explicit Foundation class allowlist.
     func importElmedia(from directory: URL) throws -> ElmediaImportResult {
+        try batchUpdates {
         var result = ElmediaImportResult()
         func mediaURL(_ text: String) -> URL {
             if let url = URL(string: text), url.scheme != nil { return url }
@@ -48,6 +49,7 @@ public extension MediaLibrary {
             }
         }
         return result
+        }
     }
 }
 

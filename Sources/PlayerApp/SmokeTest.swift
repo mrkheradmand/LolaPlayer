@@ -36,6 +36,9 @@ private final class DragProbeView: PlayerMouseView {
             }
             var failure: String?
             do {
+                try check(NSApp.mainMenu != nil && model.libraryReady, "Menu and library are ready before playback tests")
+                try check((NSApp.delegate as? AppDelegate)?.libraryController == nil, "Hidden Library panel is not created during startup")
+                try await waitFor { model.engine?.engineReady == true }
                 if let delegate = NSApp.delegate as? AppDelegate, let window = model.window {
                     try await Task.sleep(for: .milliseconds(300))
                     NSApp.activate(ignoringOtherApps: true)
@@ -460,6 +463,7 @@ private final class DragProbeView: PlayerMouseView {
                 try await waitFor { model.loaded && model.currentID == a && model.position >= 3 && model.position < 4.5 }
                 try check(true, "Selecting another file's bookmark loads it and seeks to the saved second")
                 model.persistPosition()
+                try model.library.flush()
                 let reopened = try MediaLibrary(fileURL: model.library.fileURL)
                 try check(reopened.record(a)?.bookmarks.count == 1 && reopened.record(b)?.bookmarks.count == 1, "Bookmarks persist after reconstructing library from disk")
                 model.floatEnabled = false

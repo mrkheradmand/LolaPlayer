@@ -8,7 +8,9 @@ struct VideoSurface: NSViewRepresentable {
     let model: PlayerModel
     func makeNSView(context: Context) -> LPMpvView {
         let view = LPMpvView(frame: NSRect(x: 0, y: 0, width: 960, height: 540))
-        model.attach(view); return view
+        // Let AppKit present the initial window before loading the playback runtime.
+        DispatchQueue.main.async { model.attach(view) }
+        return view
     }
     func updateNSView(_ view: LPMpvView, context: Context) {}
 }
