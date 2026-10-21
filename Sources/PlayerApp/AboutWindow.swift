@@ -4,7 +4,7 @@ import PlayerCore
 
 final class AboutWindowController: NSWindowController {
     init(model: PlayerModel) {
-        let window = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 560, height: 440),
+        let window = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 560, height: 480),
             styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.isFloatingPanel = true
         window.level = .floating
@@ -60,11 +60,15 @@ struct AboutView: View {
                 Text(copyrightText).foregroundStyle(.secondary)
                 Link("MIT License", destination: repository.appendingPathComponent("blob/master/LICENSE"))
             }.font(.system(size: 12))
-            Button("Check for Updates…") { model.checkForUpdates() }
-                .disabled(model.updateAvailability == .checking)
-                .help(model.updateCheckStatus)
+            VStack(spacing: 10) {
+                Button("Check for Updates…") { model.checkForUpdates() }
+                    .disabled(model.updateAvailability == .checking)
+                    .help(model.updateCheckStatus)
+                Toggle("Automatically check for updates", isOn: $model.automaticUpdateChecks)
+                    .toggleStyle(.checkbox).font(.system(size: 12))
+            }
         }
-        .padding(28).frame(width: 560, height: 440)
+        .padding(28).frame(width: 560, height: 480)
         .background(Color(nsColor: .windowBackgroundColor))
     }
 }

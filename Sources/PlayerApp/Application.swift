@@ -128,10 +128,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let bar = NSMenu(); NSApp.mainMenu = bar
         let app = submenu(bar, "Lola Player")
         item(app, "About Lola Player") { self.showAbout() }
-        item(app, "Check for Updates…") {
-            self.model.settingsOpen = true
-            self.model.checkForUpdates()
-        }
         item(app, "Settings…", key: ",") { self.model.settingsOpen = true }
         app.addItem(.separator()); item(app, "Hide Lola Player", key: "h") { NSApp.hide(nil) }
         item(app, "Quit Lola Player", key: "q") { NSApp.terminate(nil) }

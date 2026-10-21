@@ -29,6 +29,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     private(set) var mediaAspectRatio = 0.0
     @ObservationIgnored private var fullInterfaceSize: NSSize?
     @ObservationIgnored private var fullInterfaceMinimum: NSSize?
+    @ObservationIgnored private var fullInterfaceTitleHeight: CGFloat = 0
     var sidebar = false
     var tab: LibraryTab = .playlist
     var search = ""
@@ -497,16 +498,16 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         window.setFrame(frame, display: true)
     }
 
-    func restoreInterfaceSize() {
+    func restoreInterfaceSize(top: CGFloat? = nil) {
         guard let window, !window.styleMask.contains(.fullScreen) else { return }
         if let minimum = fullInterfaceMinimum { window.minSize = minimum }
         if let size = fullInterfaceSize {
             var frame = window.frame
-            frame.origin.y += frame.height - size.height
+            frame.origin.y = (top ?? frame.maxY) - size.height
             frame.size = size
             window.setFrame(frame, display: true)
         }
-        fullInterfaceSize = nil; fullInterfaceMinimum = nil
+        fullInterfaceSize = nil; fullInterfaceMinimum = nil; fullInterfaceTitleHeight = 0
     }
 
     func didExitFullScreen() {
@@ -522,7 +523,10 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         let fullScreen = window.styleMask.contains(.fullScreen)
         let originalFrame = window.frame
         if enabled {
-            if !fullScreen { fullInterfaceSize = window.frame.size }
+            if !fullScreen {
+                fullInterfaceSize = originalFrame.size
+                fullInterfaceTitleHeight = originalFrame.maxY - window.convertToScreen(window.contentLayoutRect).maxY
+            }
             fullInterfaceMinimum = window.minSize
             window.minSize = NSSize(width: 100, height: 64)
         }
@@ -534,10 +538,15 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             window.standardWindowButton(button)?.isHidden = enabled
         }
         if enabled {
-            if !fullScreen { window.setFrame(originalFrame, display: true) }
+            if !fullScreen {
+                // Keep the media's screen position: remove title space above it, rather than moving it into that space.
+                var compactFrame = originalFrame
+                compactFrame.size.height -= fullInterfaceTitleHeight
+                window.setFrame(compactFrame, display: true)
+            }
             fitMediaOnlyWindow()
         }
-        else if !fullScreen { restoreInterfaceSize() }
+        else if !fullScreen { restoreInterfaceSize(top: originalFrame.maxY + fullInterfaceTitleHeight) }
     }
 
     func show(_ page: LibraryTab) { setMediaOnly(false); tab = page; sidebar = true }

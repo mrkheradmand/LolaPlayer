@@ -103,7 +103,7 @@ struct PlayerView: View {
         .alert("Lola Player", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button("OK") { model.error = nil }
         } message: { Text(model.error ?? "") }
-        .sheet(isPresented: $model.settingsOpen) { settings }
+        .sheet(isPresented: $model.settingsOpen) { SettingsView(model: model) }
     }
 
     private var welcomeBackground: some View {
@@ -310,63 +310,7 @@ struct PlayerView: View {
         }.padding(12).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
     }
 
-    private var settings: some View {
-        ScrollView {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack { Text("Playback Settings").font(.title2.bold()); Spacer(); Button("Done") { model.settingsOpen = false }.keyboardShortcut(.defaultAction) }
-            Grid(alignment: .leading, horizontalSpacing: 22, verticalSpacing: 16) {
-                GridRow {
-                    Text("Playback speed")
-                    Picker("Speed", selection: Binding(get: { model.speed }, set: model.changeSpeed)) {
-                        ForEach([0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 3.0, 4.0], id: \.self) { Text(String(format: "%.2g×", $0)).tag($0) }
-                    }.labelsHidden()
-                }
-                GridRow { Text("Repeat"); Picker("Repeat", selection: $model.repeatMode) { ForEach(RepeatMode.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.labelsHidden() }
-                GridRow { Text("Shuffle"); Toggle("Shuffle playlist", isOn: $model.shuffle) }
-                GridRow { Text("Audio delay"); delayField($model.audioDelay, property: "audio-delay") }
-                GridRow { Text("Subtitle delay"); delayField($model.subtitleDelay, property: "sub-delay") }
-                GridRow {
-                    Text("A–B loop")
-                    HStack {
-                        Button(model.loopA.map { "A: \(timestamp($0))" } ?? "Set A") { model.setLoopA() }
-                        Button(model.loopB.map { "B: \(timestamp($0))" } ?? "Set B") { model.setLoopB() }
-                        Button("Clear") { model.clearLoop() }
-                    }
-                }
-            }
-            Divider()
-            Toggle("Float on Top while media is playing", isOn: $model.floatEnabled)
-            Text("The player returns to normal window level while paused, stopped, or buffering. Floating resumes automatically when playback resumes.").font(.caption).foregroundStyle(.secondary)
-            Toggle("Remember playback position for every file", isOn: $model.rememberPosition)
-            Toggle("Play automatically when opening media", isOn: $model.autoplay)
-            Toggle("Ask for a name when adding a bookmark", isOn: $model.promptForBookmark)
-            Divider()
-            Toggle("Automatically check for updates", isOn: $model.automaticUpdateChecks)
-            HStack {
-                Button("Check for Updates…") { model.checkForUpdates() }
-                    .disabled(model.updateCheckTask != nil)
-                if !model.updateCheckStatus.isEmpty {
-                    Text(model.updateCheckStatus).font(.caption).foregroundStyle(.secondary)
-                }
-            }
-            if model.availableUpdate != nil { updateNotice }
-            HStack {
-                Button("All Bookmarks") { model.show(.bookmarks); model.settingsOpen = false }
-                Button("Import Bookmarks…") { model.importBookmarks() }
-            }
-        }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(width: 490, height: min(700, (model.window?.screen?.visibleFrame.height ?? 800) - 100))
-        .preferredColorScheme(.dark)
-    }
-    private func delayField(_ binding: Binding<Double>, property: String) -> some View {
-        HStack {
-            TextField("Seconds", value: binding, format: .number.precision(.fractionLength(1))).frame(width: 70).textFieldStyle(.roundedBorder)
-                .onChange(of: binding.wrappedValue) { _, value in model.engine?.setProperty(property, value: String(value)) }
-            Stepper("seconds", value: binding, in: -60...60, step: 0.1).labelsHidden()
-            Text("seconds").foregroundStyle(.secondary)
-        }
-    }
+
 }
 
 /// Observes clicks without consuming them, including clicks on native video and controls.

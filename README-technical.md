@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.6.2, build 24 |
+| Version | 1.6.3, build 25 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -169,7 +169,7 @@ Input details:
 
 ### Media-only view
 
-Press **2** to remove the window title bar, window buttons, library sidebar, and bottom playback controls from the visible layout. Only the media and seekable progress bar remain. The window fits the video’s display aspect ratio plus the 24-point progress strip, removing player-generated letterboxing from the old window shape. Its top edge stays in place where screen bounds permit; portrait videos also narrow to fit the screen. Compact resizing preserves that aspect ratio. Press **1** to restore the saved window size, title bar, controls, minimum-size constraints, and previously open library. Full-screen windows keep their full-screen bounds; fitting/restoration applies when leaving full screen. Embedded black bars in a video file are not cropped. The mode starts off each launch and does not affect playback, floating, or bookmarks.
+Press **2** to remove the window title bar, window buttons, library sidebar, and bottom playback controls from the visible layout. Only the media and seekable progress bar remain. The window fits the video’s display aspect ratio plus the 24-point progress strip, removing player-generated letterboxing from the old window shape. The media’s top edge stays at the same screen position when the title bar is hidden or restored, avoiding cumulative upward movement; portrait videos also narrow to fit the screen. Compact resizing preserves that aspect ratio. Press **1** to restore the saved window size, title bar, controls, minimum-size constraints, and previously open library. Full-screen windows keep their full-screen bounds; fitting/restoration applies when leaving full screen. Embedded black bars in a video file are not cropped. The mode starts off each launch and does not affect playback, floating, or bookmarks.
 
 These unmodified shortcuts are ignored while editing text, in settings, or in a modal dialog. Both views are also available from the **View** menu and the video's right-click menu. Choosing a library tab from the app menu restores the full interface. The macOS system menu bar remains available.
 
@@ -227,7 +227,7 @@ The engine attempts to find matching external subtitles automatically. Opening s
 
 ### Settings and defaults
 
-Open **Lola Player → Settings…**, press **⌘,**, or click the playback-settings button.
+Open **Lola Player → Settings…**, press **⌘,**, or click the playback-settings button. The settings sheet uses a sidebar with **General**, **Playback**, and **Bookmarks** pages, grouped cards, descriptive switch rows, and a scrollable content area. Changes apply immediately; use **Done**, the close button, or Escape to dismiss it. General contains window and opening-media preferences; Playback contains speed, repeat, shuffle, synchronization, and A–B looping; Bookmarks contains naming and library actions. Update controls live in About.
 
 | Setting | Initial default | Saved between launches? |
 | --- | --- | --- |
@@ -235,7 +235,7 @@ Open **Lola Player → Settings…**, press **⌘,**, or click the playback-sett
 | Remember playback position for every file | On | Yes |
 | Play automatically when opening media | On | Yes |
 | Ask for a name when adding a bookmark | Off | Yes |
-| Automatically check for updates | On | Yes |
+| Automatically check for updates (About) | On | Yes |
 | Playback speed | 1× | No |
 | Repeat | Off | No |
 | Shuffle | Off | No |
@@ -263,13 +263,13 @@ References: [MPRemoteCommandCenter](https://developer.apple.com/documentation/me
 
 ## Updates
 
-Automatic release checks are enabled by default and saved under the `automaticUpdateChecks` preference. They run at launch and every 24 hours while the app is running. Uncheck **Automatically check for updates** in **Settings…** to cancel a pending check and stop automatic requests. Checking manually from **Lola Player → Check for Updates…**, Settings, or About remains available when automatic checks are off. Opening About starts a fresh check only when automatic checking is enabled.
+Automatic release checks are enabled by default and saved under the `automaticUpdateChecks` preference. They run at launch and every 24 hours while the app is running. Uncheck **Automatically check for updates** in **About Lola Player** to cancel a pending check and stop automatic requests. Checking manually from **About Lola Player → Check for Updates…** remains available when automatic checks are off. Opening About starts a fresh check only when automatic checking is enabled.
 
-The checker uses GitHub’s [latest published release API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release) at `https://api.github.com/repos/mrkheradmand/LolaPlayer/releases/latest`. It compares numeric `MAJOR.MINOR.PATCH` versions (optionally prefixed with `v`) against the running app’s bundle metadata, ignoring drafts, prereleases, and versions equal to or older than the installed app. It does not compare build numbers. Unsupported tags, invalid responses, connection failures, and rate limits appear as a check status in Settings without interrupting playback. Requests time out after 20 seconds; automatic failures retry on the next scheduled check or launch.
+The checker uses GitHub’s [latest published release API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release) at `https://api.github.com/repos/mrkheradmand/LolaPlayer/releases/latest`. It compares numeric `MAJOR.MINOR.PATCH` versions (optionally prefixed with `v`) against the running app’s bundle metadata, ignoring drafts, prereleases, and versions equal to or older than the installed app. It does not compare build numbers. Unsupported tags, invalid responses, connection failures, and rate limits appear as a check status in About without interrupting playback. Requests time out after 20 seconds; automatic failures retry on the next scheduled check or launch.
 
-A newer release displays a persistent in-app notice, including in media-only view. **View Release** opens that release’s page in the browser; the app constructs links for this repository and does not automatically download, replace, or install anything. Dismissing a notice remembers that version in `dismissedUpdateVersion` and suppresses further automatic notices for it; a manual check can show it again. No system-notification permission is required. The settings sheet shows the same notice while open.
+A newer release displays a persistent in-app notice, including in media-only view. **View Release** opens that release’s page in the browser; the app constructs links for this repository and does not automatically download, replace, or install anything. Dismissing a notice remembers that version in `dismissedUpdateVersion` and suppresses further automatic notices for it; a manual check can show it again. No system-notification permission is required. The notice stays in the player; Settings contains no update controls or notices.
 
-**About Lola Player** displays `Version <version> (<build>)` followed by **Latest Version** after a successful check with no newer release, or a clickable **New version available!** link when a newer release exists. Its status updates live through the shared checker and remains available after the main notice is dismissed. Pending, unchecked, and failed checks have distinct labels and never claim the installed version is latest. **Check for Updates…** in About runs a manual check without opening Settings. The custom About panel retains the app icon, credits, and repository link and reads version/build from the running bundle.
+**About Lola Player** displays `Version <version> (<build>)` followed by **Latest Version** after a successful check with no newer release, or a clickable **New version available!** link when a newer release exists. Its status updates live through the shared checker and remains available after the main notice is dismissed. Pending, unchecked, and failed checks have distinct labels and never claim the installed version is latest. **Check for Updates…** in About runs a manual check. The automatic-check checkbox is also in About; there is no separate Check for Updates app-menu command. The custom About panel retains the app icon, credits, and repository link and reads version/build from the running bundle.
 
 Requests use an ephemeral session with no app-provided credentials or cookies. GitHub receives a normal HTTPS request and a User-Agent containing the app version; media files, library records, and bookmarks are not sent. Normal playback does not depend on successful update checks. Smoke-test launches suppress automatic checks.
 
@@ -450,11 +450,11 @@ python3 scripts/test-format-playback.py  # Requires a built app and developer FF
 
 The test script uses `.build/tests` and explicitly loads the toolchain's Swift Testing macro plugin to address the discovery issue encountered with the development toolchain.
 
-Latest app validation (**1.6.2, build 24**, October 21, 2026) passed **38 tests in eight Swift suites**, **13 Python tests**, and **44 real-app smoke checks** using mpv 0.41.0 / FFmpeg 9.0.1. Update-check tests cover numeric version comparison, stable-release filtering, malformed data, HTTP errors, and a simulated GitHub request. The public release endpoint was also reached successfully during 1.4.0 development. The app smoke run verified About status and panel creation, mouse click/drag/double-click dispatch, in-memory MP4/MKV thumbnail timestamps and playback isolation, immediate cached previews, scrubbing previews without hover, media-only window fitting and restoration of the prior size/minimum, title-bar removal and restoration, preserved library visibility, repeat modes and queued playback, saved update preferences, notification dismissal, suppression of automatic networking in smoke mode, MP4/MKV playback, floating behavior, bookmarks, persistence, and recursive-playlist rejection. macOS kept the test app inactive, so foreground keyboard dispatch (including modifier and text-editing safeguards) was recorded as unavailable; media-only actions were exercised directly. That run used the development executable with the bundled playback libraries. Optional HLS and MIDI fixtures were not included in that run.
+Latest app validation (**1.6.3, build 25**, October 21, 2026) passed **38 tests in eight Swift suites**, **13 Python tests**, and **52 real-app smoke checks** using mpv 0.41.0 / FFmpeg 9.0.1. Update-check tests cover numeric version comparison, stable-release filtering, malformed data, HTTP errors, and a simulated GitHub request. The public release endpoint was also reached successfully during 1.4.0 development. The app smoke run verified About status and panel creation, mouse click/drag/double-click dispatch, in-memory MP4/MKV thumbnail timestamps and playback isolation, immediate cached previews, scrubbing previews without hover, media-only window fitting, unchanged video-surface screen position, twelve repeated view-mode toggles without window drift, restoration of the prior size/minimum, layout of all three Settings pages, About-only manual update access, title-bar removal and restoration, preserved library visibility, repeat modes and queued playback, saved update preferences, notification dismissal, suppression of automatic networking in smoke mode, MP4/MKV playback, floating behavior, bookmarks, persistence, and recursive-playlist rejection. macOS kept the test app inactive, so foreground keyboard dispatch (including modifier and text-editing safeguards) was recorded as unavailable; media-only actions were exercised directly. That run used the development executable with the bundled playback libraries. Optional HLS and MIDI fixtures were not included in that run.
 
 Version **1.6.1 (build 23)** added licensing and About text; license inclusion and app signing are also checked by the packaging workflow.
 
-Historical validation for **1.1.0** additionally recorded **24 decoder/container/HLS checks** and a different smoke-test set. Those broader format checks were not rerun for 1.6.2.
+Historical validation for **1.1.0** additionally recorded **24 decoder/container/HLS checks** and a different smoke-test set. Those broader format checks were not rerun for 1.6.3.
 
 Automated coverage includes:
 
@@ -491,7 +491,7 @@ Provide an isolated directory containing `first.mp4` and `second.mkv`, both long
   --smoke-test /absolute/path/to/fixtures
 ```
 
-The runner exercises the About panel and live update-result labels, click/drag/double-click routing, MP4/MKV thumbnail extraction and playback isolation, hover cards in both layouts, end-of-file behavior for all four repeat modes, including Repeat Off with Shuffle and additional queued files, update-check preferences and dismissal without automatic networking, media-only shortcuts and window chrome, typing safeguards, decoding, actual window levels, pause/resume, file switching, bookmarks, persistence, and end-of-file behavior. It creates an isolated library subdirectory beside the fixtures, writes `smoke-result.json`, and exits. It temporarily changes float/autoplay/bookmark-prompt preferences and restores them on normal completion; its playlist is not persisted.
+The runner exercises all three Settings page layouts, repeated view-mode changes without media/window drift, the About panel and live update-result labels, click/drag/double-click routing, MP4/MKV thumbnail extraction and playback isolation, hover cards in both layouts, end-of-file behavior for all four repeat modes, including Repeat Off with Shuffle and additional queued files, update-check preferences and dismissal without automatic networking, media-only shortcuts and window chrome, typing safeguards, decoding, actual window levels, pause/resume, file switching, bookmarks, persistence, and end-of-file behavior. It creates an isolated library subdirectory beside the fixtures, writes `smoke-result.json`, and exits. It temporarily changes float/autoplay/bookmark-prompt preferences and restores them on normal completion; its playlist is not persisted.
 
 Launching the smoke runner requires a macOS graphical session and permission to launch the app. A successful automated app smoke run is recorded above; it does not replace visual inspection or certify every media format. `Research/test-media/` contains playback fixtures, not files required to use the app.
 
@@ -506,6 +506,7 @@ Sources/
     PlayerModel.swift            Playback state, settings, persistence coordination
     PlayerModel+Updates.swift    Update scheduling, preferences, and notification state
     PlayerView.swift             Video, transport controls, library, settings UI
+    SettingsView.swift           Sidebar settings pages and grouped preference controls
     PlayerMouseView.swift        Click, double-click, and native window dragging
     TimelinePreview.swift        Hover card, thumbnail scheduling, and memory cache
     SmokeTest.swift              Optional real-engine smoke runner
@@ -629,4 +630,4 @@ Use only the appropriate bump command for a given change set. It updates `Resour
 
 Packaging stages and verifies the entire app before replacing `dist/Lola Player.app`; previous bundles are preserved under `.build/app-previous.*`. No user data is changed by packaging. `LUMEN_ALLOW_LEGACY_RUNTIME=1 scripts/build-app.sh` is an explicit development-only fallback for testing the UI and existing formats when a newer compatible runtime is unavailable; it records the actual legacy runtime and does not enable missing decoders. No encoder, converter or transcoding interface has been added.
 
-MIDI uses Apple's system synthesizer through AVFAudio/AudioToolbox, not FluidSynth. It does not bundle proprietary sound banks or promise an entirely open-source synthesis stack. MIDI supports transport, tempo, volume/mute, A–B looping, bookmarks, repeat and Now Playing; frame stepping and video/subtitle adjustments do not apply. If the system instrument component is unavailable, opening MIDI reports an error rather than crashing. Earlier MIDI-specific smoke checks passed pause/resume, seek, bookmark and floating checks; the latest 1.6.2 smoke run did not include a MIDI fixture. A separate restricted-shell run also verified safe handling when the system component is unavailable. No physical-listening or exhaustive instrument test is claimed.
+MIDI uses Apple's system synthesizer through AVFAudio/AudioToolbox, not FluidSynth. It does not bundle proprietary sound banks or promise an entirely open-source synthesis stack. MIDI supports transport, tempo, volume/mute, A–B looping, bookmarks, repeat and Now Playing; frame stepping and video/subtitle adjustments do not apply. If the system instrument component is unavailable, opening MIDI reports an error rather than crashing. Earlier MIDI-specific smoke checks passed pause/resume, seek, bookmark and floating checks; the latest 1.6.3 smoke run did not include a MIDI fixture. A separate restricted-shell run also verified safe handling when the system component is unavailable. No physical-listening or exhaustive instrument test is claimed.

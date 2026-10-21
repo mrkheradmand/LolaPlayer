@@ -45,7 +45,7 @@ private final class DragProbeView: PlayerMouseView {
                     let canDispatchKeys = window.isKeyWindow
                     if !canDispatchKeys { skipped.append("Foreground keyboard dispatch unavailable: macOS kept the test app inactive; window-mode actions are tested directly") }
                     let originalSidebar = model.sidebar
-                    let frame = window.frame
+                    let contentTop = window.convertToScreen(window.contentLayoutRect).maxY
                     @MainActor func key(_ value: String, modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
                         NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
                             timestamp: 0, windowNumber: window.windowNumber, context: nil,
@@ -62,7 +62,7 @@ private final class DragProbeView: PlayerMouseView {
                     try check(selectView("2") && model.mediaOnly,
                         "Media-only action (2) enables compact mode")
                     try check(window.titleVisibility == .hidden && window.styleMask.contains(.fullSizeContentView)
-                        && window.standardWindowButton(.closeButton)?.isHidden == true && window.frame == frame,
+                        && window.standardWindowButton(.closeButton)?.isHidden == true && abs(window.frame.maxY - contentTop) < 1,
                         "Media-only mode hides title chrome without a video aspect to fit")
                     try check(selectView("1") && !model.mediaOnly && model.sidebar
                         && window.titleVisibility == .visible && !window.styleMask.contains(.fullSizeContentView)
@@ -133,7 +133,15 @@ private final class DragProbeView: PlayerMouseView {
                     try check((!NSApp.isActive || controller.window?.isVisible == true)
                         && controller.window?.contentView is NSHostingView<AboutView>,
                         "The About window hosts the live status view")
-                    controller.close(); model.window?.makeKeyAndOrderFront(nil)
+                    controller.close()
+                    for page in SettingsPage.allCases {
+                        let host = NSHostingView(rootView: SettingsView(model: model, initialPage: page))
+                        host.frame = NSRect(x: 0, y: 0, width: 720, height: 530)
+                        host.layoutSubtreeIfNeeded()
+                        try check(host.fittingSize.width >= 700 && host.fittingSize.height > 0, "Settings \(page.rawValue) page lays out at its intended size")
+                    }
+                    try check(NSApp.mainMenu?.items.first?.submenu?.items.contains(where: { $0.title == "Check for Updates…" }) == false,
+                        "Manual update checking is accessed through About rather than Settings or a duplicate menu item"); model.window?.makeKeyAndOrderFront(nil)
                     model.updateAvailability = .notChecked
                 }
                 model.dismissUpdate()
@@ -181,18 +189,25 @@ private final class DragProbeView: PlayerMouseView {
                 try await waitFor { model.timelinePreview.image != nil }
                 try check(model.timelinePreview.represented != nil && model.paused,
                     "The normal progress bar loads its hover thumbnail without changing playback")
+                @MainActor func videoTop() -> CGFloat {
+                    guard let window = model.window, let view = model.engine else { return .nan }
+                    return window.convertToScreen(view.convert(view.bounds, to: nil)).maxY
+                }
+                let originalVideoTop = videoTop()
                 let normalSize = model.window!.frame.size
-                let originalTop = model.window!.frame.maxY
+                let originalFrame = model.window!.frame
+                let originalTop = model.window!.convertToScreen(model.window!.contentLayoutRect).maxY
                 let originalMinimum = model.window!.minSize
                 model.setMediaOnly(true)
                 try check(model.mediaAspectRatio > 0 && abs(model.window!.frame.height
                     - (model.window!.frame.width / model.mediaAspectRatio + MediaWindowLayout.progressHeight)) < 1
                     && abs(model.window!.frame.maxY - originalTop) < 1,
-                    "2 fits window height to the video plus progress strip without moving its top")
+                    "2 fits window height to the video plus progress strip without moving the media top")
                 let fittedSize = model.window!.frame.size
                 model.setMediaOnly(true)
                 try check(model.window!.frame.size == fittedSize, "Repeated 2 does not overwrite the saved interface size")
                 try await Task.sleep(for: .milliseconds(200))
+                try check(abs(videoTop() - originalVideoTop) < 1, "Hiding the title bar leaves the actual video surface at the same screen height")
                 model.timelinePreview.hoverX = 100
                 try await waitFor { model.timelinePreview.image != nil }
                 try check(model.timelinePreview.represented != nil && model.paused,
@@ -200,6 +215,16 @@ private final class DragProbeView: PlayerMouseView {
                 model.setMediaOnly(false); model.timelinePreview.hoverX = nil
                 try check(model.window!.frame.size == normalSize && model.window!.minSize == originalMinimum,
                     "1 restores the previous window dimensions and minimum size")
+                try check(model.window!.frame == originalFrame, "Restoring title chrome returns to the original screen position")
+                for _ in 0..<12 {
+                    model.setMediaOnly(true)
+                    try await Task.sleep(for: .milliseconds(30))
+                    guard abs(model.window!.frame.maxY - originalTop) < 1 else { throw Failure(message: "Compact mode moved the media top") }
+                    model.setMediaOnly(false)
+                    try await Task.sleep(for: .milliseconds(30))
+                }
+                try check(model.window!.frame == originalFrame, "Repeated 1/2 toggles do not make the window drift upward")
+                try check(abs(videoTop() - originalVideoTop) < 1, "Restoring the title bar leaves the actual video surface at its original height")
                 model.scrubPosition = 4; model.scrubbing = true
                 model.timelinePreview.request(model.thumbnailRequest(time: 4))
                 try await waitFor { !model.timelinePreview.loading && model.timelinePreview.image != nil }

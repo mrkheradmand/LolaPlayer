@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.6.3 (build 25) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Fixed upward window drift when switching between media-only and full interface by preserving the media top position across title-bar changes. Redesigned Settings with General, Playback, and Bookmarks navigation, grouped controls, and clearer descriptions. Moved automatic update preferences into About and refreshed both README guides.
+
+### Removed
+
+- Update-check controls and notices from Settings, plus the duplicate Check for Updates app-menu command; manual checking remains in About.
+
 ## 1.6.2 (build 24) — 2026-10-21
 
 ### Added
