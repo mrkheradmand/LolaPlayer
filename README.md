@@ -34,16 +34,18 @@ Installation instructions are also included in **Install Notes.txt** inside the 
 
 - Named, searchable bookmarks that stay saved when you close the app.
 - Float on Top during playback, full screen, and adjustable window sizes.
-- Playlists, playback history, shuffle, repeat, and A–B looping.
+- Media-only view with a progress bar (**2**); restore the full interface with **1**.
+- Playlists, playback history, shuffle, repeat, and A–B looping. With **Repeat Off**, playback stops at the end of the current file, even if Shuffle is on.
 - Playback speed from **0.25× to 4×**, frame stepping, and chapter navigation.
 - Audio and subtitle selection, external subtitles, and timing adjustments.
 - Mac media keys and Now Playing controls.
+- Notifications when a new GitHub release is available.
 
 ## Supported file types
 
 | Type | Formats |
 | --- | --- |
-| Video | MP4, MKV, MOV, AVI, WebM, M4V, WMV, FLV, MPEG/MPG, TS, 3GP/3G2, F4V, ASF, DIVX, M2TS/MTS/M2T, VOB/EVO, MXF, DV, Y4M, IVF, RM/RMVB, OGV/OGM, WTV, DAV, BIK/SMK |
+| Video | MP4, MKV, MOV, AVI, WebM, M4V, WMV, FLV, MPEG/MPG, TS, 3GP/3G2, F4V, ASF, DIVX, M2TS/MTS/M2T, VOB/EVO, MXF, DV, Y4M, IVF, RM/RMVB, OGV/OGM, WTV, DAV, BIK/SMK, VVC/H266 |
 | Audio | MP3, M4A, FLAC, WAV, OGG, Opus, AAC, MKA, OGA, WEBA, AIF/AIFF/AIFC, CAF, AU/SND, APE, WV, MPC, TTA, TAK, SHN, AMR, SPX, WMA, AC3/EAC3, DTS/DTSHD, THD/MLP, DSF/DFF, RA |
 | MIDI | MID, MIDI (requires the Mac's built-in MIDI instrument) |
 | Playlists | M3U, M3U8 |
@@ -67,13 +69,22 @@ Open a file with **⌘O** or drag it onto the player. You can also open folders 
 | Browse all bookmarks | ⇧⌘B |
 | Toggle Float on Top | ⌥⌘T |
 
+Press **1** or **2** while the player is active and you aren’t typing in a text box.
+
 Use the **Bookmarks** tab to name, search, and replay saved moments. The **Playlist** and **History** tabs help you return to your media.
+
+## Updates
+
+Lola checks for new releases when it opens and once a day while running. When an update is available, click **View Release** in the notice to open the download page.
+
+To turn automatic checks off, uncheck **Automatically check for updates** in **Lola Player → Settings…**. You can still choose **Lola Player → Check for Updates…** at any time. Updates are downloaded and installed manually.
 
 ## Version
 
 | App | Release |
 | --- | --- |
-| Version | 1.3.0, build 15 |
+| Version | 1.4.1, build 20 |
+
 
 See [release notes](versions.md) for what's changed.
 See [Technical README](README-technical.md) for advanced users.

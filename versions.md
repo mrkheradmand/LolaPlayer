@@ -1,5 +1,75 @@
 # Lola Player versions
 
+## 1.4.1 (build 20) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Repeat Off now stops and pauses at the end of the current file, even with additional queued files and Shuffle enabled; manual navigation remains available and the other three repeat modes retain their behavior. Updated both README guides and added app regression checks for all four repeat modes.
+
+### Removed
+
+- None.
+
+## 1.4.0 (build 19) — 2026-10-21
+
+### Added
+
+- GitHub release checks at launch and daily, with a persistent update notice and release-page link; saved checkbox to disable automatic checks and manual Check for Updates actions.
+
+### Modified
+
+- Update checks compare numeric stable versions, respect dismissed notices, handle timeouts and API errors, cancel when disabled, and avoid networking in smoke mode. Settings now scrolls to keep all options reachable on smaller screens. Updated both README guides and added release-response, request, preference, and notification checks.
+
+### Removed
+
+- None.
+
+## 1.3.3 (build 18) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Audited both READMEs against current source and scripts; refreshed navigation, media-only feature summary, runtime/build/test instructions, Git tracking details, bookmark import limits, release tagging, and version-maintenance guidance.
+
+### Removed
+
+- Removed repository links to ignored local research files and outdated release-tag examples.
+
+## 1.3.2 (build 17) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Added the missing 1/2 view shortcuts to the technical README shortcut table and clarified their activation and typing safeguards in both READMEs.
+
+### Removed
+
+- None.
+
+## 1.3.1 (build 16) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Updated technical README validation results to distinguish the successful 1.3.0 checks from historical 1.1.0 format coverage, and corrected the outdated smoke-run limitation.
+
+### Removed
+
+- None.
+
 ## 1.3.0 (build 15) — 2026-10-21
 
 ### Added

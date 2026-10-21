@@ -4,7 +4,7 @@
 
 Open the DMG and drag Lola Player to Applications.
 
-**First launch:** The app isn't notarized, so the first launch is blocked: go to **System Settings → Privacy & Security** and click **Open Anyway**, or run this in Terminal after copying the app to Applications:
+**First launch:** The app isn't notarized, so macOS may block the first launch: go to **System Settings → Privacy & Security** and click **Open Anyway**, or run this in Terminal after copying the app to Applications:
 
 ```sh
 xattr -dr com.apple.quarantine "/Applications/Lola Player.app"
@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.3.0, build 15 |
+| Version | 1.4.1, build 20 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -37,36 +37,36 @@ This is an independent implementation of the core free-player workflow. It is **
 
 ## Contents
 
-- [Lola Player](#lola-player)
-  - [Contents](#contents)
-  - [Getting started](#getting-started)
-  - [Features](#features)
-    - [Named video bookmarks: save, search, and replay exact moments](#named-video-bookmarks-save-search-and-replay-exact-moments)
-    - [Playback-aware Float on Top](#playback-aware-float-on-top)
-    - [Other playback controls](#other-playback-controls)
-  - [Supported media](#supported-media)
-  - [Using the player](#using-the-player)
-    - [Opening media and the library](#opening-media-and-the-library)
-    - [Seeking, speed, looping, audio, and subtitles](#seeking-speed-looping-audio-and-subtitles)
-    - [Settings and defaults](#settings-and-defaults)
-    - [MacBook media buttons and Now Playing](#macbook-media-buttons-and-now-playing)
-  - [Keyboard shortcuts](#keyboard-shortcuts)
-  - [Importing from Elmedia](#importing-from-elmedia)
-  - [Data, preferences, and backups](#data-preferences-and-backups)
-    - [Export and restore](#export-and-restore)
-    - [Local and network behavior](#local-and-network-behavior)
-  - [Building from source](#building-from-source)
+- [Getting started](#getting-started)
+- [Features](#features)
+  - [Named video bookmarks: save, search, and replay exact moments](#named-video-bookmarks-save-search-and-replay-exact-moments)
+  - [Playback-aware Float on Top](#playback-aware-float-on-top)
+  - [Other playback controls](#other-playback-controls)
+- [Supported media](#supported-media)
+- [Using the player](#using-the-player)
+  - [Media-only view](#media-only-view)
+  - [Opening media and the library](#opening-media-and-the-library)
+  - [Seeking, speed, looping, audio, and subtitles](#seeking-speed-looping-audio-and-subtitles)
+  - [Settings and defaults](#settings-and-defaults)
+  - [MacBook media buttons and Now Playing](#macbook-media-buttons-and-now-playing)
+- [Updates](#updates)
+- [Keyboard shortcuts](#keyboard-shortcuts)
+- [Importing from Elmedia](#importing-from-elmedia)
+- [Data, preferences, and backups](#data-preferences-and-backups)
+  - [Export and restore](#export-and-restore)
+  - [Local and network behavior](#local-and-network-behavior)
+- [Building from source](#building-from-source)
+  - [Requirements](#requirements)
+  - [Build the bundle](#build-the-bundle)
+  - [Build details and environment variables](#build-details-and-environment-variables)
+- [Testing and verification](#testing-and-verification)
+  - [Optional real-engine smoke test](#optional-real-engine-smoke-test)
+- [Project structure](#project-structure)
+- [Troubleshooting](#troubleshooting)
+- [Limitations and excluded features](#limitations-and-excluded-features)
+- [Dependencies and provenance](#dependencies-and-provenance)
 - [Automatic GitHub releases](#automatic-github-releases)
-    - [Requirements](#requirements)
-    - [Build the bundle](#build-the-bundle)
-    - [Build details and environment variables](#build-details-and-environment-variables)
-  - [Testing and verification](#testing-and-verification)
-    - [Optional real-engine smoke test](#optional-real-engine-smoke-test)
-  - [Project structure](#project-structure)
-  - [Troubleshooting](#troubleshooting)
-  - [Limitations and excluded features](#limitations-and-excluded-features)
-  - [Dependencies and provenance](#dependencies-and-provenance)
-  - [Versions and release notes](#versions-and-release-notes)
+- [Versions and release notes](#versions-and-release-notes)
 
 ## Getting started
 
@@ -115,7 +115,7 @@ Enable the pin button, **View → Float on Top**, or **⌥⌘T**.
 | Opening, buffering, or playback failure | Normal window level |
 | Preference disabled | Normal window level |
 
-The selected pin represents the saved preference, not necessarily the current window level. The status overlay appears when floating is enabled or its active state changes, then hides automatically after **two seconds**. It displays **Floating** when active and **Float on Top · paused** when suspended, including other inactive states such as end of file. Hiding the message does not change the floating preference or window level.
+The selected pin represents the saved preference, not necessarily the current window level. The status overlay is suppressed in media-only view. The status overlay appears when floating is enabled or its active state changes, then hides automatically after **two seconds**. It displays **Floating** when active and **Float on Top · paused** when suspended, including other inactive states such as end of file. Hiding the message does not change the floating preference or window level.
 
 ### Other playback controls
 
@@ -138,7 +138,7 @@ The app uses libmpv with FFmpeg rather than relying solely on macOS system codec
 
 | Category | Documented formats or inputs |
 | --- | --- |
-| Video containers | MP4, MKV, MOV, AVI, WebM, M4V, WMV, FLV, MPEG/MPG, TS; 3GP/3G2, F4V, ASF, DIVX, M2TS/MTS/M2T, VOB/EVO, MXF, DV, Y4M, IVF, RM/RMVB, OGV/OGM, WTV, DAV, BIK/SMK |
+| Video containers | MP4, MKV, MOV, AVI, WebM, M4V, WMV, FLV, MPEG/MPG, TS; 3GP/3G2, F4V, ASF, DIVX, M2TS/MTS/M2T, VOB/EVO, MXF, DV, Y4M, IVF, RM/RMVB, OGV/OGM, WTV, DAV, BIK/SMK, VVC/H266 |
 | Audio files | MP3, M4A, FLAC, WAV, OGG, Opus, AAC; MKA, OGA, WEBA, AIF/AIFF/AIFC, CAF, AU/SND, APE, WV, MPC, TTA, TAK, SHN, AMR, SPX, WMA, AC3/EAC3, DTS/DTSHD, THD/MLP, DSF/DFF, RA |
 | MIDI | Local MID/MIDI, synthesized using the macOS General MIDI component when available; no bundled SoundFont or encoded output |
 | Newer codecs | VVC/H266 and ProRes RAW decoders are registered in the bundled FFmpeg 9.0.1 runtime, which also supplies newer AAC/USAC decoding. Specific files/profiles still need validation |
@@ -149,11 +149,11 @@ The app uses libmpv with FFmpeg rather than relying solely on macOS system codec
 
 **Previously verified in the visible app:** H.264 video in MP4 with AC-3 audio, and H.264 video in MKV with Opus audio. The 1.1.0 decoder checks also successfully decoded synthetic AIFF, CAF, AU, WV, TTA, MKA, OGA, WEBA, WMA, AC3, EAC3, DTS, THD, MLP, 3GP, F4V, ASF, M2TS, MTS, VOB, IVF, Y4M, RM, and local HLS inputs through the bundled libmpv. This is not certification of every variant. Discs, network streams and specific VVC/xHE-AAC/ProRes RAW files have not all been verified. Native MIDI transport/bookmarks passed the real-app smoke checks; physical listening and every instrument/program variant are not certified. Tracker modules are intentionally excluded. Live streams may not support seeking or frame stepping.
 
-**Playback runtime:** mpv **0.41.0** with FFmpeg **9.0.1**, imported from the official IINA 1.5.0 package supplied locally. The app bundles its own libraries and does not depend on IINA remaining installed. Registered VVC and ProRes RAW decoders are confirmed; decoder presence does not certify every profile/file or hardware path. **Help → Playback Support…** reports the actual bundled versions and optional capabilities. The separate developer FFmpeg 9.0.2 command is used only for generating test fixtures.
+**Playback runtime:** mpv **0.41.0** with FFmpeg **9.0.1**, bundled from the official IINA 1.5.0 package pinned in `Runtime/pinned.json`. Release builds download and verify that package; local builds can import it or select another compatible runtime. The app bundles its own libraries and does not depend on IINA remaining installed. Registered VVC and ProRes RAW decoders are confirmed; decoder presence does not certify every profile/file or hardware path. **Help → Playback Support…** reports the actual bundled versions and optional capabilities. A separate developer FFmpeg command is used only for generating test fixtures; its version depends on the local installation.
 
 **Disc limits:** this runtime includes Blu-ray reading, but no native DVD reader. Unencrypted Blu-ray folder/image routing and numeric title selection are implemented, with real disc validation pending. DVD folders/images report the missing reader clearly; individual VOB files play. Interactive menus and decryption are excluded.
 
-**Tracker modules:** MOD, XM, IT, S3M, MTM and UMX support was removed from this update at the user’s request. No libopenmpt dependency is bundled.
+**Tracker modules:** MOD, XM, IT, S3M, MTM and UMX files are intentionally excluded. No libopenmpt dependency is bundled.
 
 Input details:
 
@@ -203,10 +203,10 @@ These controls never delete media from disk. History removal preserves file reco
 - Drag the timeline, use the ten-second skip controls, or choose **Playback → Jump to Time…**. Times accept seconds or colon-separated values, such as `90`, `01:30`, or `01:02:30`.
 - The speed button toggles between 1× and 1.5×. Settings provides more speeds; keyboard shortcuts adjust by 0.1×.
 - Click the **repeat button immediately after Next** to cycle: **Repeat Off → One File → Current Folder → Whole Library → Repeat Off**. Right-click it to select a mode directly. Playback → Repeat and Settings use the same modes.
-- **Repeat Off:** continue through the playlist without wrapping at its ends. **One File:** restart the current file when it ends; manual Previous/Next still use the playlist.
+- **Repeat Off:** stop at the end of the current file, even with other files queued or Shuffle enabled. The finished file stays selected; Play restarts it from the beginning. Manual Previous/Next still use the playlist without wrapping at its ends. **One File:** restart the current file when it ends; manual Previous/Next still use the playlist.
 - **Current Folder:** cycle through regular, non-hidden media files in the current file’s immediate folder, sorted naturally by filename. Unopened sibling files are registered without appearing as played in History. Folder repeat requires a local media file; network URLs do not have a folder scope.
 - **Whole Library:** cycle through all file/URL records known to Lola, including records outside the playlist or hidden from History, in natural filename order. Missing local files are skipped. This does not scan the entire Mac.
-- Folder/library modes wrap from the last item to the first and from the first to the last. Automatic transitions and manual track changes start the selected file at zero. Shuffle chooses another available item within the active scope when possible. Toggle it with the **shuffle button immediately left of Previous**; blue means enabled. The button, Playback menu, and Settings share the same shuffle setting.
+- Folder/library modes wrap from the last item to the first and from the first to the last. Automatic transitions and manual track changes start the selected file at zero. Shuffle chooses another available item within the active scope when possible. With Repeat Off it affects manual Previous/Next only; it never starts another file automatically. Toggle it with the **shuffle button immediately left of Previous**; blue means enabled. The button, Playback menu, and Settings share the same shuffle setting.
 - For A–B looping, set A at the start and B at a later position. Clear/Cancel removes the loop. Opening another file clears its loop points.
 - Choose chapters from **Playback → Chapters** when present. For disc records, **Playback → Choose Disc Title…** selects a DVD title (starting at 1) or Blu-ray playlist index (starting at 0). **Use Longest Disc Title** restores automatic selection. Disc bookmarks retain the selected title as well as the saved second. Frame stepping pauses playback; reverse stepping depends on the source/decoder.
 - Select embedded tracks through **Audio → Audio Track** and **Subtitles → Subtitle Track**.
@@ -226,6 +226,7 @@ Open **Lola Player → Settings…**, press **⌘,**, or click the playback-sett
 | Remember playback position for every file | On | Yes |
 | Play automatically when opening media | On | Yes |
 | Ask for a name when adding a bookmark | Off | Yes |
+| Automatically check for updates | On | Yes |
 | Playback speed | 1× | No |
 | Repeat | Off | No |
 | Shuffle | Off | No |
@@ -251,12 +252,24 @@ The integration is built against Apple's public framework. Verification of actua
 
 References: [MPRemoteCommandCenter](https://developer.apple.com/documentation/mediaplayer/mpremotecommandcenter), [MPNowPlayingInfoCenter](https://developer.apple.com/documentation/mediaplayer/mpnowplayinginfocenter).
 
+## Updates
+
+Automatic release checks are enabled by default and saved under the `automaticUpdateChecks` preference. They run at launch and every 24 hours while the app is running. Uncheck **Automatically check for updates** in **Settings…** to cancel a pending check and stop automatic requests. Checking manually from **Lola Player → Check for Updates…** or Settings remains available when automatic checks are off.
+
+The checker uses GitHub’s [latest published release API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release) at `https://api.github.com/repos/mrkheradmand/LolaPlayer/releases/latest`. It compares numeric `MAJOR.MINOR.PATCH` versions (optionally prefixed with `v`) against the running app’s bundle metadata, ignoring drafts, prereleases, and versions equal to or older than the installed app. It does not compare build numbers. Unsupported tags, invalid responses, connection failures, and rate limits appear as a check status in Settings without interrupting playback. Requests time out after 20 seconds; automatic failures retry on the next scheduled check or launch.
+
+A newer release displays a persistent in-app notice, including in media-only view. **View Release** opens that release’s page in the browser; the app constructs links for this repository and does not automatically download, replace, or install anything. Dismissing a notice remembers that version in `dismissedUpdateVersion` and suppresses further automatic notices for it; a manual check can show it again. No system-notification permission is required. The settings sheet shows the same notice while open.
+
+Requests use an ephemeral session with no app-provided credentials or cookies. GitHub receives a normal HTTPS request and a User-Agent containing the app version; media files, library records, and bookmarks are not sent. Normal playback does not depend on successful update checks. Smoke-test launches suppress automatic checks.
+
 ## Keyboard shortcuts
 
 Shortcuts apply when focus is not inside a text field or modal dialog. Help → Keyboard Shortcuts offers a shorter reference.
 
 | Action | Shortcut |
 | --- | --- |
+| Show full interface | 1 |
+| Media only with progress bar | 2 |
 | Open files/folder/playlist | ⌘O |
 | Open media URL | ⇧⌘O |
 | Save playlist | ⌘S |
@@ -282,6 +295,8 @@ Shortcuts apply when focus is not inside a text field or modal dialog. Help → 
 | Minimize | ⌥⌘M |
 | Hide app | ⌘H |
 | Close window / quit | ⌘W / ⌘Q |
+
+Press **1** or **2** without modifier keys while the player window is active. These view shortcuts are inactive while typing, in settings, or in a modal dialog. **1** restores the title bar, playback controls, and previously visible library; **2** leaves only media and the seek bar.
 
 Click the video to play/pause; double-click to toggle full screen.
 
@@ -310,7 +325,7 @@ The original installation check recovered **three files and six bookmarks**. Tha
 | Data | Location |
 | --- | --- |
 | Records, history, positions, bookmarks | `~/Library/Application Support/LumenPlayer/library.json` |
-| Preferences and playlist UUIDs | UserDefaults domain `local.lolaplayer.app` |
+| Preferences, playlist UUIDs, and dismissed-update version | UserDefaults domain `local.lolaplayer.app` |
 | Window frame | AppKit window-frame autosave |
 | Build and test output | `.build/` |
 | Built application | `dist/Lola Player.app` |
@@ -321,7 +336,7 @@ Library records contain UUIDs, media locations, filesystem identity, macOS URL-b
 
 ### Export and restore
 
-**Playback → Export Bookmarks…**, or **Export…** in Bookmarks, writes complete records for bookmarked files. It includes paths/URLs, resume metadata, and URL-bookmark data—not just titles and seconds. Import expects Lola's JSON format and skips exact duplicate time/title pairs. TXT/PBF exchange is not implemented.
+**Playback → Export Bookmarks…**, or **Export…** in Bookmarks, writes complete records for bookmarked files. It includes paths/URLs, resume metadata, and URL-bookmark data—not just titles and seconds. Import expects Lola's JSON format and restores media locations and bookmark times/names, skipping exact duplicate time/title pairs. It does not restore all exported record metadata, including filesystem identity, URL-bookmark data, resume positions, or per-bookmark disc-title selections. Use a full library backup to preserve those details. TXT/PBF exchange is not implemented.
 
 For a complete backup, quit the app and copy `library.json`. You can export preferences separately:
 
@@ -339,7 +354,7 @@ A bookmark export omits unbookmarked history and playlist membership; a full lib
 
 ### Local and network behavior
 
-The application code has no account, telemetry, cloud-sync, purchasing, or automatic-update integration. Local playback and library operations do not require a server. Network playback connects to the supplied source through the engine. Media is referenced in place, rather than copied or uploaded by the library. Elmedia's original files/preferences are not modified.
+The application code has no account, telemetry, cloud-sync, or purchasing integration. Optional automatic update checks contact GitHub as described under [Updates](#updates); updates are installed manually. Local playback and library operations do not require a server. Network playback connects to the supplied source through the engine. Media is referenced in place, rather than copied or uploaded by the library. Elmedia's original files/preferences are not modified.
 
 ## Building from source
 
@@ -347,17 +362,21 @@ The application code has no account, telemetry, cloud-sync, purchasing, or autom
 
 - Swift **6.4.x** with a compatible macOS SDK (Xcode 27.0 or its Command Line Tools).
 - Xcode or Command Line Tools providing `swift`, `xcrun`, `otool`, `install_name_tool`, and `codesign`.
-- Python 3 and zsh for packaging.
-- A compatible installed `libmpv.2.dylib` and its dependent libraries.
+- Python **3.11 or later** and zsh for packaging; GitHub workflows use Python 3.12.
+- Apple Silicon for the supplied arm64 build and checks.
+- A compatible `libmpv.2.dylib` and its dependent libraries, downloaded with `python3 scripts/fetch-runtime.py` or imported locally.
+- GitHub CLI (`gh`) for publishing releases locally; it is not needed to build or run the app.
+- A developer FFmpeg command for optional format-fixture generation; set `FFMPEG` to override its path.
 
-No third-party Swift packages are downloaded. SQLite and UI/graphics frameworks come from the SDK. The documented system requirement is macOS 27 or later; building also requires a compatible Swift toolchain and macOS SDK. The existing bundle was checked on the development Mac, not across every OS version.
+No third-party Swift packages are downloaded. SQLite and UI/graphics frameworks come from the SDK. The documented system requirement is macOS 27 or later. The package deployment target and bundle minimum remain macOS 14, which does not establish tested support on older systems; building requires a compatible Swift toolchain and macOS SDK. The existing bundle was checked on the development Mac, not across every OS version.
 
 ### Build the bundle
 
 From the project root:
 
 ```sh
-scripts/build-app.sh
+python3 scripts/fetch-runtime.py  # First build: download and stage the pinned runtime
+zsh scripts/build-app.sh
 ```
 
 The script builds the release executable, creates the bundle, copies the metadata/icon, bundles playback dependencies, and signs the app ad hoc. Output:
@@ -391,12 +410,14 @@ Open `Package.swift` in Xcode for source inspection/debugging. A standalone deve
 - `--disable-sandbox` applies to SwiftPM's build sandbox; it does not change macOS security settings.
 - [LolaPlayerIcon.png](Resources/LolaPlayerIcon.png) is the generated icon artwork: a luminous play symbol and cyan/violet playback ring on an indigo tile. It was created with the built-in image-generation tool; the [generation prompt](Resources/LolaPlayerIcon.prompt.txt) is preserved.
 - Each build runs `scripts/generate-icon.swift` to resize this transparent master into `Resources/AppIcon.icns`, including standard and Retina representations from 16 to 1024 pixels, then copies it into the signed app bundle.
-- `.build/`, `dist/`, and generated research fixtures are ignored by `.gitignore`.
+- `.build/`, `Runtime/Frameworks/`, and `dist/releases/` are ignored by Git. The packaged app under `dist/Lola Player.app` and fixtures under `Research/test-media/` are tracked. Other `Research/` files are ignored.
 
 | Variable | Purpose |
 | --- | --- |
 | `LUMEN_MPV_LIBRARY` | Select runtime for packaging, or override the runtime loaded at app startup |
 | `LUMEN_DATA_DIR` | Select a different directory for `library.json` during a normal launch |
+
+`FFMPEG` selects the executable used by the optional format-playback test. `LUMEN_ALLOW_LEGACY_RUNTIME=1` permits a legacy playback runtime for development-only packaging, as described below.
 
 The data-directory override does not isolate UserDefaults preferences or playlist IDs. Terminal environment variables do not automatically apply to a separately Finder-launched app.
 
@@ -405,14 +426,24 @@ The data-directory override does not isolate UserDefaults preferences or playlis
 Run:
 
 ```sh
-scripts/test.sh
+zsh scripts/ci-checks.sh
+```
+
+This runs the toolchain guard, metadata and format-registration checks, Python tests, and Swift tests. For individual or optional checks:
+
+```sh
+zsh scripts/test.sh
 python3 -m unittest discover -s Tests -p "test_*.py"
-python3 scripts/test-format-playback.py
+python3 scripts/test-format-playback.py  # Requires a built app and developer FFmpeg
 ```
 
 The test script uses `.build/tests` and explicitly loads the toolchain's Swift Testing macro plugin to address the discovery issue encountered with the development toolchain.
 
-The 1.1.0 run passed **22 tests in four Swift suites**, one Python version-sync regression test, **24 decoder/container/HLS checks**, and **15 real-app smoke checks** on mpv 0.41.0 / FFmpeg 9.0.1. Coverage includes:
+Latest app validation (**1.4.1, build 20**, October 21, 2026) passed **29 tests in five Swift suites**, **13 Python tests**, and **25 real-app smoke checks** using mpv 0.41.0 / FFmpeg 9.0.1. Update-check tests cover numeric version comparison, stable-release filtering, malformed data, HTTP errors, and a simulated GitHub request. The public release endpoint was also reached successfully during 1.4.0 development. The app smoke run verified Repeat Off stopping with queued files and Shuffle both off and on, manual Next with Repeat Off, One File restarting, folder/library wrapping, saved update preferences, notification dismissal, suppression of automatic networking in smoke mode, media-only shortcuts, title-bar removal and restoration, preserved library visibility, modifier-key and text-editing safeguards, MP4/MKV playback, floating behavior, bookmarks, persistence, and recursive-playlist rejection. That run used the development executable with the bundled playback libraries; the release app was also built and its code signature verified. Optional HLS and MIDI fixtures were not included in that run.
+
+Historical validation for **1.1.0** additionally recorded **24 decoder/container/HLS checks** and a different smoke-test set. Those broader format checks were not rerun for 1.4.1.
+
+Automated coverage includes:
 
 - Bookmarks across files and reconstruction of the library from disk.
 - Resume-position storage and repeat visits without duplicate records.
@@ -427,9 +458,10 @@ The 1.1.0 run passed **22 tests in four Swift suites**, one Python version-sync 
 - Existing core history-cleanup behavior.
 - Read-only, repeatable Elmedia import without duplicate bookmarks.
 - Float preference/pause combinations and inactive playback states.
+- Update version comparisons, trusted release links, draft/prerelease filtering, invalid tags, malformed responses, HTTP failures, and request construction.
 - All four repeat selections, forward/backward wrapping boundaries, empty/single-item scopes, stable natural library ordering, and folder discovery without changing History.
 
-Visible-app checks verified MP4/MKV playback, imported bookmark navigation across files, floating during playback, suspension on pause/end, a new five-second bookmark, and reopening it after relaunch. The final signature was verified with:
+Earlier visible-app checks verified MP4/MKV playback, imported bookmark navigation across files, floating during playback, suspension on pause/end, a new five-second bookmark, and reopening it after relaunch. The final signature was verified with:
 
 ```sh
 codesign --verify --deep --strict "dist/Lola Player.app"
@@ -444,9 +476,9 @@ Provide an isolated directory containing `first.mp4` and `second.mkv`, both long
   --smoke-test /absolute/path/to/fixtures
 ```
 
-The runner exercises decoding, actual window levels, pause/resume, file switching, bookmarks, persistence, and end-of-file behavior. It creates an isolated library subdirectory beside the fixtures, writes `smoke-result.json`, and exits. It temporarily changes float/autoplay/bookmark-prompt preferences and restores them on normal completion; its playlist is not persisted.
+The runner exercises end-of-file behavior for all four repeat modes, including Repeat Off with Shuffle and additional queued files, update-check preferences and dismissal without automatic networking, media-only shortcuts and window chrome, typing safeguards, decoding, actual window levels, pause/resume, file switching, bookmarks, persistence, and end-of-file behavior. It creates an isolated library subdirectory beside the fixtures, writes `smoke-result.json`, and exits. It temporarily changes float/autoplay/bookmark-prompt preferences and restores them on normal completion; its playlist is not persisted.
 
-The command-line runner could not launch in the original agent's restricted shell, so no successful automated GUI smoke run is claimed. Visible checks were performed instead. Generated `Research/test-media/` files are local fixtures, not requirements for using the app.
+Launching the smoke runner requires a macOS graphical session and permission to launch the app. A successful automated app smoke run is recorded above; it does not replace visual inspection or certify every media format. `Research/test-media/` contains playback fixtures, not files required to use the app.
 
 ## Project structure
 
@@ -456,6 +488,7 @@ Sources/
   PlayerApp/
     Application.swift            Window/app lifecycle and native menus
     PlayerModel.swift            Playback state, settings, persistence coordination
+    PlayerModel+Updates.swift    Update scheduling, preferences, and notification state
     PlayerView.swift             Video, transport controls, library, settings UI
     SmokeTest.swift              Optional real-engine smoke runner
     SystemMediaControls.swift    macOS media commands and Now Playing metadata
@@ -463,14 +496,20 @@ Sources/
     Library.swift                Records, bookmarks, storage, floating policy
     ElmediaImport.swift          Read-only database/archive importer
     PlaybackOrder.swift          Repeat modes, ordering, and folder discovery
+    MediaInput.swift             HLS/playlist parsing and disc-folder recognition
+    UpdateChecker.swift          GitHub release requests and numeric version comparison
   CMpv/
     CMpv.m                       Objective-C libmpv bridge and OpenGL renderer
     include/CMpv.h               Swift-facing playback API
   CSQLite/                       System SQLite module map/header
 Tests/PlayerCoreTests/            Swift Testing suites
-Resources/                       Metadata and app icon
-scripts/                         Build, runtime bundling, tests, icon source
-Research/                        REA findings, evidence, reference resources
+Resources/                       Metadata, artwork, and installation notes
+Runtime/                         Runtime download pin and setup documentation
+scripts/                         Build, releases, runtime bundling, and checks
+.github/workflows/               CI and tagged-release workflows
+Research/test-media/             Tracked MP4/MKV playback fixtures
+README.md                        Short guide for general users
+README-technical.md              Detailed reference for power users
 ```
 
 UI-facing Swift code runs on the main actor. The bridge dynamically loads libmpv, sends asynchronous commands, reads playback state, and renders on a dedicated serial OpenGL queue. Separating rendering from synchronous client reads follows libmpv's threading requirements. OpenGL is deprecated by Apple but used here for compatibility with the bundled runtime; Metal rendering is not implemented.
@@ -514,13 +553,13 @@ Other differences from Elmedia:
 - JSON bookmark exchange only; no TXT/PBF interoperability.
 - Folder scans are shallow. HLS, discs and MIDI instruments have the availability/verification limits described under Supported Media; tracker modules are excluded.
 - Some playback settings are session-only.
-- No cloud synchronization, automatic updater, or installer.
+- No cloud synchronization, automatic update installation, or installer. Release checking and notifications are available.
 
 Validation does not certify every codec, service, hardware configuration, HDR path, or macOS version. The deployment target and broad engine support should not be read as evidence that every combination was tested.
 
 ## Dependencies and provenance
 
-The application is newly written Swift and Objective-C. Playback uses open-source libmpv with dependent libraries, including FFmpeg and libass. REA inspected the original app's Mach-O metadata and a snapshot of its SQLite bookmark storage. See [Research/findings.md](Research/findings.md) and [Research/rea-evidence.json](Research/rea-evidence.json) for observations and coverage limits.
+The application is newly written Swift and Objective-C. Playback uses open-source libmpv with dependent libraries, including FFmpeg and libass. REA inspected the original app's Mach-O metadata and a snapshot of its SQLite bookmark storage. The original local observations are in `Research/findings.md` and `Research/rea-evidence.json`; these ignored research files are not included in a repository checkout.
 
 Primary technical references:
 
@@ -537,12 +576,13 @@ Ordinary branch pushes and pull requests run [Checks](.github/workflows/ci.yml):
 
 Pushing a version tag runs [Release](.github/workflows/release.yml) on GitHub's Apple Silicon [xcode-27 runner](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md). Both workflows explicitly select Xcode 27.0 through `DEVELOPER_DIR` and check for Swift 6.4.x before compilation. This avoids the Swift 6.3.3 compiler crash encountered in `PlayerView.swift` on the macOS 26 runner. It validates the tag against `Resources/Info.plist`, README and the newest `versions.md` entry; runs the checks; imports a pinned playback runtime; builds and signs the app ad hoc; and creates the versioned DMG with its installation notes and checksum. The release uses that version's notes from `versions.md`.
 
-Commit and push the completed changes before tagging that commit. For example, to publish version 1.2.0 after its metadata and release notes have been updated:
+Commit and push the completed changes before tagging that commit. Read the version from app metadata to avoid tagging an old version:
 
 ```sh
+release_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)
 git push origin HEAD
-git tag v1.2.0
-git push origin v1.2.0
+git tag -a "v$release_version" -m "Lola Player $release_version"
+git push origin "v$release_version"
 ```
 
 Use the actual version from `Resources/Info.plist` for each release. The workflow does not increment versions or edit commits. Only exact `vMAJOR.MINOR.PATCH` tags matching the newest version are accepted. Watch progress in the repository's **Actions** tab. GitHub Actions must be enabled and repository policy must allow the workflow's `contents: write` permission. Publishing uses the temporary `GITHUB_TOKEN`; no personal access token or Apple signing credentials are required.
@@ -563,8 +603,8 @@ python3 scripts/version.py minor --added "Describe the new feature"
 python3 scripts/version.py check
 ```
 
-Use only the appropriate bump command for a given change set. It updates Info.plist, the README version and prepends release notes. Packaging checks these agree and embeds the release notes. Added/Modified/Removed categories are always present.
+Use only the appropriate bump command for a given change set. It updates `Resources/Info.plist`, the version in `README.md`, and prepends release notes. Update the version in `README-technical.md` to match as well: the script currently checks and updates only the simple README. Keep behavior descriptions and shortcut tables current in both files. Packaging checks source metadata and the simple README, then embeds the release notes; rebuild the app before building a DMG so packaged metadata matches the source version. Added/Modified/Removed categories are always present.
 
 Packaging stages and verifies the entire app before replacing `dist/Lola Player.app`; previous bundles are preserved under `.build/app-previous.*`. No user data is changed by packaging. `LUMEN_ALLOW_LEGACY_RUNTIME=1 scripts/build-app.sh` is an explicit development-only fallback for testing the UI and existing formats when a newer compatible runtime is unavailable; it records the actual legacy runtime and does not enable missing decoders. No encoder, converter or transcoding interface has been added.
 
-MIDI uses Apple's system synthesizer through AVFAudio/AudioToolbox, not FluidSynth. It does not bundle proprietary sound banks or promise an entirely open-source synthesis stack. MIDI supports transport, tempo, volume/mute, A–B looping, bookmarks, repeat and Now Playing; frame stepping and video/subtitle adjustments do not apply. If the system instrument component is unavailable, opening MIDI reports an error rather than crashing. The real-app smoke run passed MIDI pause/resume, seek, bookmark and floating checks. A separate restricted-shell run also verified safe handling when the system component is unavailable. No physical-listening or exhaustive instrument test is claimed.
+MIDI uses Apple's system synthesizer through AVFAudio/AudioToolbox, not FluidSynth. It does not bundle proprietary sound banks or promise an entirely open-source synthesis stack. MIDI supports transport, tempo, volume/mute, A–B looping, bookmarks, repeat and Now Playing; frame stepping and video/subtitle adjustments do not apply. If the system instrument component is unavailable, opening MIDI reports an error rather than crashing. Earlier MIDI-specific smoke checks passed pause/resume, seek, bookmark and floating checks; the latest 1.4.1 smoke run did not include a MIDI fixture. A separate restricted-shell run also verified safe handling when the system component is unavailable. No physical-listening or exhaustive instrument test is claimed.

@@ -67,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if let index = CommandLine.arguments.firstIndex(of: "--smoke-test"), CommandLine.arguments.count > index + 1 {
             SmokeTest.run(model: model, root: URL(fileURLWithPath: CommandLine.arguments[index + 1])); return
         }
+        model.startAutomaticUpdateChecks()
         let arguments = CommandLine.arguments.dropFirst().filter { !$0.hasPrefix("-") }.map { value in
             if let url = URL(string: value), url.scheme != nil { return url }
             return URL(fileURLWithPath: value)
@@ -131,6 +132,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
                 .applicationVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Development",
                 .credits: credits
             ])
+        }
+        item(app, "Check for Updates…") {
+            self.model.settingsOpen = true
+            self.model.checkForUpdates()
         }
         item(app, "Settings…", key: ",") { self.model.settingsOpen = true }
         app.addItem(.separator()); item(app, "Hide Lola Player", key: "h") { NSApp.hide(nil) }

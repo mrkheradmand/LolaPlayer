@@ -67,6 +67,21 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     var promptForBookmark = UserDefaults.standard.bool(forKey: "promptForBookmark") {
         didSet { UserDefaults.standard.set(promptForBookmark, forKey: "promptForBookmark") }
     }
+    var automaticUpdateChecks = UserDefaults.standard.object(forKey: "automaticUpdateChecks") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(automaticUpdateChecks, forKey: "automaticUpdateChecks")
+            if !automaticUpdateChecks {
+                updateCheckTask?.cancel()
+                availableUpdate = nil
+                updateCheckStatus = "Automatic update checks are off."
+            }
+            startAutomaticUpdateChecks()
+        }
+    }
+    var availableUpdate: ReleaseUpdate?
+    var updateCheckStatus = ""
+    @ObservationIgnored var automaticUpdateTask: Task<Void, Never>?
+    @ObservationIgnored var updateCheckTask: Task<Void, Never>?
     weak var window: NSWindow?
     @ObservationIgnored var engine: LPMpvView?
     @ObservationIgnored var timer: Timer?
@@ -401,8 +416,15 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     }
     func handleEnd() {
         persistPosition()
-        if repeatMode == .track { seek(0); setPaused(false) }
-        else { adjacent(1) }
+        switch repeatMode {
+        case .off:
+            setPaused(true)
+        case .track:
+            seek(0); setPaused(false)
+        case .folder, .library:
+            if let id = adjacentID(1) { play(id, at: 0) }
+            else { setPaused(true) }
+        }
     }
     func setLoopA() { loopA = position; loopB = nil; engine?.setProperty("ab-loop-a", value: String(position)); engine?.setProperty("ab-loop-b", value: "no"); notify("A: \(timestamp(position))") }
     func setLoopB() {
@@ -502,5 +524,5 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         alert.window.initialFirstResponder = input
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }; return input.stringValue
     }
-    func shutdown() { timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
+    func shutdown() { automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
 }

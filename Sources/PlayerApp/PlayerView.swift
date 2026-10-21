@@ -95,6 +95,11 @@ struct PlayerView: View {
             return true
         }
         .overlay { if model.dropTarget { RoundedRectangle(cornerRadius: 8).stroke(.blue, lineWidth: 3).padding(4).allowsHitTesting(false) } }
+        .overlay(alignment: .top) {
+            if model.availableUpdate != nil && !model.settingsOpen {
+                updateNotice.padding(12)
+            }
+        }
         .alert("Lola Player", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button("OK") { model.error = nil }
         } message: { Text(model.error ?? "") }
@@ -297,7 +302,19 @@ struct PlayerView: View {
         case .bookmarks: "Remove all bookmarks for \(record.name)"
         }
     }
+    private var updateNotice: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.down.circle.fill").foregroundStyle(.blue)
+            Text("Lola Player \(model.availableUpdate?.version ?? "") is available.")
+                .font(.callout).frame(maxWidth: .infinity, alignment: .leading)
+            Button("View Release") { model.openUpdateRelease() }
+            Button { model.dismissUpdate() } label: { Image(systemName: "xmark") }
+                .buttonStyle(.plain).help("Dismiss this update").accessibilityLabel("Dismiss update notification")
+        }.padding(12).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+    }
+
     private var settings: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 20) {
             HStack { Text("Playback Settings").font(.title2.bold()); Spacer(); Button("Done") { model.settingsOpen = false }.keyboardShortcut(.defaultAction) }
             Grid(alignment: .leading, horizontalSpacing: 22, verticalSpacing: 16) {
@@ -326,11 +343,24 @@ struct PlayerView: View {
             Toggle("Remember playback position for every file", isOn: $model.rememberPosition)
             Toggle("Play automatically when opening media", isOn: $model.autoplay)
             Toggle("Ask for a name when adding a bookmark", isOn: $model.promptForBookmark)
+            Divider()
+            Toggle("Automatically check for updates", isOn: $model.automaticUpdateChecks)
+            HStack {
+                Button("Check for Updates…") { model.checkForUpdates() }
+                    .disabled(model.updateCheckTask != nil)
+                if !model.updateCheckStatus.isEmpty {
+                    Text(model.updateCheckStatus).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            if model.availableUpdate != nil { updateNotice }
             HStack {
                 Button("All Bookmarks") { model.show(.bookmarks); model.settingsOpen = false }
                 Button("Import Bookmarks…") { model.importBookmarks() }
             }
-        }.padding(24).frame(width: 490).preferredColorScheme(.dark)
+        }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(width: 490, height: min(700, (model.window?.screen?.visibleFrame.height ?? 800) - 100))
+        .preferredColorScheme(.dark)
     }
     private func delayField(_ binding: Binding<Double>, property: String) -> some View {
         HStack {
