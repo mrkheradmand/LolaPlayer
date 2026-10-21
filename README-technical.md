@@ -12,7 +12,9 @@ xattr -dr com.apple.quarantine "/Applications/Lola Player.app"
 
 These instructions are also included in **Install Notes.txt** inside the DMG.
 
-![Lola Player welcome screen](app.jpg)
+<p align="center">
+  <img src="app.png" alt="Lola Player welcome screen">
+</p>
 
 *Screenshot from the app Lola Player.*
 
@@ -24,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.2.3, build 11 |
+| Version | 1.2.6, build 14 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -181,6 +183,8 @@ File-entry context menus offer **Play**, **Add to Playlist**, and, for local fil
 | Playlist | Remove that entry from the queue | **Empty Playlist** clears the whole queue |
 | History | Remove that file from History and Open Recent | **Empty History** clears all visible history |
 | Bookmarks | Remove all bookmarks for that file | **Export…** |
+
+The library search field releases keyboard focus when you click elsewhere in the player, including the video, controls, tabs, rows, and blank space. Its blue focus border disappears without clearing the search or consuming the click. Clicking inside the field or using keyboard navigation can focus it again.
 
 Individual bookmarks also have their own trash buttons. Right-click a filename in Bookmarks to choose **Remove All Bookmarks for This File**. Empty actions apply to the entire list, even while a search is active.
 

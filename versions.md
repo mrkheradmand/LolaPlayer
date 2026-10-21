@@ -1,5 +1,33 @@
 # Lola Player versions
 
+## 1.2.6 (build 14) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Centered the existing images in both README files and updated the technical README image link to the current app.png asset.
+
+### Removed
+
+- None.
+
+## 1.2.5 (build 13) — 2026-10-21
+
+### Added
+
+- None.
+
+### Modified
+
+- Library search now releases keyboard focus and its blue border when clicking outside the field, preserving the search text and normal click actions.
+
+### Removed
+
+- None.
+
 ## 1.2.4 (build 12) — 2026-10-21
 
 ### Added

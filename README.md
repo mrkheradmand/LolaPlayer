@@ -8,7 +8,9 @@ A Player with **named bookmarks at any video timestamp** and **Float on Top that
 
 **[Download Lola Player for Mac](https://github.com/mrkheradmand/LolaPlayer/releases/latest)** · Apple Silicon · macOS 27 or later
 
-![Lola Player welcome screen](app.jpg)
+<p align="center">
+  <img src="app.png" alt="Lola Player welcome screen" width="950">
+</p>
 
 ## Install
 
@@ -23,6 +25,10 @@ xattr -dr com.apple.quarantine "/Applications/Lola Player.app"
 ```
 
 Installation instructions are also included in **Install Notes.txt** inside the disk image. No extra playback software is needed.
+
+<p align="center">
+  <img src="app-bookmark.png" alt="Lola Player bookmark list" width="950">
+</p>
 
 ## Features
 
@@ -65,7 +71,7 @@ Use the **Bookmarks** tab to name, search, and replay saved moments. The **Playl
 
 | App | Release |
 | --- | --- |
-| Version | 1.2.4, build 12 |
+| Version | 1.2.6, build 14 |
 
 See [release notes](versions.md) for what's changed.
 See [Technical README](README-technical.md) for advanced users.

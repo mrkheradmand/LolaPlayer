@@ -15,6 +15,7 @@ struct VideoSurface: NSViewRepresentable {
 
 struct PlayerView: View {
     @Bindable var model: PlayerModel
+    @FocusState private var searchFocused: Bool
     private static let welcomePhoto: NSImage? = {
         let bundled = Bundle.main.url(forResource: "WelcomeNature", withExtension: "png")
         let source = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
@@ -176,7 +177,11 @@ struct PlayerView: View {
                 icon("xmark", "Close library") { model.sidebar = false }
             }.padding(16)
             Picker("Library", selection: $model.tab) { ForEach(LibraryTab.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented).padding(.horizontal, 12)
-            TextField("Search files and bookmarks", text: $model.search).textFieldStyle(.roundedBorder).padding(12)
+            TextField("Search files and bookmarks", text: $model.search)
+                .textFieldStyle(.roundedBorder)
+                .focused($searchFocused)
+                .background(SearchFocusDismissal(isFocused: searchFocused) { searchFocused = false })
+                .padding(12)
             Divider()
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 4) {
@@ -323,6 +328,52 @@ struct PlayerView: View {
                 .onChange(of: binding.wrappedValue) { _, value in model.engine?.setProperty(property, value: String(value)) }
             Stepper("seconds", value: binding, in: -60...60, step: 0.1).labelsHidden()
             Text("seconds").foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// Observes clicks without consuming them, including clicks on native video and controls.
+private struct SearchFocusDismissal: NSViewRepresentable {
+    let isFocused: Bool
+    let dismiss: () -> Void
+
+    func makeNSView(context: Context) -> ClickObserver { ClickObserver() }
+
+    func updateNSView(_ view: ClickObserver, context: Context) {
+        view.isFocused = isFocused
+        view.dismiss = dismiss
+    }
+
+    static func dismantleNSView(_ view: ClickObserver, coordinator: ()) {
+        view.stopObserving()
+    }
+
+    final class ClickObserver: NSView {
+        var isFocused = false
+        var dismiss: (() -> Void)?
+        private var monitor: Any?
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            stopObserving()
+            guard window != nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] event in
+                MainActor.assumeIsolated {
+                    guard let self, self.isFocused, let window = self.window,
+                          event.window === window,
+                          !self.bounds.contains(self.convert(event.locationInWindow, from: nil)) else { return }
+                    window.makeFirstResponder(nil)
+                    self.dismiss?()
+                }
+                return event
+            }
+        }
+
+        func stopObserving() {
+            if let monitor { NSEvent.removeMonitor(monitor) }
+            monitor = nil
         }
     }
 }
