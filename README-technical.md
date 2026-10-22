@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.14.0, build 46 |
+| Version | 1.14.1, build 47 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -415,6 +415,8 @@ From the project root:
 python3 scripts/fetch-runtime.py  # First build: download and stage the pinned runtime
 zsh scripts/build-app.sh
 ```
+
+Icon packaging preserves the original `Resources/LolaPlayerIcon.png` artwork and draws it with an 8% transparent inset on each side at every ICNS size, reducing its visual footprint in Dock, Finder, and About.
 
 The script builds the release executable, creates the bundle, copies the metadata/icon, bundles playback dependencies, and signs the app ad hoc. Output:
 

@@ -3,7 +3,7 @@ import CoreGraphics
 import ImageIO
 import UniformTypeIdentifiers
 
-// Resize the generated artwork without redrawing it, preserving transparency.
+// Preserve the artwork while adding transparent breathing room for Dock sizing.
 guard CommandLine.arguments.count == 3 else {
     fatalError("Usage: swift scripts/generate-icon.swift source.png destination.icns")
 }
@@ -32,7 +32,9 @@ for (type, pixels) in [("icp4", 16), ("icp5", 32), ("icp6", 64),
         fatalError("Unable to allocate icon bitmap")
     }
     context.interpolationQuality = .high
-    context.draw(artwork, in: CGRect(x: 0, y: 0, width: pixels, height: pixels))
+    let canvas = CGRect(x: 0, y: 0, width: pixels, height: pixels)
+    let inset = CGFloat(pixels) * 0.08
+    context.draw(artwork, in: canvas.insetBy(dx: inset, dy: inset))
     let png = NSMutableData()
     guard let image = context.makeImage(),
           let output = CGImageDestinationCreateWithData(png, UTType.png.identifier as CFString, 1, nil) else {

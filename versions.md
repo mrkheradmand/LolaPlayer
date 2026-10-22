@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.14.1 (build 47) — 2026-10-22
+
+### Added
+
+- None.
+
+### Modified
+
+- Add transparent padding when packaging app icons so the charcoal tile has a balanced visual size in Dock, Finder, and About; preserve the source artwork.
+
+### Removed
+
+- None.
+
 ## 1.14.0 (build 46) — 2026-10-22
 
 ### Added
