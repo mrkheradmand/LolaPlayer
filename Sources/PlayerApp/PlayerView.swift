@@ -75,6 +75,8 @@ struct PlayerView: View {
                     Button("Show All Bookmarks") { model.show(.bookmarks) }
                     Button(model.mediaOnly ? "Show Full Interface (1)" : "Media Only (2)") { model.setMediaOnly(!model.mediaOnly) }
                     Button("Enter Full Screen") { model.window?.toggleFullScreen(nil) }
+                    Divider()
+                    Button("Close") { model.closePlayerWindow() }
                 }
                 if model.mediaOnly {
                     timeline.padding(.horizontal, 12).padding(.vertical, 4)

@@ -1,5 +1,20 @@
 # Lola Player versions
 
+## 1.10.0 (build 39) — 2026-10-22
+
+### Added
+
+- Remember media-only or full-interface mode across launches, independently of window-position saving.
+- Close option beneath a separator at the bottom of the player-area context menu.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
 ## 1.9.7 (build 38) — 2026-10-21
 
 ### Added

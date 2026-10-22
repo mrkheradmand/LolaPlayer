@@ -39,6 +39,38 @@ private final class DragProbeView: PlayerMouseView {
                 try check(NSApp.mainMenu != nil && model.libraryReady, "Menu and library are ready before playback tests")
                 try check((NSApp.delegate as? AppDelegate)?.libraryController == nil, "Hidden Library panel is not created during startup")
                 try await waitFor { model.engine?.engineReady == true }
+                let modeSuite = "local.lolaplayer.mode-test.\(UUID().uuidString)"
+                let modeDefaults = UserDefaults(suiteName: modeSuite)!
+                defer { modeDefaults.removePersistentDomain(forName: modeSuite) }
+                func freshModeWindow() -> NSWindow {
+                    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 500),
+                        styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+                    window.isReleasedWhenClosed = false
+                    return window
+                }
+                let firstWindow = freshModeWindow()
+                let firstLaunch = PlayerModel(); firstLaunch.window = firstWindow
+                firstLaunch.rememberWindowGeometry = false
+                firstLaunch.setMediaOnly(true, defaults: modeDefaults)
+                let modeWindow = freshModeWindow()
+                let nextLaunch = PlayerModel(); nextLaunch.window = modeWindow
+                nextLaunch.rememberWindowGeometry = false
+                nextLaunch.restoreInterfaceMode(from: modeDefaults)
+                try check(nextLaunch.mediaOnly && modeWindow.titleVisibility == .hidden
+                    && modeWindow.styleMask.contains(.fullSizeContentView)
+                    && modeWindow.minSize == NSSize(width: 100, height: 64),
+                    "Media-only preference restores hidden controls and window chrome without remembering geometry")
+                nextLaunch.setMediaOnly(false, defaults: modeDefaults)
+                let fullWindow = freshModeWindow()
+                let fullLaunch = PlayerModel(); fullLaunch.window = fullWindow
+                fullLaunch.restoreInterfaceMode(from: modeDefaults)
+                try check(!fullLaunch.mediaOnly && !modeDefaults.bool(forKey: "mediaOnly")
+                    && fullWindow.titleVisibility == .visible,
+                    "Returning to full interface persists for the next launch")
+                fullWindow.orderFront(nil)
+                fullLaunch.closePlayerWindow()
+                try check(!fullWindow.isVisible, "Player Close action closes its window")
+
                 if let delegate = NSApp.delegate as? AppDelegate, let window = model.window {
                     try await Task.sleep(for: .milliseconds(300))
                     NSApp.activate(ignoringOtherApps: true)

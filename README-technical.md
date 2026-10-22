@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.9.7, build 38 |
+| Version | 1.10.0, build 39 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -173,7 +173,7 @@ Input details:
 
 Press **2** to remove the window title bar, window buttons, and bottom playback controls from the visible layout. Only the media and seekable progress bar remain. The window fits the video’s display aspect ratio plus the 24-point progress strip, removing player-generated letterboxing from the old window shape. The media’s top edge stays at the same screen position when the title bar is hidden or restored, avoiding cumulative upward movement; portrait videos also narrow to fit the screen. Compact resizing preserves that aspect ratio. Press **1** to restore the saved window size, title bar, controls, and minimum-size constraints. The detached Library remains independently available in either mode. Full-screen windows keep their full-screen bounds; fitting/restoration applies when leaving full screen. Embedded black bars in a video file are not cropped. The mode starts off each launch and does not affect playback, floating, or bookmarks.
 
-These unmodified shortcuts are ignored while editing text, in settings, or in a modal dialog. Both views are also available from the **View** menu and the video's right-click menu. Opening Library preserves media-only mode and the player’s dimensions. The View menu shows 1 and 2 in its shortcut column, with no modifier key required; the shortcuts apply only to the main player window. The player handles Space and these view keys directly at window event dispatch, before the video/SwiftUI responder can consume them. Menu key equivalents use the same guarded handler. Events without an explicit source window use the current key window; events from Library or other auxiliary windows cannot change player mode. Clicking the video explicitly restores keyboard focus to the player. The macOS system menu bar remains available.
+These unmodified shortcuts are ignored while editing text, in settings, or in a modal dialog. Both views are also available from the **View** menu and the video's right-click menu. Your chosen mode is saved as `mediaOnly` and restored on the next launch, independently of Remember Window Position and Size. The video's right-click menu ends with a separator and **Close**, which closes the player window using the normal window-close behavior. Opening Library preserves media-only mode and the player’s dimensions. The View menu shows 1 and 2 in its shortcut column, with no modifier key required; the shortcuts apply only to the main player window. The player handles Space and these view keys directly at window event dispatch, before the video/SwiftUI responder can consume them. Menu key equivalents use the same guarded handler. Events without an explicit source window use the current key window; events from Library or other auxiliary windows cannot change player mode. Clicking the video explicitly restores keyboard focus to the player. The macOS system menu bar remains available.
 
 ### Window dragging and timeline previews
 

@@ -103,6 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             window.setFrame(frame, display: true)
         }
         model.window = window
+        model.restoreInterfaceMode()
         model.libraryWindowChanged = { [weak self] in
             guard let self, !self.fullScreenTransition else { return }; if self.model.sidebar { self.ensureLibraryController() }; self.libraryController?.sync()
         }

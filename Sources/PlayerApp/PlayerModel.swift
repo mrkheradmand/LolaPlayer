@@ -575,7 +575,17 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         } else { restoreInterfaceSize() }
     }
 
-    func setMediaOnly(_ enabled: Bool) {
+    func restoreInterfaceMode(from defaults: UserDefaults = .standard) {
+        guard !CommandLine.arguments.contains("--smoke-test") || defaults !== UserDefaults.standard else { return }
+        setMediaOnly(defaults.bool(forKey: "mediaOnly"), defaults: defaults)
+    }
+
+    func closePlayerWindow() { window?.performClose(nil) }
+
+    func setMediaOnly(_ enabled: Bool, defaults: UserDefaults = .standard) {
+        if !CommandLine.arguments.contains("--smoke-test") || defaults !== UserDefaults.standard {
+            defaults.set(enabled, forKey: "mediaOnly")
+        }
         guard enabled != mediaOnly else { return }
         guard let window else { mediaOnly = enabled; return }
         let fullScreen = window.styleMask.contains(.fullScreen)
