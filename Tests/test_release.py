@@ -45,7 +45,7 @@ class ReleaseTests(unittest.TestCase):
 
     def fake_gh(self, *, existing=False, published=False, upload_failure=False,
                 missing_asset=False, bad_digest=False, auth_failure=False,
-                verification_failure=False):
+                verification_failure=False, previous='v1.2.2'):
 
         def run(args, **kwargs):
             self.calls.append(args)
@@ -64,7 +64,7 @@ class ReleaseTests(unittest.TestCase):
                 release = {'id': 42, 'tag_name': 'v1.2.3', 'draft': not published, 'assets': assets}
                 if '?per_page=' in endpoint:
                     # Matching drafts must be found even on later pages.
-                    data = [[{'id': 1, 'tag_name': 'v1.0.0', 'draft': False}], [release] if existing else []]
+                    data = [[{'id': 1, 'tag_name': previous, 'draft': False}], [release] if existing else []]
                 elif '/git/ref/tags/' in endpoint:
                     data = {'ref': 'refs/tags/v1.2.3'}
                 elif method == 'POST':
@@ -155,6 +155,83 @@ class ReleaseTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.publish()
         self.assertEqual(self.calls, [])
+
+    def cumulative_fixture(self):
+        (self.root/'versions.md').write_text(
+            '# Lola Player versions\n\n## 1.2.3 (build 8) — Today\n\n'
+            '### Added\n\n- Feature.\n\n### Modified\n\n- Current fix.\n\n### Removed\n\n- None.\n\n'
+            '## 1.2.2 (build 7)\n\n### Added\n\n- feature\n- Earlier feature.\n\n'
+            '### Modified\n\n- Older fix.\n\n### Removed\n\n- Old control.\n\n'
+            '## 1.2.1 (build 6)\n\n### Added\n\n- Already published.\n\n'
+            '### Modified\n\n- None.\n\n### Removed\n\n- None.\n')
+
+    def test_combines_all_unreleased_versions_by_category(self):
+        self.cumulative_fixture()
+        result = metadata.combined_metadata(self.root, 'v1.2.3', 'v1.2.1')
+        notes = result['notes']
+        self.assertIn('Changes since **v1.2.1**', notes)
+        self.assertIn('- Earlier feature.', notes)
+        self.assertIn('- Current fix.', notes)
+        self.assertIn('- Older fix.', notes)
+        self.assertIn('### Removed\n\n- Old control.', notes)
+        self.assertNotIn('Already published', notes)
+        self.assertNotIn('- None', notes)
+        self.assertEqual(notes.lower().count('- feature'), 1)
+
+    def test_previous_release_selection_ignores_drafts_prereleases_and_newer_tags(self):
+        pages = [[{'tag_name': 'v1.8.0', 'draft': False},
+                  {'tag_name': 'v1.11.0', 'draft': True}],
+                 [{'tag_name': 'v1.10.0', 'draft': False},
+                  {'tag_name': 'v1.11.1', 'prerelease': True},
+                  {'tag_name': 'v2.0.0'}, {'tag_name': 'v1.12.0'}, {'tag_name': 'invalid'}]]
+        self.assertEqual(metadata.previous_release_tag(pages, 'v1.12.0'), 'v1.10.0')
+        self.assertIsNone(metadata.previous_release_tag(pages, 'v1.0.0'))
+
+    def test_release_discovery_reads_all_pages_and_reports_api_errors(self):
+        def ok(args, **kwargs):
+            self.assertIn('--paginate', args)
+            self.assertIn('--slurp', args)
+            return subprocess.CompletedProcess(args, 0, '[[{"tag_name": "v1.2.1"}], [{"tag_name": "v1.2.2"}]]', '')
+        self.assertEqual(metadata.previous_release_tag(metadata.published_releases('owner/repo', run=ok), 'v1.2.3'), 'v1.2.2')
+        def failed(args, **kwargs):
+            return subprocess.CompletedProcess(args, 1, '', 'HTTP 401: Bad credentials')
+        with self.assertRaisesRegex(RuntimeError, 'HTTP 401'):
+            metadata.published_releases('owner/repo', run=failed)
+
+    def test_first_release_includes_all_history_and_keeps_empty_categories(self):
+        self.cumulative_fixture()
+        result = metadata.combined_metadata(self.root, 'v1.2.3', None)
+        self.assertIn('- Already published.', result['notes'])
+        result = metadata.combined_metadata(self.root, 'v1.2.3', 'v1.2.2')
+        self.assertIn('### Removed\n\n- None.', result['notes'])
+
+    def test_missing_boundary_or_malformed_intermediate_entry_fails_safely(self):
+        self.cumulative_fixture()
+        for previous in ['v1.0.0', 'v1.2.3', 'invalid']:
+            with self.subTest(previous=previous), self.assertRaises(ValueError):
+                metadata.combined_metadata(self.root, 'v1.2.3', previous)
+        notes = self.root/'versions.md'
+        notes.write_text(notes.read_text().replace('### Modified\n\n- Older fix.', '### Other\n\n- Older fix.'))
+        with self.assertRaisesRegex(ValueError, '1.2.2 is missing Modified'):
+            metadata.combined_metadata(self.root, 'v1.2.3', 'v1.2.1')
+
+    def test_new_and_resumed_drafts_publish_cumulative_notes(self):
+        self.cumulative_fixture()
+        for existing in [False, True]:
+            with self.subTest(existing=existing):
+                bodies = []
+                fake = self.fake_gh(existing=existing, previous='v1.2.1')
+                def record(args, **kwargs):
+                    if 'input' in kwargs:
+                        bodies.append(json.loads(kwargs['input']).get('body', ''))
+                    return fake(args, **kwargs)
+                publisher.publish(self.root, 'v1.2.3', 'owner/repo', run=record)
+                self.assertTrue(bodies)
+                for body in bodies:
+                    self.assertIn('- Earlier feature.', body)
+                    self.assertIn('- Old control.', body)
+                    self.assertNotIn('Already published', body)
+                self.assertIn('- Earlier feature.', (self.root/'.build/release/release-notes.md').read_text())
 
     def test_runtime_tampering_is_rejected(self):
         digest = hashlib.sha256(self.dmg.read_bytes()).hexdigest()

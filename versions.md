@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.13.2 (build 45) — 2026-10-22
+
+### Added
+
+- None.
+
+### Modified
+
+- Generate GitHub release notes from all changelog entries since the previous published stable release, grouped into Added, Modified, and Removed with repeated bullet text deduplicated.
+
+### Removed
+
+- None.
+
 ## 1.13.1 (build 44) — 2026-10-22
 
 ### Added

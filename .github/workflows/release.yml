@@ -27,7 +27,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Validate tag and prepare release notes
-        run: python3 scripts/release-metadata.py "$GITHUB_REF_NAME"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/release-metadata.py "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY"
       - name: Run checks
         run: zsh scripts/ci-checks.sh
       - name: Download and import pinned playback runtime

@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.13.1, build 44 |
+| Version | 1.13.2, build 45 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -626,7 +626,7 @@ The generated app records runtime origin in `Contents/Resources/Runtime.txt`. Cu
 
 Ordinary branch pushes and pull requests run [Checks](.github/workflows/ci.yml): version/format consistency, Python release-tool tests, and Swift tests. They do not publish a release.
 
-Pushing a version tag runs [Release](.github/workflows/release.yml) on GitHub's Apple Silicon [xcode-27 runner](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md). Both workflows explicitly select Xcode 27.0 through `DEVELOPER_DIR` and check for Swift 6.4.x before compilation. This avoids the Swift 6.3.3 compiler crash encountered in `PlayerView.swift` on the macOS 26 runner. It validates the tag against `Resources/Info.plist`, README and the newest `versions.md` entry; runs the checks; imports a pinned playback runtime; builds and signs the app ad hoc; and creates the versioned DMG with its installation notes and checksum. The release uses that version's notes from `versions.md`.
+Pushing a version tag runs [Release](.github/workflows/release.yml) on GitHub's Apple Silicon [xcode-27 runner](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md). Both workflows explicitly select Xcode 27.0 through `DEVELOPER_DIR` and check for Swift 6.4.x before compilation. This avoids the Swift 6.3.3 compiler crash encountered in `PlayerView.swift` on the macOS 26 runner. It validates the tag against `Resources/Info.plist`, README and the newest `versions.md` entry; runs the checks; imports a pinned playback runtime; builds and signs the app ad hoc; and creates the versioned DMG with its installation notes and checksum. Release notes combine every `versions.md` entry after the previous published stable release through the tagged version, grouped under Added, Modified, and Removed. Repeated bullet text is deduplicated (ignoring case, whitespace, and a trailing period); differently worded entries are preserved so changes are not silently omitted. Empty categories show None. Drafts, prereleases, and newer/equal tags are excluded when selecting the previous release; the highest older stable version is used. A first release includes all recorded entries, and a missing previous-release entry stops publication rather than generating incomplete notes.
 
 Commit and push the completed changes before tagging that commit. Read the version from app metadata to avoid tagging an old version:
 
@@ -638,6 +638,8 @@ git push origin "v$release_version"
 ```
 
 Use the actual version from `Resources/Info.plist` for each release. The workflow does not increment versions or edit commits. Only exact `vMAJOR.MINOR.PATCH` tags matching the newest version are accepted. Watch progress in the repository's **Actions** tab. GitHub Actions must be enabled and repository policy must allow the workflow's `contents: write` permission. Publishing uses the temporary `GITHUB_TOKEN`; no personal access token or Apple signing credentials are required.
+
+The preparation and publishing scripts use the same cumulative-note generator, including when resuming a draft. You can preview notes offline with `python3 scripts/release-metadata.py vCURRENT --previous-tag vPREVIOUS`, substituting actual versions; output is written to `.build/release/release-notes.md`. This does not publish anything.
 
 The workflow finds drafts through GitHub's paginated releases list and retains the numeric release ID when creating a draft. It uploads the DMG and `SHA256SUMS.txt`, verifies GitHub's reported asset sizes and SHA-256 digests, and publishes through that release ID. Draft verification does not use the published-release-only tag lookup. API failures report the endpoint and GitHub error message.
 

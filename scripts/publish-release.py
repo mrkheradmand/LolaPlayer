@@ -38,9 +38,6 @@ def publish(root, tag, repo, run=subprocess.run):
         digest = hashlib.file_digest(handle, 'sha256').hexdigest()
     if checksum.read_text().strip() != f'{digest}  {dmg.name}':
         raise ValueError('DMG filename or checksum does not match SHA256SUMS.txt')
-    notes = root/'.build/release/release-notes.md'
-    notes.parent.mkdir(parents=True, exist_ok=True)
-    notes.write_text(result['notes'])
     # By-tag REST lookup returns published releases, so discover drafts by list.
     releases = f'repos/{repo}/releases'
     pages = api(run, releases+'?per_page=100', paginate=True)
@@ -50,6 +47,11 @@ def publish(root, tag, repo, run=subprocess.run):
     existing = matches[0] if matches else None
     if existing is not None and not existing['draft']:
         raise ValueError(f'{tag} is already published; existing assets will not be overwritten')
+    previous_tag = release_metadata.previous_release_tag(pages, tag)
+    result = release_metadata.combined_metadata(root, tag, previous_tag)
+    notes = root/'.build/release/release-notes.md'
+    notes.parent.mkdir(parents=True, exist_ok=True)
+    notes.write_text(result['notes'])
     if existing is None:
         # Preserve --verify-tag behavior: never create a tag implicitly.
         api(run, f'repos/{repo}/git/ref/tags/{tag}')
