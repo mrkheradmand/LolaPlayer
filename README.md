@@ -68,7 +68,7 @@ Unencrypted Blu-ray folders and ISO images have limited support, without disc me
 
 ## Quick controls
 
-Open a file with **⌘O** or drag it onto the player. You can also open folders and playlists.
+Open a file with **⌘O** or drag it onto the player. You can also open folders and playlists. Folders selected with **+** or **⌘O** include supported media in all subfolders.
 
 The compact bottom controls show the timeline and playback buttons; the filename is in the title bar and Library.
 
@@ -109,7 +109,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.13.2, build 45 |
+| Version | 1.14.0, build 46 |
 
 
 See [release notes](versions.md) for what's changed.

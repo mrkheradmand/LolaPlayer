@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.13.2, build 45 |
+| Version | 1.14.0, build 46 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -193,6 +193,8 @@ Use **File → Open…** for files, folders, or playlists. Opening multiple file
 | Playlist | Current queue, retained between normal launches |
 | History | All file/URL records, ordered by most recent opening |
 | Bookmarks | All bookmarked records, grouped by file |
+
+Selecting a folder with the Library **+** button or **Open… (⌘O)** recursively adds supported media from all subfolders, skips non-media files, and opens the first media file. DVD/Blu-ray folder recognition retains its existing behavior.
 
 Drop media files or folders anywhere in the **Playlist** view to append supported audio/video files, including files inside subfolders. Folder discovery runs in the background, skips hidden files and package contents, and does not follow directory symlinks during recursion. Overlapping/repeated drops do not duplicate existing playlist entries. Dropping files does not change the current playback or add unplayed files to History. The Playlist highlights while a file drop is over it. Drag an existing Playlist card over the upper or lower half of another card to show an insertion line before or after it, or drop in the space below the last card to append it. Reordering updates the saved playlist order without restarting playback; when search is active, the destination refers to that card in the full playlist. History and Bookmarks cards do not offer playlist reordering.
 

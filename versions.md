@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.14.0 (build 46) — 2026-10-22
+
+### Added
+
+- Folders selected through + or Open now include supported media in all subfolders, using the same recursive discovery as Playlist folder drops.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
 ## 1.13.2 (build 45) — 2026-10-22
 
 ### Added

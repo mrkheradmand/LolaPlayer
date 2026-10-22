@@ -56,7 +56,52 @@ private final class DragProbeView: PlayerMouseView {
         }
     }
 
+    private static func runFolderOpenOnly(model: PlayerModel, root: URL) {
+        Task { @MainActor in
+            var checks: [String] = []
+            var failure: String?
+            let folder = root.appendingPathComponent("folder-open-\(UUID().uuidString)")
+            defer { try? FileManager.default.removeItem(at: folder) }
+            func check(_ valid: Bool, _ name: String) throws {
+                guard valid else { throw Failure(message: name) }; checks.append(name)
+            }
+            do {
+                for _ in 0..<200 {
+                    if model.engine?.engineReady == true { break }
+                    try await Task.sleep(for: .milliseconds(50))
+                }
+                guard model.engine?.engineReady == true else { throw Failure(message: "Playback engine did not initialize") }
+                let nested = folder.appendingPathComponent("Season/Subfolder")
+                try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+                try FileManager.default.copyItem(at: root.appendingPathComponent("first.mp4"), to: folder.appendingPathComponent("first.mp4"))
+                try FileManager.default.copyItem(at: root.appendingPathComponent("second.mkv"), to: nested.appendingPathComponent("second.MKV"))
+                try FileManager.default.copyItem(at: root.appendingPathComponent("first.mp4"), to: nested.appendingPathComponent("third.mp4"))
+                try Data().write(to: nested.appendingPathComponent("notes.txt"))
+                model.open([folder])
+                let names = model.queue.compactMap { model.library.record($0)?.name }
+                try check(names == ["first.mp4", "second.MKV", "third.mp4"], "Folder opening includes supported media from all nested subfolders in stable order")
+                try check(model.current?.name == "first.mp4", "Folder opening selects the first media file as before")
+                for _ in 0..<200 {
+                    if model.loaded || model.error != nil { break }
+                    try await Task.sleep(for: .milliseconds(50))
+                }
+                try check(model.loaded && model.error == nil && model.duration > 10, "Recursively opened folder still loads its first playable media file")
+                model.open([folder])
+                try check(model.queue.count == 3 && Set(model.queue).count == 3, "Reopening a recursive folder does not duplicate playlist entries")
+            } catch let error as Failure { failure = error.message }
+            catch { failure = error.localizedDescription }
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
+            }
+            model.shutdown(); NSApp.terminate(nil)
+        }
+    }
+
     static func run(model: PlayerModel, root: URL) {
+        if CommandLine.arguments.contains("--folder-open-only") {
+            runFolderOpenOnly(model: model, root: root); return
+        }
         if CommandLine.arguments.contains("--playlist-reorder-only") {
             runPlaylistReorderOnly(model: model, root: root); return
         }

@@ -287,7 +287,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
                     perform { ids.append(try library.visitDisc(root, kind: kind)) }
                     continue
                 }
-                do { open(try MediaFormats.files(in: url)) }
+                do { open(try MediaInput.playlistDropFiles([url])) }
                 catch { self.error = error.localizedDescription }; continue
             }
             if url.isFileURL && url.pathExtension.lowercased() == "iso" {
