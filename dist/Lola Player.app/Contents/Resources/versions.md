@@ -1,5 +1,87 @@
 # Lola Player versions
 
+## 1.13.1 (build 44) — 2026-10-22
+
+### Added
+
+- Playlist drag reordering with saved order, plus recursive file/folder drops that preserve current playback and avoid duplicate entries.
+- Option-B named bookmarks, remembered interface mode, and a separated Close option in the player context menu.
+
+### Modified
+
+- Use native macOS card drag sources and drop targets so Playlist reordering starts reliably and shows insertion lines before or after hovered cards.
+
+### Removed
+
+- Redundant Command-P speed-reset shortcut; Command-Backslash remains available.
+
+## 1.13.0 (build 43) — 2026-10-22
+
+### Added
+
+- Drag Playlist items to insertion lines to reorder them, including moving to the end; save the new order without interrupting playback.
+- Drag media files and folders onto Playlist, including media in subfolders, without duplicate entries or changing playback.
+- Option-B prompts for a bookmark name while the player is focused, protecting text editing, Settings, and dialogs.
+- Remember media-only or full-interface mode across launches, independently of window-position saving.
+- Close option beneath a separator at the bottom of the player-area context menu.
+
+### Modified
+
+- None.
+
+### Removed
+
+- Redundant Command-P speed-reset shortcut; Command-Backslash remains the normal-speed shortcut.
+
+## 1.12.0 (build 42) — 2026-10-22
+
+### Added
+
+- Drag media files and folders onto Playlist; recursively discover supported media in subfolders, avoid duplicate entries, and preserve current playback.
+- Option-B prompts for a bookmark name while the player is focused, protecting text editing, Settings, and dialogs.
+- Remember media-only or full-interface mode across launches, independently of window-position saving.
+- Close option beneath a separator at the bottom of the player-area context menu.
+
+### Modified
+
+- None.
+
+### Removed
+
+- Redundant Command-P speed-reset shortcut; Command-Backslash remains the normal-speed shortcut.
+
+## 1.11.1 (build 41) — 2026-10-22
+
+### Added
+
+- Option-B prompts for a bookmark name while the player is focused, protecting text editing, Settings, and dialogs.
+- Remember media-only or full-interface mode across launches, independently of window-position saving.
+- Close option beneath a separator at the bottom of the player-area context menu.
+
+### Modified
+
+- None.
+
+### Removed
+
+- Redundant Command-P speed-reset shortcut; Command-Backslash remains the normal-speed shortcut.
+
+## 1.11.0 (build 40) — 2026-10-22
+
+### Added
+
+- Command-P resets playback speed to 1x; Option-B always prompts for a bookmark name. Both require the focused player and protect text editing, Settings, and dialogs.
+- Remember media-only or full-interface mode across launches, independently of window-position saving.
+- Close option beneath a separator at the bottom of the player-area context menu.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
 ## 1.10.0 (build 39) — 2026-10-22
 
 ### Added

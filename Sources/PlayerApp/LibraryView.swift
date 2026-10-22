@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 import PlayerCore
 
 struct LibraryView: View {
@@ -45,12 +46,12 @@ struct LibraryView: View {
             }.padding(20)
             Divider()
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 10) {
+                LazyVStack(alignment: .leading, spacing: model.tab == .playlist ? 0 : 10) {
                     if displayedRecords.isEmpty {
                         VStack(spacing: 10) {
                             Image(systemName: model.tab == .bookmarks ? "bookmark" : "list.bullet").font(.title2)
                             Text(model.search.isEmpty ? (model.tab == .bookmarks ? "No saved bookmarks" : "No files here yet") : "No results").font(.headline)
-                            Text(model.tab == .bookmarks ? "Press ⌘B to save a moment. Bookmarks stay with every file in your history." : "Open media to start your library.").font(.caption).multilineTextAlignment(.center)
+                            Text(model.tab == .bookmarks ? "Press ⌘B to save a moment. Bookmarks stay with every file in your history." : (model.tab == .playlist ? "Drop media files or folders here, including subfolders." : "Open media to start your library.")).font(.caption).multilineTextAlignment(.center)
                         }.foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(30)
                     }
                     ForEach(displayedRecords) { record in
@@ -121,6 +122,16 @@ struct LibraryView: View {
                         }.padding(.bottom, model.tab == .bookmarks ? 8 : 0)
                             .background(record.id == model.currentID ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(record.id == model.currentID ? Color.accentColor.opacity(0.3) : .primary.opacity(0.06), lineWidth: 1))
+                            .modifier(PlaylistReorderRow(model: model, id: record.id))
+                    }
+                    if model.tab == .playlist && !model.queue.isEmpty {
+                        Color.clear.frame(height: 36).contentShape(Rectangle())
+                            .overlay { PlaylistNativeDragSurface(model: model, source: nil, before: nil, after: nil) }
+                            .overlay(alignment: .top) {
+                                if model.playlistReorderTargeted && model.playlistDropBefore == nil {
+                                    Rectangle().fill(Color.accentColor).frame(height: 3).allowsHitTesting(false)
+                                }
+                            }
                     }
                 }.padding(16)
             }
@@ -133,6 +144,16 @@ struct LibraryView: View {
                 if model.tab == .history { Button("Empty History", role: .destructive) { model.emptyHistory() }.disabled(model.historyRecords.isEmpty) }
             }.controlSize(.small).padding(16)
         }.background(Color(nsColor: .windowBackgroundColor))
+        .onDrop(of: [.fileURL], isTargeted: $model.playlistDropTarget) { providers in
+            guard model.tab == .playlist else { return false }
+            return model.dropOnPlaylist(providers)
+        }
+        .overlay {
+            if model.playlistDropTarget && model.tab == .playlist {
+                RoundedRectangle(cornerRadius: 10).stroke(Color.accentColor, lineWidth: 3)
+                    .padding(4).allowsHitTesting(false)
+            }
+        }
     }
     private func symbol(_ tab: LibraryTab) -> String {
         switch tab { case .playlist: "list.bullet"; case .history: "clock"; case .bookmarks: "bookmark" }
@@ -204,5 +225,114 @@ private struct SearchFocusDismissal: NSViewRepresentable {
             if let monitor { NSEvent.removeMonitor(monitor) }
             monitor = nil
         }
+    }
+}
+
+/// Native dragging avoids the competing SwiftUI Button/ScrollView gestures on cards.
+struct PlaylistReorderDrop {
+    nonisolated static let typeIdentifier = "local.lolaplayer.playlist-item"
+}
+
+private struct PlaylistNativeDragSurface: NSViewRepresentable {
+    let model: PlayerModel
+    let source: UUID?
+    let before: UUID?
+    let after: UUID?
+    func makeNSView(context: Context) -> PlaylistDragSurfaceView {
+        let view = PlaylistDragSurfaceView()
+        view.registerForDraggedTypes([NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)])
+        return view
+    }
+    func updateNSView(_ view: PlaylistDragSurfaceView, context: Context) {
+        view.model = model; view.source = source; view.before = before; view.after = after
+    }
+}
+
+final class PlaylistDragSurfaceView: NSView, NSDraggingSource {
+    weak var model: PlayerModel?
+    var source: UUID?
+    var before: UUID?
+    var after: UUID?
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        registerForDraggedTypes([NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)])
+    }
+    required init?(coder: NSCoder) { super.init(coder: coder); registerForDraggedTypes([NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)]) }
+    override var isFlipped: Bool { true }
+    override var acceptsFirstResponder: Bool { true }
+
+    override func mouseDown(with event: NSEvent) {
+        guard let source, let model, let window else { return }
+        let start = event.locationInWindow
+        while let next = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            if next.type == .leftMouseUp { model.play(source); return }
+            guard hypot(next.locationInWindow.x - start.x, next.locationInWindow.y - start.y) >= 5 else { continue }
+            let item = NSPasteboardItem()
+            item.setString(source.uuidString, forType: NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier))
+            let dragging = NSDraggingItem(pasteboardWriter: item)
+            let title = model.library.record(source)?.name ?? "Playlist item"
+            let image = NSImage(size: NSSize(width: 260, height: 40), flipped: false) { rect in
+                NSColor.controlBackgroundColor.setFill(); NSBezierPath(roundedRect: rect, xRadius: 8, yRadius: 8).fill()
+                (title as NSString).draw(in: rect.insetBy(dx: 10, dy: 10), withAttributes: [.font: NSFont.systemFont(ofSize: 12), .foregroundColor: NSColor.labelColor])
+                return true
+            }
+            dragging.setDraggingFrame(NSRect(origin: convert(next.locationInWindow, from: nil), size: image.size), contents: image)
+            beginDraggingSession(with: [dragging], event: next, source: self)
+            return
+        }
+    }
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation { .move }
+    func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+        model?.playlistReorderTargeted = false
+    }
+    private func destination(_ sender: NSDraggingInfo) -> UUID? {
+        guard source != nil else { return before }
+        return convert(sender.draggingLocation, from: nil).y < bounds.midY ? before : after
+    }
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation { draggingUpdated(sender) }
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        guard let model, model.tab == .playlist,
+              let value = sender.draggingPasteboard.string(forType: NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)),
+              let id = UUID(uuidString: value), model.queue.contains(id) else { return [] }
+        showInsertion(before: destination(sender))
+        return .move
+    }
+    func showInsertion(before destination: UUID?) {
+        model?.playlistDropBefore = destination; model?.playlistReorderTargeted = true
+    }
+    override func draggingExited(_ sender: NSDraggingInfo?) { model?.playlistReorderTargeted = false }
+    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool { true }
+    @discardableResult func acceptDrop(_ pasteboard: NSPasteboard, before destination: UUID?) -> Bool {
+        guard let model, model.tab == .playlist,
+              let value = pasteboard.string(forType: NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)),
+              let id = UUID(uuidString: value), model.queue.contains(id) else { return false }
+        model.movePlaylistItem(id, before: destination)
+        model.playlistReorderTargeted = false
+        return true
+    }
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        acceptDrop(sender.draggingPasteboard, before: destination(sender))
+    }
+}
+
+private struct PlaylistReorderRow: ViewModifier {
+    let model: PlayerModel
+    let id: UUID
+    @ViewBuilder func body(content: Content) -> some View {
+        if model.tab == .playlist {
+            content.padding(.vertical, 5)
+                .overlay {
+                    HStack(spacing: 0) {
+                        PlaylistNativeDragSurface(model: model, source: id, before: id,
+                            after: model.queue.firstIndex(of: id).flatMap { model.queue.indices.contains($0 + 1) ? model.queue[$0 + 1] : nil })
+                        Color.clear.frame(width: 36).allowsHitTesting(false)
+                    }
+                }
+                .overlay(alignment: .top) {
+                    if model.playlistReorderTargeted && model.playlistDropBefore == id {
+                        Rectangle().fill(Color.accentColor).frame(height: 3).allowsHitTesting(false)
+                    }
+                }
+        } else { content }
     }
 }

@@ -12,7 +12,54 @@ private final class DragProbeView: PlayerMouseView {
 /// Invoked only by --smoke-test; exercises the real bundled decoder and NSWindow.
 @MainActor enum SmokeTest {
     struct Failure: Error { let message: String }
+    private static func runPlaylistReorderOnly(model: PlayerModel, root: URL) {
+        Task { @MainActor in
+            var checks: [String] = []
+            var failure: String?
+            func check(_ valid: Bool, _ name: String) throws {
+                guard valid else { throw Failure(message: name) }; checks.append(name)
+            }
+            do {
+                let ids = (0..<4).map { _ in UUID() }
+                model.queue = ids
+                let current = model.currentID
+                let speed = model.speed
+                let pasteboard = NSPasteboard.withUniqueName()
+                defer { pasteboard.releaseGlobally() }
+                pasteboard.setString(ids[3].uuidString, forType: NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier))
+                let surface = PlaylistDragSurfaceView()
+                surface.model = model
+                try check(surface.registeredDraggedTypes.contains(NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)),
+                    "Native card registers the actual pasteboard drag type")
+                surface.showInsertion(before: ids[1])
+                try check(model.playlistReorderTargeted && model.playlistDropBefore == ids[1],
+                    "Native drag hover activates the insertion indicator")
+                try check(surface.acceptDrop(pasteboard, before: ids[1]), "Native Playlist drop target accepts the dragged row pasteboard")
+                try check(model.queue == [ids[0], ids[3], ids[1], ids[2]], "Dropping a row inserts it before the destination")
+                try check(!model.playlistReorderTargeted, "Dropping clears the insertion indicator")
+                model.movePlaylistItem(ids[0], before: nil)
+                try check(model.queue == [ids[3], ids[1], ids[2], ids[0]], "Bottom drop target moves an item to the end")
+                model.movePlaylistItem(ids[2], before: ids[3])
+                try check(model.queue == [ids[2], ids[3], ids[1], ids[0]], "Reordering upward preserves all other item positions")
+                let ordered = model.queue
+                model.movePlaylistItem(ids[1], before: ids[1])
+                model.movePlaylistItem(UUID(), before: ids[0])
+                try check(model.queue == ordered && Set(model.queue).count == 4, "Self and stale drops do not duplicate or remove entries")
+                try check(model.currentID == current && model.speed == speed, "Reordering does not change the playing item or speed")
+            } catch let error as Failure { failure = error.message }
+            catch { failure = error.localizedDescription }
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
+            }
+            model.queue = []; model.shutdown(); NSApp.terminate(nil)
+        }
+    }
+
     static func run(model: PlayerModel, root: URL) {
+        if CommandLine.arguments.contains("--playlist-reorder-only") {
+            runPlaylistReorderOnly(model: model, root: root); return
+        }
         Task { @MainActor in
             var checks: [String] = []
             var skipped: [String] = []
@@ -39,6 +86,25 @@ private final class DragProbeView: PlayerMouseView {
                 try check(NSApp.mainMenu != nil && model.libraryReady, "Menu and library are ready before playback tests")
                 try check((NSApp.delegate as? AppDelegate)?.libraryController == nil, "Hidden Library panel is not created during startup")
                 try await waitFor { model.engine?.engineReady == true }
+                let dropRoot = root.appendingPathComponent("playlist-drop-\(UUID().uuidString)")
+                defer { try? FileManager.default.removeItem(at: dropRoot) }
+                let nestedDrop = dropRoot.appendingPathComponent("Folder/Subfolder")
+                try FileManager.default.createDirectory(at: nestedDrop, withIntermediateDirectories: true)
+                try Data().write(to: dropRoot.appendingPathComponent("first.mp4"))
+                try Data().write(to: nestedDrop.appendingPathComponent("second.mkv"))
+                try Data().write(to: nestedDrop.appendingPathComponent("ignore.txt"))
+                let droppedModel = PlayerModel()
+                await droppedModel.loadLibrary()
+                try check(droppedModel.dropOnPlaylist([NSItemProvider(object: dropRoot as NSURL)]),
+                    "Playlist accepts a Finder-style folder URL provider")
+                try await waitFor { droppedModel.queue.count == 2 || droppedModel.error != nil }
+                try check(droppedModel.queue.count == 2 && droppedModel.error == nil
+                    && droppedModel.historyRecords.isEmpty && droppedModel.currentID == nil,
+                    "Folder drops add nested media to Playlist without playing it or marking it as History")
+                let originalQueue = droppedModel.queue
+                await droppedModel.appendPlaylistFiles([dropRoot, dropRoot.appendingPathComponent("first.mp4")])
+                try check(droppedModel.queue == originalQueue, "Repeated file and overlapping folder drops do not duplicate Playlist entries")
+                try droppedModel.library.flush()
                 let modeSuite = "local.lolaplayer.mode-test.\(UUID().uuidString)"
                 let modeDefaults = UserDefaults(suiteName: modeSuite)!
                 defer { modeDefaults.removePersistentDomain(forName: modeSuite) }
@@ -249,9 +315,23 @@ private final class DragProbeView: PlayerMouseView {
                             windowNumber: number, context: nil, characters: " ", charactersIgnoringModifiers: " ",
                             isARepeat: false, keyCode: 49)!
                     }
+                    @MainActor func playbackKey(_ key: String, modifiers: NSEvent.ModifierFlags) -> NSEvent {
+                        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers, timestamp: 0,
+                            windowNumber: window.windowNumber, context: nil,
+                            characters: modifiers == .option && key == "b" ? "∫" : key,
+                            charactersIgnoringModifiers: key, isARepeat: false, keyCode: key == "\\" ? 42 : 11)!
+                    }
+                    let resetKey = playbackKey("\\", modifiers: .command)
+                    let namedKey = playbackKey("b", modifiers: .option)
                     if let finder = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").first {
                         finder.activate(options: [.activateIgnoringOtherApps])
                         try await waitFor { NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.finder" }
+                        model.changeSpeed(1.5)
+                        let beforeBackground = model.current?.bookmarks.count
+                        try check(NSApp.mainMenu?.performKeyEquivalent(with: resetKey) == false && model.speed == 1.5
+                            && NSApp.mainMenu?.performKeyEquivalent(with: namedKey) == false
+                            && model.current?.bookmarks.count == beforeBackground,
+                            "Command-Backslash and Option-B cannot change speed or add bookmarks while Finder is active")
                         let position = model.position
                         try check(NSApp.mainMenu?.performKeyEquivalent(with: space()) == false && !model.paused,
                             "With Finder frontmost, Lola menu refuses Space and leaves playback running")
@@ -263,6 +343,56 @@ private final class DragProbeView: PlayerMouseView {
                     NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil)
                     try await waitFor { delegate.isPlayerAppFrontmost && window.isKeyWindow }
                     window.makeFirstResponder(nil)
+                    model.changeSpeed(1.75)
+                    let unusedPrintKey = playbackKey("p", modifiers: .command)
+                    try check(NSApp.mainMenu?.performKeyEquivalent(with: unusedPrintKey) == false && model.speed == 1.75,
+                        "Command-P is unassigned and does not reset playback speed")
+                    try check(NSApp.mainMenu?.performKeyEquivalent(with: resetKey) == true && model.speed == 1,
+                        "Focused Command-Backslash resets playback speed to 1x")
+                    model.settingsOpen = true
+                    model.changeSpeed(1.5)
+                    try check(NSApp.mainMenu?.performKeyEquivalent(with: namedKey) == false,
+                        "Settings prevents Option-B playback shortcuts")
+                    model.settingsOpen = false
+                    let typingField = NSTextField(string: "Typing")
+                    window.contentView?.addSubview(typingField); window.makeFirstResponder(typingField)
+                    try check(NSApp.mainMenu?.performKeyEquivalent(with: namedKey) == false,
+                        "Text editing protects Option-B")
+                    window.makeFirstResponder(nil); typingField.removeFromSuperview()
+                    model.changeSpeed(1)
+                    window.makeKeyAndOrderFront(nil)
+                    try await waitFor { delegate.canUseFocusedPlaybackShortcuts }
+                    model.setPaused(true)
+                    if ProcessInfo.processInfo.environment["LOLA_SKIP_NAMED_BOOKMARK_SMOKE"] != "1" {
+                    let bookmarkCount = model.current?.bookmarks.count ?? 0
+                    let namingTimer = Timer(timeInterval: 0.15, repeats: false) { _ in
+                        MainActor.assumeIsolated {
+                            (NSApp.modalWindow?.initialFirstResponder as? NSTextField)?.stringValue = "Shortcut named bookmark"
+                            NSApp.stopModal(withCode: .alertFirstButtonReturn)
+                        }
+                    }
+                    RunLoop.main.add(namingTimer, forMode: .modalPanel)
+                    let namedHandled = NSApp.mainMenu?.performKeyEquivalent(with: namedKey)
+                    namingTimer.invalidate()
+                    let shortcutBookmark = model.current?.bookmarks.last
+                    try check(namedHandled == true && model.current?.bookmarks.count == bookmarkCount + 1
+                        && shortcutBookmark?.title == "Shortcut named bookmark" && !model.promptForBookmark,
+                        "Option-B saves the entered name even when automatic bookmark naming is disabled (handled: \(String(describing: namedHandled)), count: \(model.current?.bookmarks.count ?? -1), title: \(shortcutBookmark?.title ?? "none"), loaded: \(model.loaded), key: \(namedKey.charactersIgnoringModifiers ?? "none"), focused: \(delegate.canUseFocusedPlaybackShortcuts))")
+                    if let id = model.currentID, let shortcutBookmark { try model.library.removeBookmark(id, bookmark: shortcutBookmark.id) }
+                    window.makeKeyAndOrderFront(nil); window.makeFirstResponder(nil)
+                    try await waitFor { delegate.canUseFocusedPlaybackShortcuts }
+                    let cancelTimer = Timer(timeInterval: 0.15, repeats: false) { _ in
+                        MainActor.assumeIsolated { NSApp.stopModal(withCode: .alertSecondButtonReturn) }
+                    }
+                    RunLoop.main.add(cancelTimer, forMode: .modalPanel)
+                    _ = NSApp.mainMenu?.performKeyEquivalent(with: namedKey)
+                    cancelTimer.invalidate()
+                    try check(model.current?.bookmarks.count == bookmarkCount, "Canceling Option-B does not add a bookmark")
+                    } else { skipped.append("Named-bookmark dialog checks omitted by request") }
+                    window.makeKeyAndOrderFront(nil); window.makeFirstResponder(nil)
+                    try await waitFor { delegate.canUseFocusedPlaybackShortcuts }
+                    model.seek(0.5); model.setPaused(false)
+                    try await waitFor { !model.paused && model.position < 3 }
                     window.sendEvent(space(window.windowNumber))
                     try check(model.paused, "Space still pauses when the player is active")
                     window.sendEvent(space(window.windowNumber))

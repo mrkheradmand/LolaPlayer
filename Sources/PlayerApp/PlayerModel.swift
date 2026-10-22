@@ -7,6 +7,9 @@ import CMpv
 enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "History", bookmarks = "Bookmarks" }
 
 @Observable final class PlayerModel {
+    var playlistReorderTargeted = false
+    var playlistDropBefore: UUID?
+    var playlistDropTarget = false
     var library: MediaLibrary
     var revision = 0
     var queue: [UUID] = [] {
@@ -217,6 +220,43 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         guard let id = currentID, loaded else { return }
         perform { try library.updatePosition(id, seconds: ended ? 0 : position, duration: duration) }
     }
+    func movePlaylistItem(_ id: UUID, before destination: UUID?) {
+        let reordered = PlaybackOrder.moving(queue, item: id, before: destination)
+        if reordered != queue { queue = reordered }
+    }
+
+    @discardableResult func dropOnPlaylist(_ providers: [NSItemProvider]) -> Bool {
+        guard libraryReady else { return false }
+        let providers = providers.filter { $0.canLoadObject(ofClass: URL.self) }
+        guard !providers.isEmpty else { return false }
+        Task {
+            var urls: [URL] = []
+            for provider in providers {
+                let url: URL? = await withCheckedContinuation { continuation in
+                    _ = provider.loadObject(ofClass: URL.self) { url, _ in continuation.resume(returning: url) }
+                }
+                if let url { urls.append(url) }
+            }
+            await appendPlaylistFiles(urls)
+        }
+        return true
+    }
+
+    func appendPlaylistFiles(_ urls: [URL]) async {
+        guard libraryReady, !shuttingDown else { return }
+        let result = await Task.detached { Result { try MediaInput.playlistDropFiles(urls) } }.value
+        guard !shuttingDown else { return }
+        switch result {
+        case .success(let files):
+            perform {
+                let ids = try library.register(files)
+                var known = Set(queue)
+                queue += ids.filter { known.insert($0).inserted }
+            }
+        case .failure(let problem): error = "Could not add dropped files: \(problem.localizedDescription)"
+        }
+    }
+
     func open(_ urls: [URL]) {
         guard libraryReady, engine?.engineReady == true else { pendingURLs += urls; return }
         var ids: [UUID] = []
@@ -502,11 +542,12 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         loopB = position; engine?.setProperty("ab-loop-b", value: String(position)); notify("A–B loop active")
     }
     func clearLoop() { loopA = nil; loopB = nil; engine?.setProperty("ab-loop-a", value: "no"); engine?.setProperty("ab-loop-b", value: "no") }
-    func addBookmark() {
+    func addBookmark() { addBookmark(named: false) }
+    func addBookmark(named: Bool) {
         guard let id = currentID, loaded else { return }
         let seconds = position
         let title: String
-        if promptForBookmark {
+        if named || promptForBookmark {
             guard let value = textPrompt("Bookmark at \(timestamp(seconds))", initial: "Bookmark \(timestamp(seconds))") else { return }; title = value
         } else { title = "Bookmark \(timestamp(seconds))" }
         perform { try library.addBookmark(id, seconds: seconds, title: title) }; notify("Saved bookmark at \(timestamp(seconds))")

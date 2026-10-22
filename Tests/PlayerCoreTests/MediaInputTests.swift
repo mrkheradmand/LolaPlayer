@@ -52,3 +52,27 @@ struct MediaInputTests {
         #expect(try MediaFormats.files(in: root).map(\.lastPathComponent) == ["camera.MTS", "film.MXF", "music.APE", "score.MID"])
     }
 }
+
+struct PlaylistDropTests {
+    @Test func recursivelyFindsMediaAndDeduplicatesOverlappingDrops() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let nested = root.appendingPathComponent("Season/Subfolder")
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        for name in ["first.MP4", "notes.txt", ".hidden.mp3"] { try Data().write(to: root.appendingPathComponent(name)) }
+        for name in ["episode2.mkv", "episode10.mkv", "song.FLAC", "subtitles.srt"] { try Data().write(to: nested.appendingPathComponent(name)) }
+        let files = try MediaInput.playlistDropFiles([root, nested, root.appendingPathComponent("first.MP4")])
+        #expect(files.map(\.lastPathComponent) == ["first.MP4", "episode2.mkv", "episode10.mkv", "song.FLAC"])
+        #expect(try MediaInput.playlistDropFiles([root.appendingPathComponent("notes.txt")]).isEmpty)
+        #expect(try MediaInput.playlistDropFiles([URL(string: "https://example.com/movie.mp4")!]).isEmpty)
+    }
+    @Test func rejectsMissingInputsAndDoesNotFollowDirectorySymlinks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try Data().write(to: root.appendingPathComponent("clip.mp4"))
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("loop"), withDestinationURL: root)
+        #expect(try MediaInput.playlistDropFiles([root]).count == 1)
+        #expect(throws: (any Error).self) { try MediaInput.playlistDropFiles([root.appendingPathComponent("missing.mp4")]) }
+    }
+}

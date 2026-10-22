@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.10.0, build 39 |
+| Version | 1.13.1, build 44 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -93,6 +93,7 @@ When no media file is open, the welcome screen displays a generated alpine-lake 
 Save multiple moments in each video, name them for easy reference, and keep them together in the dedicated **Bookmarks** tab. Bookmarks remain attached to their source files across your library and history.
 
 - **Save a selected time:** seek to the moment you want, then press **⌘B** or click the bookmark button.
+- **Save with a name:** press **⌥B** to enter a name before saving, regardless of the bookmark-naming preference. Cancel leaves bookmarks unchanged.
 - **Give it a name:** choose **… → Edit…** to enter a descriptive name, such as “Favorite scene” or “Chapter 2 explanation.” You can also adjust its saved time in seconds.
 - **Keep every bookmark in one list:** open **View → Show All Bookmarks** or press **⇧⌘B** to browse bookmarks from all files, grouped by video.
 - **Search your saved moments:** filter the list by bookmark name or filename.
@@ -193,6 +194,8 @@ Use **File → Open…** for files, folders, or playlists. Opening multiple file
 | History | All file/URL records, ordered by most recent opening |
 | Bookmarks | All bookmarked records, grouped by file |
 
+Drop media files or folders anywhere in the **Playlist** view to append supported audio/video files, including files inside subfolders. Folder discovery runs in the background, skips hidden files and package contents, and does not follow directory symlinks during recursion. Overlapping/repeated drops do not duplicate existing playlist entries. Dropping files does not change the current playback or add unplayed files to History. The Playlist highlights while a file drop is over it. Drag an existing Playlist card over the upper or lower half of another card to show an insertion line before or after it, or drop in the space below the last card to append it. Reordering updates the saved playlist order without restarting playback; when search is active, the destination refers to that card in the full playlist. History and Bookmarks cards do not offer playlist reordering.
+
 The **Library** is a separate, resizable native panel with Playlist, History, and Bookmarks navigation, grouped file cards, a highlighted current file, and timestamp badges for bookmarks. Each navigation button’s hit area covers its full width and padded height, including empty space around the icon and label. Open it with the player’s list button, **⌘L**, **⇧⌘H**, or **⇧⌘B**. Closing it leaves playback running and does not close the player.
 
 On opening, Library prefers a 12-point gap to the player’s right. If space is unavailable, it checks the left, below, above, and other connected displays for an unobstructed position. If every available region is occupied by the player, it stays within screen bounds and overlaps at the upper right. You can move and resize it independently. In full screen it becomes an auxiliary floating panel at the right-center of the player’s screen, 24 points from the edge, and hides when the app is inactive. Entering or leaving full screen repositions the open panel. Opening Library does not shrink the player or reveal hidden playback controls.
@@ -222,6 +225,7 @@ The normal bottom control area has only the timeline and transport/volume rows. 
 Scroll vertically over the media area while the player window is active to adjust volume: physical wheel-up raises it and wheel-down lowers it, independent of the macOS natural-scrolling setting. Wheel events use 5-percentage-point steps; precise trackpad events use finer proportional changes, capped at 5 points per event. Volume stays within 0–100%. A brief percentage overlay appears in both normal and media-only layouts. Explicit mute remains enabled until you unmute. Horizontal-dominant scrolling and trackpad momentum are ignored. The handler lives on the video mouse surface, so Library, Settings, controls, and other windows keep their own scrolling; inactive player windows, Settings sheets, and modal dialogs cannot adjust player volume. Scrolling does not pause, seek, drag, or change keyboard focus.
 
 - Drag the timeline, use the ten-second skip controls, or choose **Playback → Jump to Time…**. Times accept seconds or colon-separated values, such as `90`, `01:30`, or `01:02:30`.
+- **⌘\** resets playback speed to **1×**. **⌥B** requires the focused player and is ignored during text editing, Settings, and modal dialogs; it does not respond while another app is active.
 - The speed button toggles between 1× and 1.5×. Settings provides more speeds; keyboard shortcuts adjust by 0.1×.
 - Click the **repeat button immediately after Next** to cycle: **Repeat Off → One File → Current Folder → Whole Library → Repeat Off**. Right-click it to select a mode directly. Playback → Repeat and Settings use the same modes.
 - **Repeat Off:** stop at the end of the current file, even with other files queued or Shuffle enabled. The finished file stays selected; Play restarts it from the beginning. Manual Previous/Next still use the playlist without wrapping at its ends. **One File:** restart the current file when it ends; manual Previous/Next still use the playlist.
@@ -308,13 +312,14 @@ Space, 1, and 2 require Lola to be the active, frontmost application and its pla
 | Mute | ⌘M |
 | Next / previous frame | E / ⇧E |
 | Bookmark current position | ⌘B |
+| Add named bookmark | ⌥B |
 | Show all bookmarks | ⇧⌘B |
 | Show history | ⇧⌘H |
 | Show playlist | ⌘L |
 | Toggle Float on Top preference | ⌥⌘T |
 | Set loop starting / return point | ⌥⌘A / ⌥⌘B |
 | Increase / decrease speed | ⌘] / ⌘[ |
-| Reset speed | ⌘\ |
+| Reset speed to 1× | ⌘\ |
 | Show / hide subtitles | V |
 | Toggle full screen | ⌃⌘F |
 | Settings | ⌘, |

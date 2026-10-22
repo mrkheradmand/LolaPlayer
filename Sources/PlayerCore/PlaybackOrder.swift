@@ -36,6 +36,16 @@ public enum MediaFormats {
 }
 
 public enum PlaybackOrder {
+    /// Insert before an existing item, or append when the destination is nil.
+    public static func moving(_ ids: [UUID], item: UUID, before destination: UUID?) -> [UUID] {
+        guard ids.contains(item), destination != item,
+              destination == nil || ids.contains(destination!) else { return ids }
+        var result = ids.filter { $0 != item }
+        let index = destination.flatMap { result.firstIndex(of: $0) } ?? result.endIndex
+        result.insert(item, at: index)
+        return result
+    }
+
     public static func library(_ records: [MediaRecord]) -> [UUID] {
         records.sorted {
             let names = $0.name.localizedStandardCompare($1.name)

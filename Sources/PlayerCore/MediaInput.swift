@@ -11,6 +11,36 @@ public enum DiscKind: String, Codable, Sendable {
 }
 
 public enum MediaInput {
+    /// Expand dropped folders recursively without treating their contents as played.
+    public static func playlistDropFiles(_ inputs: [URL]) throws -> [URL] {
+        let manager = FileManager.default
+        var result: [URL] = []
+        var seen = Set<URL>()
+        func append(_ url: URL) throws {
+            let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
+            guard MediaFormats.fileExtensions.contains(canonical.pathExtension.lowercased()),
+                  try canonical.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true,
+                  seen.insert(canonical).inserted else { return }
+            result.append(canonical)
+        }
+        for input in inputs where input.isFileURL {
+            if try input.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true {
+                var scanError: Error?
+                guard let enumerator = manager.enumerator(at: input, includingPropertiesForKeys: [.isRegularFileKey],
+                    options: [.skipsHiddenFiles, .skipsPackageDescendants], errorHandler: { _, error in
+                        scanError = error; return false
+                    }) else { throw CocoaError(.fileReadUnknown) }
+                var files: [URL] = []
+                for case let file as URL in enumerator { files.append(file) }
+                if let scanError { throw scanError }
+                for file in files.sorted(by: { $0.path.localizedStandardCompare($1.path) == .orderedAscending }) {
+                    try append(file)
+                }
+            } else { try append(input) }
+        }
+        return result
+    }
+
     /// HLS must reach the demuxer as one manifest, never a queue of segments.
     public static func isHLS(_ text: String) -> Bool {
         text.components(separatedBy: .newlines).contains {

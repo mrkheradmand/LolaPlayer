@@ -34,6 +34,8 @@ The app uses a flat mint-green play icon on a charcoal tile.
 
 ## Features
 
+Drag media files or folders onto **Library → Playlist** to add them without starting playback. Folders include media in all subfolders; existing playlist items are not duplicated. Drag a Playlist card over the upper or lower half of another card to choose the insertion line; drop below the last item to move it to the end. The order is remembered.
+
 The menu and player window open before your library and playback engine finish loading.
 
 - Named, searchable bookmarks that stay saved when you close the app.
@@ -78,8 +80,12 @@ Click and hold on the media, then move the mouse to drag the window. A click wit
 | Media only with progress bar | 2 |
 | Play / pause | Space |
 | Bookmark the current moment | ⌘B |
+| Add a bookmark with a name | ⌥B |
+| Reset playback speed to 1× | ⌘\ |
 | Browse all bookmarks | ⇧⌘B |
 | Toggle Float on Top | ⌥⌘T |
+
+⌥B works only with the player focused, outside text fields, Settings, and dialogs.
 
 Space plays/pauses only when Lola’s player window is active; it stays available to Finder for Quick Look when Finder is active. Dedicated Mac media keys still work separately.
 
@@ -103,7 +109,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.10.0, build 39 |
+| Version | 1.13.1, build 44 |
 
 
 See [release notes](versions.md) for what's changed.

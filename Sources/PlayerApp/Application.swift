@@ -39,6 +39,17 @@ nonisolated final class PlayerMenu: NSMenu {
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let appIsFrontmost = MainActor.assumeIsolated { (NSApp.delegate as? AppDelegate)?.isPlayerAppFrontmost == true }
         guard appIsFrontmost else { return false }
+        let plainKey = event.charactersIgnoringModifiers?.lowercased()
+        let shortcutModifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
+        if plainKey == "b" && shortcutModifiers == .option {
+            return MainActor.assumeIsolated {
+                guard let delegate = NSApp.delegate as? AppDelegate, delegate.model.libraryReady,
+                      delegate.canUseFocusedPlaybackShortcuts else { return false }
+                guard delegate.model.loaded else { return false }
+                delegate.model.addBookmark(named: true)
+                return true
+            }
+        }
         let characters = event.characters
         let modifiers = event.modifierFlags.rawValue
         let windowNumber = event.windowNumber
@@ -80,6 +91,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var isFullScreenTransitioning: Bool { fullScreenTransition }
     var isPlayerAppFrontmost: Bool {
         NSApp.isActive && NSWorkspace.shared.frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier
+    }
+    var canUseFocusedPlaybackShortcuts: Bool {
+        guard isPlayerAppFrontmost, let window, window.isKeyWindow,
+              window.attachedSheet == nil, NSApp.modalWindow == nil, !model.settingsOpen else { return false }
+        return !(window.firstResponder is NSTextView) && !(window.firstResponder is NSTextField)
     }
     var playItem: NSMenuItem!
     private var fullScreenTransition = false
@@ -253,6 +269,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         item(playbackMenu, "Previous Video Frame", key: "e", modifiers: .shift) { self.model.stepFrame(true) }
         playbackMenu.addItem(.separator())
         item(playbackMenu, "Bookmark Current Position", key: "b") { self.model.addBookmark() }
+        let namedBookmark = item(playbackMenu, "Add Named Bookmark…", key: "b", modifiers: .option) { self.model.addBookmark(named: true) }
+        (namedBookmark.target as? MenuAction)?.available = { [weak self] in
+            self?.model.libraryReady == true && self?.model.loaded == true && self?.canUseFocusedPlaybackShortcuts == true
+        }
         bookmarkMenu = submenu(playbackMenu, "Bookmarks from All Files"); bookmarkMenu.delegate = self
         item(playbackMenu, "Import Bookmarks…") { self.model.importBookmarks() }
         item(playbackMenu, "Export Bookmarks…") { self.model.exportBookmarks() }
@@ -298,7 +318,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         item(help, "Keyboard Shortcuts") {
             let alert = NSAlert(); alert.messageText = "Keyboard Shortcuts"
-            alert.informativeText = "1 — Show full interface\n2 — Media only with progress bar\nSpace — Play / Pause\n← / → — Seek 10 seconds\n↑ / ↓ — Volume\n⌘B — Save bookmark\n⇧⌘B — All bookmarks\n⇧⌘H — History\n⌥⌘T — Float on Top while playing\n⌘L — Playlist\n⌘O — Open file\n⌃⌘F — Full screen\n⌘[ / ⌘] — Playback speed\nE / ⇧E — Next / previous frame"
+            alert.informativeText = "1 — Show full interface\n2 — Media only with progress bar\nSpace — Play / Pause\n← / → — Seek 10 seconds\n↑ / ↓ — Volume\n⌘B — Save bookmark\n⌥B — Save named bookmark\n⇧⌘B — All bookmarks\n⇧⌘H — History\n⌥⌘T — Float on Top while playing\n⌘L — Playlist\n⌘O — Open file\n⌃⌘F — Full screen\n⌘[ / ⌘] — Playback speed\n⌘\\ — Reset speed to 1×\nE / ⇧E — Next / previous frame"
             alert.runModal()
         }
     }
