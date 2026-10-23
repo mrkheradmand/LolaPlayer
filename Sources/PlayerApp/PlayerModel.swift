@@ -37,6 +37,12 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     @ObservationIgnored var libraryWindowChanged: (() -> Void)?
     @ObservationIgnored var revealLibrary: (() -> Void)?
     @ObservationIgnored private var changingInterface = false
+    var keepRunningWhenWindowCloses = UserDefaults.standard.bool(forKey: "keepRunningWhenWindowCloses") {
+        didSet {
+            guard !CommandLine.arguments.contains("--smoke-test") else { return }
+            UserDefaults.standard.set(keepRunningWhenWindowCloses, forKey: "keepRunningWhenWindowCloses")
+        }
+    }
     var rememberWindowGeometry = UserDefaults.standard.object(forKey: "rememberWindowGeometry") as? Bool ?? true {
         didSet {
             guard !CommandLine.arguments.contains("--smoke-test") else { return }
@@ -619,6 +625,12 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func restoreInterfaceMode(from defaults: UserDefaults = .standard) {
         guard !CommandLine.arguments.contains("--smoke-test") || defaults !== UserDefaults.standard else { return }
         setMediaOnly(defaults.bool(forKey: "mediaOnly"), defaults: defaults)
+    }
+
+    func pauseForWindowClose() {
+        if loaded { setPaused(true) }
+        else { paused = true; engine?.setProperty("pause", value: "yes") }
+        playbackClickFeedback.clear()
     }
 
     func closePlayerWindow() { window?.performClose(nil) }

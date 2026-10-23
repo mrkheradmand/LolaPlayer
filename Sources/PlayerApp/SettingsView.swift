@@ -86,6 +86,8 @@ struct SettingsView: View {
         Group {
             card("Window") {
                 preference("Float on Top", detail: "Keep the player above other windows during playback. It returns to normal when paused or stopped.", value: $model.floatEnabled)
+                Divider()
+                preference("Keep running when the player window closes", detail: "Pause playback and stay in the Dock. Click the Dock icon to reopen the player; press ⌘Q to quit.", value: $model.keepRunningWhenWindowCloses)
             }
             card("Opening media") {
                 preference("Play automatically", detail: "Start playback when you open a file.", value: $model.autoplay)

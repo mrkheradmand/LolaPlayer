@@ -6,8 +6,8 @@
 <key>NSHumanReadableCopyright</key><string>Copyright © 2026 J Kheradmand</string>
 <key>CFBundleName</key><string>Lola Player</string>
 <key>CFBundleDisplayName</key><string>Lola Player</string>
-<key>CFBundleVersion</key><string>47</string>
-<key>CFBundleShortVersionString</key><string>1.14.1</string>
+<key>CFBundleVersion</key><string>48</string>
+<key>CFBundleShortVersionString</key><string>1.15.0</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleIconFile</key><string>LolaPlayerIcon.icns</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>

@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.14.1, build 47 |
+| Version | 1.15.0, build 48 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -245,11 +245,12 @@ The engine attempts to find matching external subtitles automatically. Opening s
 
 ### Settings and defaults
 
-Open **Lola Player → Settings…**, press **⌘,**, or click the playback-settings button. The settings sheet uses a sidebar with **General**, **Playback**, and **Bookmarks** pages, grouped cards, descriptive switch rows with consistently right-aligned switches on every page, and a scrollable content area. Changes apply immediately; use **Done**, the close button, or Escape to dismiss it. General contains window and opening-media preferences; Playback contains speed, repeat, shuffle, synchronization, and A–B looping; Bookmarks contains naming and library actions. Update controls live in About.
+Open **Lola Player → Settings…**, press **⌘,**, or click the playback-settings button. The settings sheet uses a sidebar with **General**, **Playback**, and **Bookmarks** pages, grouped cards, descriptive switch rows with consistently right-aligned switches on every page, and a scrollable content area. Changes apply immediately; use **Done**, the close button, or Escape to dismiss it. General contains window and opening-media preferences; **Keep running when the player window closes** saves `keepRunningWhenWindowCloses` (off by default). When enabled, the red close button, ⌘W on the player, and the player context menu’s Close command pause playback, hide auxiliary windows, and retain the app in the Dock. Clicking the Dock icon restores the same player and loaded media without resuming automatically. Quit/⌘Q still flushes library changes and shuts down the playback engine. When disabled, closing the player quits as before. Playback contains speed, repeat, shuffle, synchronization, and A–B looping; Bookmarks contains naming and library actions. Update controls live in About.
 
 | Setting | Initial default | Saved between launches? |
 | --- | --- | --- |
 | Float on Top while media is playing | Off | Yes |
+| Keep running when the player window closes | Off | Yes |
 | Remember playback position for every file | On | Yes |
 | Play automatically when opening media | On | Yes |
 | Ask for a name when adding a bookmark | Off | Yes |

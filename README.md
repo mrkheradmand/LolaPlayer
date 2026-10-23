@@ -34,6 +34,8 @@ The app uses a flat mint-green play icon on a charcoal tile, with transparent pa
 
 ## Features
 
+To keep Lola in the Dock after closing its window, enable **Settings → General → Keep running when the player window closes**. Closing pauses playback; click the Dock icon to reopen, then press Play to resume. **⌘Q** quits the app. The setting is off by default.
+
 Drag media files or folders onto **Library → Playlist** to add them without starting playback. Folders include media in all subfolders; existing playlist items are not duplicated. Drag a Playlist card over the upper or lower half of another card to choose the insertion line; drop below the last item to move it to the end. The order is remembered.
 
 The menu and player window open before your library and playback engine finish loading.
@@ -109,7 +111,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.14.1, build 47 |
+| Version | 1.15.0, build 48 |
 
 
 See [release notes](versions.md) for what's changed.

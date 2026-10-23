@@ -98,7 +98,73 @@ private final class DragProbeView: PlayerMouseView {
         }
     }
 
+    private static func runCloseToDockOnly(model: PlayerModel, root: URL) {
+        Task { @MainActor in
+            var checks: [String] = []
+            var failure: String?
+            let originalKeepRunning = model.keepRunningWhenWindowCloses
+            func check(_ valid: Bool, _ name: String) throws {
+                guard valid else { throw Failure(message: name) }; checks.append(name)
+            }
+            @MainActor func waitFor(_ condition: @MainActor () -> Bool) async throws {
+                for _ in 0..<200 {
+                    if condition() { return }
+                    if let error = model.error { throw Failure(message: error) }
+                    try await Task.sleep(for: .milliseconds(50))
+                }
+                throw Failure(message: "Timed out checking close-to-Dock behavior")
+            }
+            do {
+                guard let delegate = NSApp.delegate as? AppDelegate, let window = model.window else {
+                    throw Failure(message: "Missing player window")
+                }
+                model.keepRunningWhenWindowCloses = false
+                try check(delegate.applicationShouldTerminateAfterLastWindowClosed(NSApp), "Switch off retains close-to-quit behavior")
+                model.keepRunningWhenWindowCloses = true
+                try check(!delegate.applicationShouldTerminateAfterLastWindowClosed(NSApp), "Switch on keeps the app running without a player window")
+                try await waitFor { model.engine?.engineReady == true }
+                model.open([root.appendingPathComponent("first.mp4")])
+                try await waitFor { model.loaded && model.duration > 10 }
+                model.setPaused(false)
+                try await waitFor { !model.paused && model.position > 0.2 }
+                let engine = model.engine
+                let current = model.currentID
+                let queue = model.queue
+                model.show(.playlist)
+                window.performClose(nil)
+                try await waitFor { model.paused && model.engine?.flagProperty("pause") == true }
+                try check(!window.isVisible && model.paused && !model.sidebar
+                    && delegate.libraryController?.window?.isVisible != true, "Closing pauses actual playback and hides the player and Library")
+                try check(model.engine === engine && model.engine?.engineReady == true
+                    && model.currentID == current && model.queue == queue, "Closing retains the loaded engine, current file, and playlist")
+                _ = delegate.applicationShouldHandleReopen(NSApp, hasVisibleWindows: false)
+                try await waitFor { window.isVisible }
+                try check(window.isVisible && model.paused && model.currentID == current, "Dock reopen restores the same player and leaves playback paused")
+                let position = model.position
+                model.setPaused(false)
+                try await waitFor { !model.paused && model.position > position + 0.15 }
+                try check(model.engine === engine, "Playback resumes after reopening without rebuilding the engine")
+                model.closePlayerWindow()
+                try await waitFor { model.paused && model.engine?.flagProperty("pause") == true }
+                try check(!window.isVisible && model.paused, "Context-menu Close also pauses and keeps the player reusable")
+                _ = delegate.applicationShouldHandleReopen(NSApp, hasVisibleWindows: false)
+                try check(delegate.applicationShouldTerminate(NSApp) == .terminateNow,
+                    "Explicit Quit remains allowed while keep-running is enabled")
+            } catch let error as Failure { failure = error.message }
+            catch { failure = error.localizedDescription }
+            model.keepRunningWhenWindowCloses = originalKeepRunning
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
+            }
+            NSApp.terminate(nil)
+        }
+    }
+
     static func run(model: PlayerModel, root: URL) {
+        if CommandLine.arguments.contains("--close-to-dock-only") {
+            runCloseToDockOnly(model: model, root: root); return
+        }
         if CommandLine.arguments.contains("--folder-open-only") {
             runFolderOpenOnly(model: model, root: root); return
         }

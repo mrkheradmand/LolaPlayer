@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.15.0 (build 48) — 2026-10-23
+
+### Added
+
+- General setting to keep running in the Dock when the player window closes; closing pauses playback, Dock clicks reopen the retained player, and Quit still shuts down fully.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
 ## 1.14.1 (build 47) — 2026-10-22
 
 ### Added

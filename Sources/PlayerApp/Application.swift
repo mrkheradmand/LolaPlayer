@@ -149,7 +149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
     }
     func application(_ sender: NSApplication, open urls: [URL]) { model.open(urls); window?.makeKeyAndOrderFront(nil) }
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { !model.keepRunningWhenWindowCloses }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         model.persistPosition()
         do { try model.library.flush(); return .terminateNow }
@@ -182,7 +182,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         return true
     }
-    func windowWillClose(_ notification: Notification) { model.saveWindowGeometry(); model.sidebar = false; aboutController?.close(); model.shutdown() }
+    func windowWillClose(_ notification: Notification) {
+        model.saveWindowGeometry(); model.pauseForWindowClose()
+        model.sidebar = false; aboutController?.close()
+        // Keep the retained window and engine reusable; termination performs full shutdown.
+    }
     func windowDidMove(_ notification: Notification) { model.saveWindowGeometry() }
     func windowDidResize(_ notification: Notification) { model.saveWindowGeometry() }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { window.makeKeyAndOrderFront(nil); return true }
