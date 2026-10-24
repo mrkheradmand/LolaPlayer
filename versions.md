@@ -1,5 +1,47 @@
 # Lola Player versions
 
+## 1.22.1 (build 68) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Keep a 10-point gap between the Library header divider and the first revealed card on every tab, matching inter-card spacing.
+
+### Removed
+
+- None.
+
+## 1.22.0 (build 67) — 2026-10-24
+
+### Added
+
+- Live yellow bookmark ticks on the current media seek bar, updated on bookmark additions, edits, and removals.
+
+### Modified
+
+- Move Settings beside the volume slider and add green hover color and pointing-hand cursors to playback control buttons.
+
+### Removed
+
+- None.
+
+## 1.21.0 (build 66) — 2026-10-24
+
+### Added
+
+- Header search icon toggles the existing Library search and sorting area with a fade; Library buttons gain pointing-hand cursors and hover feedback.
+
+### Modified
+
+- Darken the add-files button and turn the search icon green on hover; reveal the playing file near the top of Library lists.
+
+### Removed
+
+- None.
+
 ## 1.20.6 (build 65) — 2026-10-24
 
 ### Added

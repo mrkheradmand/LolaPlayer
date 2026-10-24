@@ -162,6 +162,7 @@ struct PlayerView: View {
             HStack(spacing: 14) {
                 icon(model.muted || model.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill", "Mute", action: model.toggleMute)
                 Slider(value: Binding(get: { model.volume }, set: model.changeVolume), in: 0...100).controlSize(.mini).frame(width: 80).accessibilityLabel("Volume")
+                icon("slider.horizontal.3", "Playback settings") { model.settingsOpen = true }
                 Spacer(minLength: 5)
                 icon("shuffle", model.shuffle ? "Shuffle: On" : "Shuffle: Off") { model.shuffle.toggle() }
                     .foregroundStyle(model.shuffle ? Color.blue : Color.secondary)
@@ -179,7 +180,7 @@ struct PlayerView: View {
                                 .font(.system(size: 7)).padding(2).background(Color(nsColor: .windowBackgroundColor), in: Circle()).offset(x: 6, y: 5)
                         }
                     }.frame(width: 25, height: 26)
-                }.buttonStyle(.plain)
+                }.buttonStyle(ControlButtonStyle())
                     .foregroundStyle(model.repeatMode == .off ? Color.secondary : Color.blue)
                     .help("\(model.repeatMode.rawValue) — click to change")
                     .accessibilityLabel("Repeat: \(model.repeatMode.rawValue)")
@@ -191,10 +192,9 @@ struct PlayerView: View {
                         }
                     }
                 Spacer(minLength: 5)
-                Button { model.changeSpeed(model.speed == 1 ? 1.5 : 1) } label: { Text(String(format: "%.2g×", model.speed)).font(.system(size: 11, weight: .medium)).frame(width: 28) }.buttonStyle(.plain).help("Toggle playback speed")
+                Button { model.changeSpeed(model.speed == 1 ? 1.5 : 1) } label: { Text(String(format: "%.2g×", model.speed)).font(.system(size: 11, weight: .medium)).frame(width: 28) }.buttonStyle(ControlButtonStyle()).help("Toggle playback speed")
                 icon("bookmark", "Bookmark Current Position", action: model.addBookmark)
                 icon(model.floatEnabled ? "pin.fill" : "pin", "Float on Top while playing") { model.floatEnabled.toggle() }.foregroundStyle(model.floatEnabled ? .blue : .primary)
-                icon("slider.horizontal.3", "Playback settings") { model.settingsOpen = true }
                 icon("list.bullet", "Show playlist and history") { model.sidebar.toggle() }
             }
         }.padding(.horizontal, 18).padding(.vertical, 12)
@@ -202,7 +202,7 @@ struct PlayerView: View {
 
     private func icon(_ system: String, _ label: String, size: CGFloat = 15, action: @escaping () -> Void) -> some View {
         Button(action: action) { Image(systemName: system).font(.system(size: size, weight: .medium)).frame(width: max(20, size), height: 26) }
-            .buttonStyle(.plain).help(label).accessibilityLabel(label)
+            .buttonStyle(ControlButtonStyle()).help(label).accessibilityLabel(label)
     }
 
     private var updateNotice: some View {

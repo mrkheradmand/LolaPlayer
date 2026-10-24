@@ -88,6 +88,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             else { UserDefaults.standard.removeObject(forKey: "playerWindowFrame") }
         }
     }
+    var librarySearchVisible = false
     var sortOptionsVisible = false
     var libraryScrollRequest = 0
     var playlistSort: LibrarySort = .dateAdded
@@ -217,6 +218,13 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         return result
     }()
 
+    var timelineBookmarks: [MediaBookmark] {
+        guard loaded, duration.isFinite, duration > 0, let record = current else { return [] }
+        return record.bookmarks.filter {
+            $0.seconds.isFinite && $0.seconds >= 0 && $0.seconds <= duration
+                && (record.discKind == nil || $0.discTitle == record.discTitle)
+        }
+    }
     var current: MediaRecord? { _ = revision; return currentID.flatMap { library.record($0) } }
     var playlistRecords: [MediaRecord] { _ = revision; return queue.compactMap { library.record($0) } }
     var records: [MediaRecord] { _ = revision; return library.recent }

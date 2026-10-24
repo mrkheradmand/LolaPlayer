@@ -167,6 +167,16 @@ struct PreviewSeekBar: View {
                 case .ended: preview.hoverX = nil; if !model.scrubbing { preview.request(nil) }
                 }
             }
+            .overlay {
+                GeometryReader { track in
+                    ForEach(model.timelineBookmarks) { bookmark in
+                        Rectangle().fill(Color.yellow).frame(width: 2, height: 8)
+                            .position(x: TimelinePosition.x(seconds: bookmark.seconds,
+                                                          width: track.size.width, duration: duration),
+                                      y: track.size.height / 2)
+                    }
+                }.allowsHitTesting(false).accessibilityHidden(true)
+            }
             .overlay(alignment: .bottomLeading) {
                 if let time, model.loaded, duration > 0 {
                     VStack(spacing: 5) {

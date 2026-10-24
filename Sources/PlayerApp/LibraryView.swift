@@ -16,10 +16,23 @@ struct LibraryView: View {
                         Text("Your files. Your favorite moments.").font(.callout).foregroundStyle(.secondary)
                     }
                     Spacer()
+                    Button {
+                        searchFocused = false
+                        withAnimation(reduceMotion ? nil : .timingCurve(0.23, 1, 0.32, 1, duration: 0.18)) {
+                            model.librarySearchVisible.toggle()
+                            if !model.librarySearchVisible { model.search = "" }
+                        }
+                    } label: {
+                        Image(systemName: "magnifyingglass").font(.system(size: 14, weight: .medium))
+                            .frame(width: 30, height: 30).contentShape(Circle())
+                    }.buttonStyle(LibraryButtonStyle(search: true))
+                        .help(model.librarySearchVisible ? "Hide search" : "Show search")
+                        .accessibilityLabel("Search Library")
+                        .accessibilityValue(model.librarySearchVisible ? "Expanded" : "Collapsed")
                     Button { model.openPanel() } label: {
                         Image(systemName: "plus").font(.system(size: 13, weight: .semibold))
                             .frame(width: 30, height: 30).background(.quaternary, in: Circle())
-                    }.buttonStyle(.plain).help("Open files").accessibilityLabel("Open files")
+                    }.buttonStyle(LibraryButtonStyle(darken: true)).help("Open files").accessibilityLabel("Open files")
                 }
                 HStack(spacing: 4) {
                     ForEach(LibraryTab.allCases, id: \.self) { tab in
@@ -30,9 +43,11 @@ struct LibraryView: View {
                                 .contentShape(Rectangle())
                                 .background(model.tab == tab ? Color.accentColor.opacity(0.18) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
                                 .foregroundStyle(model.tab == tab ? Color.accentColor : .secondary)
-                        }.buttonStyle(.plain).accessibilityAddTraits(model.tab == tab ? .isSelected : [])
+                        }.buttonStyle(LibraryButtonStyle()).accessibilityAddTraits(model.tab == tab ? .isSelected : [])
                     }
                 }.padding(4).background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+                if model.librarySearchVisible {
+                    VStack(alignment: .leading, spacing: 18) {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField(model.tab == .bookmarks ? "Search files and bookmarks" : "Search files", text: $model.search)
@@ -60,7 +75,7 @@ struct LibraryView: View {
                                     Circle().fill(Color.accentColor).frame(width: 5, height: 5).allowsHitTesting(false)
                                 }
                             }
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(LibraryButtonStyle())
                         .help(model.sortOptionsVisible ? "Hide sorting options" : "Show sorting options")
                         .accessibilityLabel("Sorting options")
                         .accessibilityValue(model.sortOptionsVisible ? "Expanded" : "Collapsed")
@@ -71,11 +86,13 @@ struct LibraryView: View {
                 if model.sortOptionsVisible {
                     sortingPanel.transition(.opacity)
                 }
+                    }.transition(.opacity)
+                }
             }.padding(20)
             Divider()
             ScrollViewReader { scroll in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: model.tab == .playlist ? 0 : 10) {
+                LazyVStack(alignment: .leading, spacing: 10) {
                     if displayedRecords.isEmpty {
                         VStack(spacing: 10) {
                             Image(systemName: model.tab == .bookmarks ? "bookmark" : "list.bullet").font(.title2)
@@ -101,7 +118,7 @@ struct LibraryView: View {
                                     }
                                     Spacer(minLength: 0)
                                 }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                              }.buttonStyle(.plain).help(record.location.path)
+                              }.buttonStyle(LibraryButtonStyle()).help(record.location.path)
                               Button(role: .destructive) {
                                   switch model.tab {
                                   case .playlist: model.removeFromPlaylist(record)
@@ -109,7 +126,7 @@ struct LibraryView: View {
                                   case .bookmarks: model.removeAllBookmarks(record)
                                   }
                               } label: { Image(systemName: "trash").frame(width: 28, height: 32) }
-                                  .buttonStyle(.plain).foregroundStyle(.secondary).padding(.trailing, 8)
+                                  .buttonStyle(LibraryButtonStyle()).foregroundStyle(.secondary).padding(.trailing, 8)
                                   .help(fileRemovalLabel(record))
                                   .accessibilityLabel(fileRemovalLabel(record))
                             }
@@ -135,14 +152,14 @@ struct LibraryView: View {
                                                 Text(bookmark.title).lineLimit(1)
                                                 Spacer()
                                             }.font(.system(size: 12))
-                                        }.buttonStyle(.plain).help("Open \(record.name) at \(timestamp(bookmark.seconds))")
+                                        }.buttonStyle(LibraryButtonStyle()).help("Open \(record.name) at \(timestamp(bookmark.seconds))")
                                         Menu {
                                             Button("Edit…") { model.editBookmark(record, bookmark) }
                                             Button("Delete Bookmark", role: .destructive) { model.removeBookmark(record, bookmark) }
-                                        } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).fixedSize()
+                                        } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).fixedSize().modifier(LibraryHoverFeedback())
                                         Button(role: .destructive) { model.removeBookmark(record, bookmark) } label: {
                                             Image(systemName: "trash").frame(width: 22, height: 24)
-                                        }.buttonStyle(.plain).foregroundStyle(.secondary)
+                                        }.buttonStyle(LibraryButtonStyle()).foregroundStyle(.secondary)
                                             .help("Delete bookmark at \(timestamp(bookmark.seconds))")
                                             .accessibilityLabel("Delete bookmark at \(timestamp(bookmark.seconds)) from \(record.name)")
                                     }.padding(.horizontal, 12).padding(.vertical, 5)
@@ -167,13 +184,16 @@ struct LibraryView: View {
                                 }
                             }
                     }
-                }.padding(16)
+                }.padding(.horizontal, 16).padding(.bottom, 16)
             }
+            .contentMargins(.top, 10, for: .scrollContent)
             .onAppear { revealPlaying(scroll) }
             .onChange(of: model.tab) { _, _ in revealPlaying(scroll) }
             .onChange(of: model.libraryScrollRequest) { _, _ in revealPlaying(scroll) }
             .onChange(of: model.sidebar) { _, visible in if visible { revealPlaying(scroll) } }
             .onChange(of: model.currentID) { _, _ in revealPlaying(scroll) }
+            .onChange(of: model.librarySearchVisible) { _, _ in revealPlaying(scroll) }
+            .onChange(of: model.sortOptionsVisible) { _, _ in revealPlaying(scroll) }
             .onChange(of: model.librarySort) { _, _ in revealPlaying(scroll) }
             .onChange(of: model.onlyCurrentFolder) { _, _ in revealPlaying(scroll) }
             }
@@ -185,7 +205,7 @@ struct LibraryView: View {
                 if model.tab == .playlist { Button("Empty Playlist", role: .destructive) { model.queue = [] }.disabled(model.queue.isEmpty) }
                 if model.tab == .history { Button("Empty History", role: .destructive) { model.emptyHistory() }.disabled(model.historyRecords.isEmpty) }
             }.controlSize(.small).padding(16)
-        }.background(Color(nsColor: .windowBackgroundColor))
+        }.buttonStyle(LibraryButtonStyle()).background(Color(nsColor: .windowBackgroundColor))
         .onDrop(of: [.fileURL], isTargeted: $model.playlistDropTarget) { providers in
             guard model.tab == .playlist else { return false }
             return model.dropOnPlaylist(providers)
@@ -222,7 +242,7 @@ struct LibraryView: View {
                             .overlay(RoundedRectangle(cornerRadius: 7)
                                 .stroke(model.librarySort == option ? Color.accentColor.opacity(0.35) : .white.opacity(0.06), lineWidth: 1))
                             .contentShape(Rectangle())
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(LibraryButtonStyle())
                         .help(model.librarySort == option ? "Reverse sort direction" : "Sort by " + option.rawValue)
                         .accessibilityValue(model.librarySort == option ? (model.librarySortAscending ? "Ascending" : "Descending") : "Not selected")
                         .accessibilityAddTraits(model.librarySort == option ? .isSelected : [])
@@ -235,7 +255,7 @@ struct LibraryView: View {
                     Text("Only current folder").font(.system(size: 11, weight: .medium))
                     Spacer(minLength: 12)
                     Toggle("Only current folder", isOn: $model.onlyCurrentFolder)
-                        .labelsHidden().toggleStyle(.switch).controlSize(.small)
+                        .labelsHidden().toggleStyle(.switch).controlSize(.small).modifier(LibraryHoverFeedback())
                 }.help("Show only media in the playing file’s immediate folder")
             }
         }.padding(12)
@@ -262,7 +282,7 @@ struct LibraryView: View {
         guard let id = model.currentID, displayedRecords.contains(where: { $0.id == id }) else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             guard model.currentID == id, displayedRecords.contains(where: { $0.id == id }) else { return }
-            scroll.scrollTo(id, anchor: .center)
+            scroll.scrollTo(id, anchor: .top)
         }
     }
     private func symbol(_ tab: LibraryTab) -> String {
@@ -293,7 +313,7 @@ struct LibraryView: View {
     }
     private func icon(_ name: String, _ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) { Image(systemName: name).frame(width: 26, height: 26) }
-            .buttonStyle(.plain).help(label).accessibilityLabel(label)
+            .buttonStyle(LibraryButtonStyle()).help(label).accessibilityLabel(label)
     }
 }
 
@@ -372,6 +392,10 @@ final class PlaylistDragSurfaceView: NSView, NSDraggingSource {
         registerForDraggedTypes([NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)])
     }
     required init?(coder: NSCoder) { super.init(coder: coder); registerForDraggedTypes([NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)]) }
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        if source != nil { addCursorRect(bounds, cursor: .pointingHand) }
+    }
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
 
@@ -434,7 +458,7 @@ private struct PlaylistReorderRow: ViewModifier {
     let id: UUID
     @ViewBuilder func body(content: Content) -> some View {
         if model.tab == .playlist {
-            content.padding(.vertical, 5)
+            content
                 .overlay {
                     HStack(spacing: 0) {
                         PlaylistNativeDragSurface(model: model, source: id, before: id,

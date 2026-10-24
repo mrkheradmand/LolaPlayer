@@ -428,7 +428,52 @@ private final class DragProbeView: PlayerMouseView {
         }
     }
 
+    private static func runBookmarkMarkersOnly(model: PlayerModel, root: URL) {
+        Task { @MainActor in
+            var checks: [String] = []
+            var failure: String?
+            func check(_ valid: Bool, _ message: String) throws {
+                guard valid else { throw Failure(message: message) }
+                checks.append(message)
+            }
+            do {
+                let id = try model.library.visit(root.appendingPathComponent("markers.mp4"))
+                let other = try model.library.visit(root.appendingPathComponent("other.mp4"))
+                model.currentID = id; model.loaded = true; model.duration = 120
+                try model.library.addBookmark(other, seconds: 10, title: "Other file")
+                try check(model.timelineBookmarks.isEmpty, "Timeline excludes another media file’s bookmarks")
+                let changed = RefreshNotification()
+                withObservationTracking { _ = model.timelineBookmarks } onChange: { changed.received = true }
+                var bookmarkID: UUID?
+                model.perform { bookmarkID = try model.library.addBookmark(id, seconds: 60, title: "Middle") }
+                try check(changed.received && model.timelineBookmarks.count == 1,
+                          "Adding a bookmark notifies the visible seek bar")
+                let host = NSHostingView(rootView: PreviewSeekBar(model: model))
+                host.frame = NSRect(x: 0, y: 0, width: 400, height: 16); host.layoutSubtreeIfNeeded()
+                guard let bookmarkID else { throw Failure(message: "Bookmark was not saved") }
+                model.perform { try model.library.editBookmark(id, bookmark: bookmarkID, title: "Moved", seconds: 30) }
+                try check(model.timelineBookmarks.first?.seconds == 30, "Editing bookmark time moves the marker")
+                model.perform { try model.library.addBookmark(id, seconds: 200, title: "Outside duration") }
+                try check(model.timelineBookmarks.count == 1, "Markers exclude times outside the current duration")
+                model.perform { try model.library.removeBookmark(id, bookmark: bookmarkID) }
+                try check(model.timelineBookmarks.isEmpty, "Deleting a bookmark removes its seek-bar marker")
+                model.loaded = false
+                try check(model.timelineBookmarks.isEmpty, "Unloaded media has no seek-bar markers")
+            } catch let error as Failure { failure = error.message }
+            catch { failure = error.localizedDescription }
+            model.loaded = false
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
+            }
+            model.shutdown(); NSApp.terminate(nil)
+        }
+    }
+
     static func run(model: PlayerModel, root: URL) {
+        if ProcessInfo.processInfo.environment["LOLA_SMOKE_BOOKMARK_MARKERS_ONLY"] == "1" {
+            runBookmarkMarkersOnly(model: model, root: root); return
+        }
         if ProcessInfo.processInfo.environment["LOLA_SMOKE_ABOUT_LAYOUT_ONLY"] == "1" {
             runAboutLayoutOnly(model: model, root: root); return
         }
