@@ -1,5 +1,20 @@
 # Lola Player versions
 
+## 1.16.0 (build 49) — 2026-10-24
+
+### Added
+
+- Persistent green playlist watch status after more than one minute of active playback, with completion remembered across launches.
+- Prevent idle Mac sleep and the screen saver during media playback; release wake protection when playback pauses, ends, fails, or quits.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
 ## 1.15.0 (build 48) — 2026-10-23
 
 ### Added

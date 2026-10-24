@@ -1,5 +1,5 @@
 Playback runtime: mpv v0.41.0; FFmpeg 9.0.1.
-Local source: /Users/jey/DEV/TEST/GENERAL/ELMedia_Player/Runtime/Frameworks/libmpv.2.dylib
+Local source: /Users/jey/DEV/TEST/GENERAL/LolaPlayer/Runtime/Frameworks/libmpv.2.dylib
 Modern runtime: True; tracker decoder: False.
 mpv: https://mpv.io/ ; FFmpeg: https://ffmpeg.org/ ; libass: https://github.com/libass/libass
 This build is for local use. Before redistribution, supply applicable licenses and corresponding source.

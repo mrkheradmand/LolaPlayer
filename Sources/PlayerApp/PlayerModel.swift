@@ -7,6 +7,9 @@ import CMpv
 enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "History", bookmarks = "Bookmarks" }
 
 @Observable final class PlayerModel {
+    private let playbackWake = PlaybackWake()
+    private var playbackSampleTime = ProcessInfo.processInfo.systemUptime
+    private var unsavedPlayedSeconds = 0.0
     var playlistReorderTargeted = false
     var playlistDropBefore: UUID?
     var playlistDropTarget = false
@@ -224,7 +227,13 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func notify(_ text: String, inMediaOnly: Bool = false) { message = text; messageInMediaOnly = inMediaOnly; messageUntil = Date().addingTimeInterval(2.5) }
     func persistPosition() {
         guard let id = currentID, loaded else { return }
-        perform { try library.updatePosition(id, seconds: ended ? 0 : position, duration: duration) }
+        perform {
+            try library.batchUpdates {
+                try library.recordPlayback(id, seconds: unsavedPlayedSeconds, finished: ended)
+                try library.updatePosition(id, seconds: ended ? 0 : position, duration: duration)
+            }
+            unsavedPlayedSeconds = 0
+        }
     }
     func movePlaylistItem(_ id: UUID, before destination: UUID?) {
         let reordered = PlaybackOrder.moving(queue, item: id, before: destination)
@@ -335,6 +344,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         if !queue.contains(id) { queue.append(id) }
         perform { _ = try library.visit(url) }
         playbackClickFeedback.clear(); timelinePreview.clear(); mediaAspectRatio = 0
+        unsavedPlayedSeconds = 0; playbackSampleTime = ProcessInfo.processInfo.systemUptime
         currentID = id; position = 0; duration = 0; loaded = false; ended = false; failed = false
         if repeatMode == .folder { refreshFolder() }
         paused = !autoplay; buffering = true; handledEnd = false; loopA = nil; loopB = nil
@@ -375,6 +385,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     }
 
     func tick() {
+        samplePlaybackTime()
         guard let engine, engine.engineReady else { return }
         if let problem = library.takeSaveError() { error = "Could not save library: \(problem)" }
         ticks += 1
@@ -383,7 +394,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             if let loopA, let loopB, position >= loopB { midi.seek(loopA); position = loopA }
             if !paused && position >= duration {
                 midi.pause(); ended = true; paused = true
-                if !handledEnd { handledEnd = true; handleEnd() }
+                if !handledEnd { handledEnd = true; persistPosition(); handleEnd() }
             }
             if ticks % 34 == 0 { persistPosition() }
             if message != nil && Date() > messageUntil { message = nil }
@@ -416,7 +427,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             position = engine.numberProperty("time-pos"); duration = engine.numberProperty("duration")
             paused = engine.flagProperty("pause"); ended = engine.flagProperty("eof-reached")
             buffering = engine.flagProperty("paused-for-cache")
-            if ended && !handledEnd { handledEnd = true; handleEnd() }
+            if ended && !handledEnd { handledEnd = true; persistPosition(); handleEnd() }
         }
         if ticks % 34 == 0 { persistPosition() }
         if ticks % 10 == 0 && loaded { tracks = engine.tracks(); chapters = engine.chapters(); updateMediaGeometry(); prepareTimelinePreviews() }
@@ -424,7 +435,16 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         applyWindowLevel()
         systemMediaControls?.update()
     }
+    private func samplePlaybackTime() {
+        let now = ProcessInfo.processInfo.systemUptime
+        let elapsed = now - playbackSampleTime
+        playbackSampleTime = now
+        if loaded && !paused && !buffering && !ended && !failed && elapsed >= 0 && elapsed < 1 {
+            unsavedPlayedSeconds += elapsed
+        }
+    }
     func applyWindowLevel() {
+        playbackWake.update(active: !shuttingDown && loaded && !paused && !ended && !failed)
         let active = floating
         let level: NSWindow.Level = active ? .floating : .normal
         if window?.level != level { window?.level = level }
@@ -440,6 +460,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         libraryWindowChanged?()
     }
     func setPaused(_ value: Bool) {
+        samplePlaybackTime()
         guard loaded else { return }
         if !value && ended { seek(0) }
         if let midi {
@@ -737,5 +758,5 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         alert.window.initialFirstResponder = input
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }; return input.stringValue
     }
-    func shutdown() { shuttingDown = true; playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); do { try library.flush() } catch { NSLog("Library save failed: %@", error.localizedDescription) }; midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
+    func shutdown() { shuttingDown = true; playbackWake.update(active: false); samplePlaybackTime(); playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); do { try library.flush() } catch { NSLog("Library save failed: %@", error.localizedDescription) }; midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
 }

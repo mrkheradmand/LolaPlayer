@@ -64,7 +64,9 @@ struct LibraryView: View {
                                         .frame(width: 36, height: 40).background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(record.name).font(.system(size: 13, weight: .medium)).lineLimit(2).multilineTextAlignment(.leading)
-                                        Text("\(timestamp(record.position)) / \(timestamp(record.duration)) · \(record.bookmarks.count) bookmarks").font(.system(size: 11)).foregroundStyle(.secondary)
+                                        (Text("\(timestamp(record.position)) / \(timestamp(record.duration))")
+                                            + Text(model.tab == .playlist ? record.watchStatus.map { " · " + $0 } ?? "" : "").foregroundColor(.green)
+                                            + Text(" · \(record.bookmarks.count) bookmarks")).font(.system(size: 11)).foregroundStyle(.secondary)
                                     }
                                     Spacer(minLength: 0)
                                 }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
