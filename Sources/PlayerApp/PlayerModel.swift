@@ -74,8 +74,9 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             else { UserDefaults.standard.removeObject(forKey: "playerWindowFrame") }
         }
     }
+    var sortOptionsVisible = false
     var libraryScrollRequest = 0
-    var playlistSort: LibrarySort = .playlistOrder
+    var playlistSort: LibrarySort = .dateAdded
     var historySort: LibrarySort = .datePlayed
     var bookmarksSort: LibrarySort = .dateAdded
     var playlistAscending = false
@@ -89,6 +90,10 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         set {
             switch tab { case .playlist: playlistSort = newValue; case .history: historySort = newValue; case .bookmarks: bookmarksSort = newValue }
         }
+    }
+    func selectLibrarySort(_ option: LibrarySort) {
+        if librarySort == option { librarySortAscending.toggle() }
+        else { librarySort = option; librarySortAscending = false }
     }
     var librarySortAscending: Bool {
         get {

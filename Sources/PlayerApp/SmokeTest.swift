@@ -320,7 +320,7 @@ private final class DragProbeView: PlayerMouseView {
                     ids.append(id)
                 }
                 let other = try model.library.visit(root.appendingPathComponent("other/Other.mp4"))
-                model.queue = ids + [other]; model.currentID = ids.last; model.revision += 1
+                model.queue = ids + [other]; model.playlistSort = .playlistOrder; model.currentID = ids.last; model.revision += 1
                 model.show(.playlist)
                 try await Task.sleep(for: .seconds(1))
                 let panel = (NSApp.delegate as? AppDelegate)?.libraryController?.window
@@ -330,8 +330,13 @@ private final class DragProbeView: PlayerMouseView {
                 let view = LibraryView(model: model)
                 try check(view.displayedRecords.count == 60 && !view.displayedRecords.contains(where: { $0.id == other }),
                           "Playlist current-folder filter excludes other folders")
-                model.playlistSort = .dateAdded
+                model.selectLibrarySort(.dateAdded)
                 try check(view.displayedRecords.first?.id == ids.last, "Playlist Date added sorts newest first")
+                model.selectLibrarySort(.dateAdded)
+                try check(model.librarySortAscending && view.displayedRecords.first?.id == ids.first,
+                          "Selecting the active sort button reverses direction")
+                model.selectLibrarySort(.lastPlayed)
+                try check(!model.librarySortAscending, "Selecting another sort starts descending")
                 model.historyAscending = true; model.tab = .history
                 try await Task.sleep(for: .seconds(0.8))
                 try check((scrollView(in: panel?.contentView)?.contentView.bounds.origin.y ?? 0) > 100,
@@ -357,7 +362,50 @@ private final class DragProbeView: PlayerMouseView {
         }
     }
 
+    private static func runAboutLayoutOnly(model: PlayerModel, root: URL) {
+        Task { @MainActor in
+            var checks: [String] = []
+            var failure: String?
+            func check(_ valid: Bool, _ message: String) throws {
+                guard valid else { throw Failure(message: message) }
+                checks.append(message)
+            }
+            do {
+                let controller = AboutWindowController(model: model)
+                controller.showWindow(nil); controller.window?.makeKeyAndOrderFront(nil)
+                controller.window?.contentView?.layoutSubtreeIfNeeded()
+                let about = AboutView(model: model)
+                try check(controller.window?.contentView is NSHostingView<AboutView>,
+                          "Redesigned About hosts the live SwiftUI view")
+                try check(controller.window?.contentView?.bounds.size == NSSize(width: 560, height: 520),
+                          "About uses the reference-style compact layout dimensions")
+                try check(controller.window?.appearance?.name == .aqua && controller.window?.styleMask.contains(.fullSizeContentView) == true,
+                          "About uses a light surface with integrated title bar")
+                try check(about.versionText.contains("(Build ") && about.copyrightText.contains("J Kheradmand"),
+                          "About retains bundle version, build, and author metadata")
+                model.updateAvailability = .current
+                try check(AboutView(model: model).versionLine.contains("Latest Version"), "Current update status remains available")
+                model.updateAvailability = .checking
+                try check(AboutView(model: model).versionLine.contains("Checking for updates"), "Pending update status remains available")
+                controller.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification))
+                try check(controller.window?.isVisible == false, "About still dismisses on focus loss")
+                controller.showWindow(nil)
+                try check(controller.window?.isVisible == true, "About can be explicitly reopened")
+                controller.close()
+            } catch let error as Failure { failure = error.message }
+            catch { failure = error.localizedDescription }
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
+            }
+            model.shutdown(); NSApp.terminate(nil)
+        }
+    }
+
     static func run(model: PlayerModel, root: URL) {
+        if ProcessInfo.processInfo.environment["LOLA_SMOKE_ABOUT_LAYOUT_ONLY"] == "1" {
+            runAboutLayoutOnly(model: model, root: root); return
+        }
         if ProcessInfo.processInfo.environment["LOLA_SMOKE_LIBRARY_SORTING_ONLY"] == "1" {
             runLibrarySortingOnly(model: model, root: root); return
         }

@@ -1,5 +1,47 @@
 # Lola Player versions
 
+## 1.20.3 (build 62) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Redesign About with a light reference-style layout, centered app identity and version, separated update controls, and repository, release, license, and credit footer links.
+
+### Removed
+
+- None.
+
+## 1.20.2 (build 61) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Simplify Library sorting: remove the Playlist order option, use per-button direction arrows with click-to-reverse sorting, and replace the folder checkbox and subtitle with a compact switch.
+
+### Removed
+
+- None.
+
+## 1.20.1 (build 60) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Redesign Library sorting as a collapsible panel beneath Search, opened by an icon-only button, with a subtle fade, selectable sort cards, labeled direction controls, and a refined folder filter.
+
+### Removed
+
+- None.
+
 ## 1.20.0 (build 59) — 2026-10-24
 
 ### Added

@@ -44,7 +44,7 @@ The app uses a flat mint-green play icon on a charcoal tile, with transparent pa
 
 To keep Lola in the Dock after closing its window, enable **Settings → General → Keep running when the player window closes**. Closing pauses playback; click the Dock icon to reopen, then press Play to resume. **⌘Q** quits the app. The setting is off by default.
 
-Drag media files or folders onto **Library → Playlist** to add them without starting playback. Folders include media in all subfolders; existing playlist items are not duplicated. Drag a Playlist card over the upper or lower half of another card to choose the insertion line; drop below the last item to move it to the end. The order is remembered. Played files show their current-time value in green. Fully watched files also show a green “Watched” label after the bookmark count. Status is remembered between launches. Bookmark counts and watch status update in the open Playlist automatically. Opening Library or switching tabs scrolls to the playing file when it is in the visible results. Use Sort and the direction arrow to order each tab; Playlist also offers Only current folder.
+Drag media files or folders onto **Library → Playlist** to add them without starting playback. Folders include media in all subfolders; existing playlist items are not duplicated. Drag a Playlist card over the upper or lower half of another card to choose the insertion line; drop below the last item to move it to the end. The order is remembered. Played files show their current-time value in green. Fully watched files also show a green “Watched” label after the bookmark count. Status is remembered between launches. Bookmark counts and watch status update in the open Playlist automatically. Opening Library or switching tabs scrolls to the playing file when it is in the visible results. Click the sorting icon at the right of Search to reveal sorting options below it. Choose a sort button; click it again to reverse the direction shown by its arrow. Playlist also offers an Only current folder switch.
 
 The menu and player window open before your library and playback engine finish loading.
 
@@ -109,7 +109,7 @@ Settings (**⌘,**) groups your preferences into **General**, **Playback**, and 
 
 Lola checks for new releases when it opens and once a day while running. When an update is available, click **View Release** in the notice to open the download page.
 
-To turn automatic checks off, uncheck **Automatically check for updates** in **Lola Player → About Lola Player**. Use **Check for Updates…** in About to check manually at any time. Press **⌘A** outside text fields to open About (in text fields it still selects all). **About Lola Player** also shows **Latest Version** or **New version available!** beside the version. Click the new-version message to open its release page. Updates are downloaded and installed manually. About closes when you return to the player or switch apps; open it again from the app menu.
+To turn automatic checks off, uncheck **Automatically check for updates** in **Lola Player → About Lola Player**. Use **Check for Updates…** in About to check manually at any time. Press **⌘A** outside text fields to open About (in text fields it still selects all). **About Lola Player** has a light layout with the app icon, update controls, and repository, release, and license links. It also shows **Latest Version** or **New version available!** with the version information. Click the new-version message to open its release page. Updates are downloaded and installed manually. About closes when you return to the player or switch apps; open it again from the app menu.
 
 ## License
 
@@ -119,7 +119,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.20.0, build 59 |
+| Version | 1.20.3, build 62 |
 
 
 See [release notes](versions.md) for what's changed.

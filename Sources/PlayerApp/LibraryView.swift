@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 import PlayerCore
 
 struct LibraryView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable var model: PlayerModel
     @FocusState private var searchFocused: Bool
     var body: some View {
@@ -40,25 +41,35 @@ struct LibraryView: View {
                     if !model.search.isEmpty {
                         icon("xmark.circle.fill", "Clear search") { model.search = "" }
                     }
+                    Rectangle().fill(.primary.opacity(0.1)).frame(width: 1, height: 18)
+                    Button {
+                        searchFocused = false
+                        withAnimation(reduceMotion ? nil : .timingCurve(0.23, 1, 0.32, 1, duration: 0.18)) {
+                            model.sortOptionsVisible.toggle()
+                        }
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(model.sortOptionsVisible ? Color.accentColor : .secondary)
+                            .frame(width: 28, height: 26)
+                            .background(model.sortOptionsVisible ? Color.accentColor.opacity(0.14) : .clear,
+                                        in: RoundedRectangle(cornerRadius: 6))
+                            .contentShape(Rectangle())
+                            .overlay(alignment: .topTrailing) {
+                                if model.tab == .playlist && model.onlyCurrentFolder {
+                                    Circle().fill(Color.accentColor).frame(width: 5, height: 5).allowsHitTesting(false)
+                                }
+                            }
+                    }.buttonStyle(.plain)
+                        .help(model.sortOptionsVisible ? "Hide sorting options" : "Show sorting options")
+                        .accessibilityLabel("Sorting options")
+                        .accessibilityValue(model.sortOptionsVisible ? "Expanded" : "Collapsed")
+
                 }.padding(.horizontal, 12).padding(.vertical, 10)
                     .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 9))
                     .overlay(RoundedRectangle(cornerRadius: 9).stroke(searchFocused ? Color.accentColor : .primary.opacity(0.08), lineWidth: searchFocused ? 2 : 1))
-                HStack {
-                    Picker("Sort", selection: $model.librarySort) {
-                        ForEach(sortOptions, id: \.self) { Text($0.rawValue).tag($0) }
-                    }.frame(maxWidth: 220)
-                    if model.librarySort != .playlistOrder {
-                        Button { model.librarySortAscending.toggle() } label: {
-                            Image(systemName: model.librarySortAscending ? "arrow.up" : "arrow.down")
-                        }.buttonStyle(.plain)
-                            .help(model.librarySortAscending ? "Ascending: click for descending" : "Descending: click for ascending")
-                            .accessibilityLabel(model.librarySortAscending ? "Sort ascending" : "Sort descending")
-                    }
-                    Spacer(minLength: 0)
-                }.controlSize(.small)
-                if model.tab == .playlist {
-                    Toggle("Only current folder", isOn: $model.onlyCurrentFolder).toggleStyle(.checkbox)
-                        .font(.caption).help("Show only media in the playing file’s folder")
+                if model.sortOptionsVisible {
+                    sortingPanel.transition(.opacity)
                 }
             }.padding(20)
             Divider()
@@ -186,16 +197,72 @@ struct LibraryView: View {
             }
         }
     }
+    private var sortingPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Sort by").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                Spacer()
+                Text(model.tab.rawValue).font(.system(size: 10, weight: .medium)).foregroundStyle(.tertiary)
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6),
+                                    count: sortOptions.count == 1 ? 1 : 2), spacing: 6) {
+                ForEach(sortOptions, id: \.self) { option in
+                    Button { model.selectLibrarySort(option) } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: sortSymbol(option)).font(.system(size: 12))
+                                .frame(width: 16).foregroundStyle(model.librarySort == option ? Color.accentColor : .secondary)
+                            Text(option.rawValue).font(.system(size: 11, weight: .medium)).lineLimit(1)
+                            Spacer(minLength: 0)
+                            Image(systemName: model.librarySort == option && model.librarySortAscending ? "arrow.up" : "arrow.down")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(model.librarySort == option ? Color.accentColor : .secondary)
+                        }.padding(.horizontal, 10).padding(.vertical, 9).frame(maxWidth: .infinity)
+                            .background(model.librarySort == option ? Color.accentColor.opacity(0.12) : .white.opacity(0.035),
+                                        in: RoundedRectangle(cornerRadius: 7))
+                            .overlay(RoundedRectangle(cornerRadius: 7)
+                                .stroke(model.librarySort == option ? Color.accentColor.opacity(0.35) : .white.opacity(0.06), lineWidth: 1))
+                            .contentShape(Rectangle())
+                    }.buttonStyle(.plain)
+                        .help(model.librarySort == option ? "Reverse sort direction" : "Sort by " + option.rawValue)
+                        .accessibilityValue(model.librarySort == option ? (model.librarySortAscending ? "Ascending" : "Descending") : "Not selected")
+                        .accessibilityAddTraits(model.librarySort == option ? .isSelected : [])
+                }
+            }
+            if model.tab == .playlist {
+                Divider().overlay(.white.opacity(0.03))
+                HStack(spacing: 10) {
+                    Image(systemName: "folder").font(.system(size: 13)).foregroundStyle(.secondary)
+                    Toggle("Only current folder", isOn: $model.onlyCurrentFolder)
+                        .toggleStyle(.switch).controlSize(.small)
+                        .font(.system(size: 11, weight: .medium))
+                }.help("Show only media in the playing file’s immediate folder")
+            }
+        }.padding(12)
+            .background(.black.opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.07), lineWidth: 1))
+            .accessibilityIdentifier("library-sorting-panel")
+    }
+    private func sortSymbol(_ option: LibrarySort) -> String {
+        switch option {
+        case .playlistOrder: "list.bullet"
+        case .dateAdded: "calendar.badge.plus"
+        case .lastPlayed, .datePlayed: "clock"
+        case .watchedTill: "play.circle"
+        }
+    }
     private var sortOptions: [LibrarySort] {
         switch model.tab {
-        case .playlist: [.playlistOrder, .dateAdded, .lastPlayed, .watchedTill]
+        case .playlist: [.dateAdded, .lastPlayed, .watchedTill]
         case .history: [.datePlayed]
         case .bookmarks: [.dateAdded, .lastPlayed, .watchedTill]
         }
     }
     private func revealPlaying(_ scroll: ScrollViewProxy) {
         guard let id = model.currentID, displayedRecords.contains(where: { $0.id == id }) else { return }
-        DispatchQueue.main.async { scroll.scrollTo(id, anchor: .center) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            guard model.currentID == id, displayedRecords.contains(where: { $0.id == id }) else { return }
+            scroll.scrollTo(id, anchor: .center)
+        }
     }
     private func symbol(_ tab: LibraryTab) -> String {
         switch tab { case .playlist: "list.bullet"; case .history: "clock"; case .bookmarks: "bookmark" }
