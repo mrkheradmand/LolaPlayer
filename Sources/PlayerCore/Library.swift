@@ -148,12 +148,13 @@ public final class MediaLibrary {
         records[i].accessBookmark = try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
         try save()
     }
-    public func addBookmark(_ id: UUID, seconds: Double, title: String) throws {
-        guard seconds.isFinite, let i = records.firstIndex(where: { $0.id == id }) else { return }
+    @discardableResult public func addBookmark(_ id: UUID, seconds: Double, title: String) throws -> UUID? {
+        guard seconds.isFinite, let i = records.firstIndex(where: { $0.id == id }) else { return nil }
         var bookmark = MediaBookmark(seconds: seconds, title: title)
         bookmark.discTitle = records[i].discTitle
         records[i].bookmarks.append(bookmark)
         records[i].bookmarks.sort { $0.seconds < $1.seconds }; try save()
+        return bookmark.id
     }
     public func editBookmark(_ id: UUID, bookmark: UUID, title: String, seconds: Double) throws {
         guard seconds.isFinite, let i = records.firstIndex(where: { $0.id == id }), let b = records[i].bookmarks.firstIndex(where: { $0.id == bookmark }) else { return }

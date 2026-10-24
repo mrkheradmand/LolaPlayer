@@ -67,7 +67,11 @@ nonisolated final class PlayerMenu: NSMenu {
 /// Handle player shortcuts before SwiftUI or the video responder consumes plain key presses.
 final class PlayerWindow: NSWindow {
     var viewShortcut: ((NSEvent) -> Bool)?
+    var pointerActivity: (() -> Void)?
     override func sendEvent(_ event: NSEvent) {
+        if [.mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged, .leftMouseDown, .rightMouseDown, .scrollWheel].contains(event.type) {
+            pointerActivity?()
+        }
         if event.type == .keyDown, viewShortcut?(event) == true { return }
         super.sendEvent(event)
     }
@@ -112,6 +116,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         window.appearance = NSAppearance(named: .darkAqua); window.backgroundColor = .black
         window.titlebarAppearsTransparent = true; window.isReleasedWhenClosed = false
         window.collectionBehavior = [.fullScreenPrimary]; window.delegate = self
+        window.acceptsMouseMovedEvents = true
+        (window as? PlayerWindow)?.pointerActivity = { [weak self] in
+            guard let self, self.model.isFullScreen else { return }
+            self.model.revealFullScreenControls()
+        }
         window.center()
         if model.rememberWindowGeometry, !CommandLine.arguments.contains("--smoke-test"),
            let saved = UserDefaults.standard.string(forKey: "playerWindowFrame"),
@@ -195,8 +204,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         model.mediaOnly && !fullScreenTransition && !sender.styleMask.contains(.fullScreen) ? model.mediaOnlySize(for: frameSize) : frameSize
     }
     func windowWillEnterFullScreen(_ notification: Notification) { model.saveWindowGeometry(); fullScreenTransition = true; libraryController?.hideForFullScreenTransition() }
-    func windowDidEnterFullScreen(_ notification: Notification) { fullScreenTransition = false; libraryController?.sync(reposition: true) }
-    func windowWillExitFullScreen(_ notification: Notification) { fullScreenTransition = true; libraryController?.hideForFullScreenTransition() }
+    func windowDidEnterFullScreen(_ notification: Notification) { fullScreenTransition = false; model.setFullScreenControls(true); libraryController?.sync(reposition: true) }
+    func windowWillExitFullScreen(_ notification: Notification) { fullScreenTransition = true; model.setFullScreenControls(false); libraryController?.hideForFullScreenTransition() }
     func windowDidExitFullScreen(_ notification: Notification) { fullScreenTransition = false; model.didExitFullScreen(); libraryController?.sync(reposition: true); model.saveWindowGeometry() }
 
     @discardableResult func item(_ menu: NSMenu, _ title: String, key: String = "", modifiers: NSEvent.ModifierFlags = .command, action: @escaping () -> Void) -> NSMenuItem {

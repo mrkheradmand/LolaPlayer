@@ -209,7 +209,103 @@ private final class DragProbeView: PlayerMouseView {
         nonisolated(unsafe) var received = false
     }
 
+    private static func runControlsTimeoutOnly(model: PlayerModel, root: URL) {
+        Task { @MainActor in
+            var checks: [String] = []
+            var failure: String?
+            func check(_ valid: Bool, _ message: String) throws {
+                guard valid else { throw Failure(message: message) }
+                checks.append(message)
+            }
+            do {
+                let player = model.window as? PlayerWindow
+                let pointerActivity = player?.pointerActivity
+                player?.pointerActivity = nil
+                defer { player?.pointerActivity = pointerActivity }
+                model.setFullScreenControls(true)
+                try check(!model.fullScreenControlsHidden, "Controls visible on entering full screen")
+                try await Task.sleep(for: .seconds(3))
+                model.revealFullScreenControls()
+                try await Task.sleep(for: .seconds(3))
+                try check(!model.fullScreenControlsHidden, "Pointer activity resets the five-second deadline")
+                try await Task.sleep(for: .seconds(2.3))
+                try check(model.fullScreenControlsHidden, "Controls hide five seconds after the latest activity")
+                player?.pointerActivity = pointerActivity
+                if let window = player,
+                   let event = NSEvent.mouseEvent(with: .mouseMoved, location: .zero, modifierFlags: [],
+                        timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                        context: nil, eventNumber: 0, clickCount: 0, pressure: 0) {
+                    window.sendEvent(event)
+                    try check(!model.fullScreenControlsHidden, "Native mouse movement reveals hidden controls")
+                } else { throw Failure(message: "Could not send mouse movement to player") }
+                model.setFullScreenControls(false)
+                try await Task.sleep(for: .seconds(5.3))
+                try check(!model.fullScreenControlsHidden && !model.isFullScreen, "Windowed controls remain visible after timeout")
+            } catch let error as Failure { failure = error.message }
+            catch { failure = error.localizedDescription }
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
+            }
+            model.shutdown(); NSApp.terminate(nil)
+        }
+    }
+
+    private static func runBookmarkNamingOnly(model: PlayerModel, root: URL) {
+        Task { @MainActor in
+            var checks: [String] = []
+            var failure: String?
+            let preference = model.promptForBookmark
+            defer { model.promptForBookmark = preference }
+            func check(_ valid: Bool, _ message: String) throws {
+                guard valid else { throw Failure(message: message) }
+                checks.append(message)
+            }
+            do {
+                model.promptForBookmark = false
+                let id = try model.library.visit(root.appendingPathComponent("name.mp4"))
+                model.currentID = id; model.loaded = true; model.position = 12
+                model.addBookmark()
+                guard let target = model.bookmarkConfirmation else { throw Failure(message: "Missing bookmark confirmation") }
+                try check(model.library.record(id)?.bookmarks.count == 1 && model.messageUntil.timeIntervalSinceNow > 2.8,
+                          "Bookmark saved immediately with three-second clickable confirmation")
+                model.nameConfirmedBookmark()
+                try check(model.bookmarkNameTarget?.bookmarkID == target.bookmarkID, "Confirmation opens naming for exact saved bookmark")
+                let prompt = NSHostingView(rootView: BookmarkNamePrompt(model: model))
+                prompt.frame = NSRect(x: 0, y: 0, width: 960, height: 540)
+                prompt.layoutSubtreeIfNeeded()
+                model.currentID = try model.library.visit(root.appendingPathComponent("other.mp4"))
+                model.finishBookmarkNaming("  Favorite scene  ")
+                try check(model.library.record(id)?.bookmarks.first?.title == "Favorite scene"
+                    && model.library.record(id)?.bookmarks.count == 1 && model.bookmarkNameTarget == nil,
+                    "Enter renames the original bookmark without duplicates after file change")
+                model.bookmarkNameTarget = target; model.finishBookmarkNaming("   ")
+                try check(model.library.record(id)?.bookmarks.first?.title == "Favorite scene" && model.bookmarkNameTarget == nil,
+                          "Empty Enter dismisses and preserves bookmark")
+                model.bookmarkNameTarget = target; model.finishBookmarkNaming(nil)
+                try check(model.library.record(id)?.bookmarks.count == 1 && model.bookmarkNameTarget == nil,
+                          "Cancel or Escape preserves saved bookmark")
+                model.bookmarkConfirmation = target; model.messageUntil = .distantPast
+                model.nameConfirmedBookmark()
+                try check(model.bookmarkNameTarget == nil, "Expired confirmation cannot open naming")
+            } catch let error as Failure { failure = error.message }
+            catch { failure = error.localizedDescription }
+            model.loaded = false
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
+            }
+            model.shutdown(); NSApp.terminate(nil)
+        }
+    }
+
     static func run(model: PlayerModel, root: URL) {
+        if ProcessInfo.processInfo.environment["LOLA_SMOKE_BOOKMARK_NAMING_ONLY"] == "1" {
+            runBookmarkNamingOnly(model: model, root: root); return
+        }
+        if ProcessInfo.processInfo.environment["LOLA_SMOKE_CONTROLS_TIMEOUT_ONLY"] == "1" {
+            runControlsTimeoutOnly(model: model, root: root); return
+        }
         if ProcessInfo.processInfo.environment["LOLA_SMOKE_LIBRARY_REFRESH_ONLY"] == "1" {
             runLibraryRefreshOnly(model: model, root: root); return
         }

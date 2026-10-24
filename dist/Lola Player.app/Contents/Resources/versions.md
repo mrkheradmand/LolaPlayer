@@ -1,5 +1,33 @@
 # Lola Player versions
 
+## 1.19.0 (build 58) — 2026-10-24
+
+### Added
+
+- Clickable three-second bookmark confirmation opens a small centered naming dialog with an 80% opaque background; Enter names the saved bookmark, while Escape or empty input keeps it unchanged.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
+## 1.18.0 (build 57) — 2026-10-24
+
+### Added
+
+- Full-screen playback controls hide after five seconds of pointer inactivity and reappear when the mouse moves; windowed controls remain visible.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
 ## 1.17.4 (build 56) — 2026-10-24
 
 ### Added

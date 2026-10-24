@@ -60,9 +60,23 @@ struct PlayerView: View {
                         }
                         Spacer()
                         if let message = model.message, !model.mediaOnly || model.messageInMediaOnly {
-                            Text(message).font(.system(size: 13, weight: .medium)).padding(10).background(.ultraThinMaterial, in: Capsule()).padding(.bottom, 22)
+                            if model.bookmarkConfirmation != nil {
+                                Button { model.nameConfirmedBookmark() } label: {
+                                    Text(message).font(.system(size: 13, weight: .medium)).padding(10)
+                                        .background(.ultraThinMaterial, in: Capsule())
+                                }.buttonStyle(.plain).help("Click to name this bookmark").padding(.bottom, 22)
+                            } else {
+                                Text(message).font(.system(size: 13, weight: .medium)).padding(10)
+                                    .background(.ultraThinMaterial, in: Capsule()).padding(.bottom, 22).allowsHitTesting(false)
+                            }
                         }
-                    }.allowsHitTesting(false)
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    if model.isFullScreen && !model.fullScreenControlsHidden {
+                        playbackControls
+                            .background(Color(nsColor: NSColor(white: 0.12, alpha: 0.95)))
+                    }
                 }
                 .overlay { PlaybackClickFeedbackView(feedback: model.playbackClickFeedback) }
                 .contentShape(Rectangle())
@@ -78,11 +92,7 @@ struct PlayerView: View {
                     Divider()
                     Button("Close") { model.closePlayerWindow() }
                 }
-                if model.mediaOnly {
-                    timeline.padding(.horizontal, 12).padding(.vertical, 4)
-                } else {
-                    controls
-                }
+                if !model.isFullScreen { playbackControls }
             }
         }
         .background(Color(nsColor: NSColor(white: 0.12, alpha: 1)))
@@ -106,7 +116,20 @@ struct PlayerView: View {
         .alert("Lola Player", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
             Button("OK") { model.error = nil }
         } message: { Text(model.error ?? "") }
+        .overlay {
+            if model.bookmarkNameTarget != nil {
+                BookmarkNamePrompt(model: model)
+            }
+        }
         .sheet(isPresented: $model.settingsOpen) { SettingsView(model: model) }
+    }
+
+    @ViewBuilder private var playbackControls: some View {
+        if model.mediaOnly {
+            timeline.padding(.horizontal, 12).padding(.vertical, 4)
+        } else {
+            controls
+        }
     }
 
     private var welcomeBackground: some View {

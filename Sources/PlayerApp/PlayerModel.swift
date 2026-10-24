@@ -10,6 +10,26 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     private let playbackWake = PlaybackWake()
     private var playbackSampleTime = ProcessInfo.processInfo.systemUptime
     private var unsavedPlayedSeconds = 0.0
+    private(set) var fullScreenControlsHidden = false
+    private(set) var isFullScreen = false
+    @ObservationIgnored private var controlsHideTimer: Timer?
+
+    func setFullScreenControls(_ fullScreen: Bool) {
+        isFullScreen = fullScreen
+        revealFullScreenControls()
+    }
+
+    func revealFullScreenControls() {
+        controlsHideTimer?.invalidate()
+        fullScreenControlsHidden = false
+        guard isFullScreen else { return }
+        controlsHideTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.isFullScreen else { return }
+                self.fullScreenControlsHidden = true
+            }
+        }
+    }
     var playlistReorderTargeted = false
     var playlistDropBefore: UUID?
     var playlistDropTarget = false
@@ -58,6 +78,13 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     var search = ""
     var error: String?
     var message: String?
+    struct BookmarkNameTarget {
+        let recordID: UUID
+        let bookmarkID: UUID
+        let seconds: Double
+    }
+    var bookmarkConfirmation: BookmarkNameTarget?
+    var bookmarkNameTarget: BookmarkNameTarget?
     var messageInMediaOnly = false
     var floatStatusVisible = false
     var tracks: [[String: Any]] = []
@@ -99,7 +126,10 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         didSet { UserDefaults.standard.set(autoplay, forKey: "autoplay") }
     }
     var promptForBookmark = UserDefaults.standard.bool(forKey: "promptForBookmark") {
-        didSet { UserDefaults.standard.set(promptForBookmark, forKey: "promptForBookmark") }
+        didSet {
+            guard !CommandLine.arguments.contains("--smoke-test") else { return }
+            UserDefaults.standard.set(promptForBookmark, forKey: "promptForBookmark")
+        }
     }
     var automaticUpdateChecks = UserDefaults.standard.object(forKey: "automaticUpdateChecks") as? Bool ?? true {
         didSet {
@@ -231,7 +261,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func perform(_ operation: () throws -> Void) {
         do { try operation(); revision += 1 } catch { self.error = error.localizedDescription }
     }
-    func notify(_ text: String, inMediaOnly: Bool = false) { message = text; messageInMediaOnly = inMediaOnly; messageUntil = Date().addingTimeInterval(2.5) }
+    func notify(_ text: String, inMediaOnly: Bool = false) { bookmarkConfirmation = nil; message = text; messageInMediaOnly = inMediaOnly; messageUntil = Date().addingTimeInterval(2.5) }
     func persistPosition() {
         guard let id = currentID, loaded else { return }
         perform {
@@ -584,7 +614,26 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         if named || promptForBookmark {
             guard let value = textPrompt("Bookmark at \(timestamp(seconds))", initial: "Bookmark \(timestamp(seconds))") else { return }; title = value
         } else { title = "Bookmark \(timestamp(seconds))" }
-        perform { try library.addBookmark(id, seconds: seconds, title: title) }; notify("Saved bookmark at \(timestamp(seconds))")
+        do {
+            guard let bookmarkID = try library.addBookmark(id, seconds: seconds, title: title) else { return }
+            revision += 1
+            notify("Saved bookmark at \(timestamp(seconds))", inMediaOnly: true)
+            messageUntil = Date().addingTimeInterval(3)
+            bookmarkConfirmation = BookmarkNameTarget(recordID: id, bookmarkID: bookmarkID, seconds: seconds)
+        } catch { self.error = error.localizedDescription }
+    }
+    func nameConfirmedBookmark() {
+        guard let target = bookmarkConfirmation, Date() <= messageUntil,
+              library.record(target.recordID)?.bookmarks.contains(where: { $0.id == target.bookmarkID }) == true else { return }
+        bookmarkNameTarget = target
+        bookmarkConfirmation = nil; message = nil
+    }
+    func finishBookmarkNaming(_ name: String?) {
+        guard let target = bookmarkNameTarget else { return }
+        defer { bookmarkNameTarget = nil }
+        guard let name = name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty,
+              let bookmark = library.record(target.recordID)?.bookmarks.first(where: { $0.id == target.bookmarkID }) else { return }
+        perform { try library.editBookmark(target.recordID, bookmark: target.bookmarkID, title: name, seconds: bookmark.seconds) }
     }
     func editBookmark(_ record: MediaRecord, _ bookmark: MediaBookmark) {
         let alert = NSAlert(); alert.messageText = "Edit Bookmark"; alert.addButton(withTitle: "Save"); alert.addButton(withTitle: "Cancel")
@@ -765,5 +814,5 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         alert.window.initialFirstResponder = input
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }; return input.stringValue
     }
-    func shutdown() { shuttingDown = true; playbackWake.update(active: false); samplePlaybackTime(); playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); do { try library.flush() } catch { NSLog("Library save failed: %@", error.localizedDescription) }; midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
+    func shutdown() { shuttingDown = true; controlsHideTimer?.invalidate(); playbackWake.update(active: false); samplePlaybackTime(); playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); do { try library.flush() } catch { NSLog("Library save failed: %@", error.localizedDescription) }; midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
 }

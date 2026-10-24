@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.17.4, build 56 |
+| Version | 1.19.0, build 58 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -94,6 +94,7 @@ Save multiple moments in each video, name them for easy reference, and keep them
 
 - **Save a selected time:** seek to the moment you want, then press **⌘B** or click the bookmark button.
 - **Save with a name:** press **⌥B** to enter a name before saving, regardless of the bookmark-naming preference. Cancel leaves bookmarks unchanged.
+- **Name after saving:** click the saved-bookmark confirmation within three seconds to open a small centered dialog with an 80% opaque background. Enter saves the name; Escape, Cancel, or an empty/whitespace-only Enter dismisses it while retaining the saved bookmark. Naming edits that exact bookmark, even if playback moves or another file opens. This works in full screen and media-only mode.
 - **Give it a name:** choose **… → Edit…** to enter a descriptive name, such as “Favorite scene” or “Chapter 2 explanation.” You can also adjust its saved time in seconds.
 - **Keep every bookmark in one list:** open **View → Show All Bookmarks** or press **⇧⌘B** to browse bookmarks from all files, grouped by video.
 - **Search your saved moments:** filter the list by bookmark name or filename.
@@ -246,6 +247,8 @@ Scroll vertically over the media area while the player window is active to adjus
 - Settings provides audio/subtitle delay. Positive values delay that stream; steppers use 0.1-second increments over −60 to +60 seconds.
 
 The engine attempts to find matching external subtitles automatically. Opening subtitles alone does not choose a video for them.
+
+In full screen, playback controls overlay the media and hide after five seconds of pointer inactivity. Mouse movement, dragging, clicking, or scrolling in the player reveals them and restarts the timer. This also applies to the media-only timeline. Exiting full screen restores the normal controls; windowed controls do not auto-hide.
 
 ### Settings and defaults
 
