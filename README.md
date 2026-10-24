@@ -14,6 +14,8 @@ A Player with **named bookmarks at any video timestamp** and **Float on Top that
 
 Playback keeps your Mac awake and prevents the screen saver until you pause or finish.
 
+Hide the last-played filename on the welcome screen in **Settings → General → Show last-played media name**. You can still resume with **Resume Last Media**.
+
 ## Install
 
 1. Download the latest **.dmg** from the link above.
@@ -38,7 +40,7 @@ The app uses a flat mint-green play icon on a charcoal tile, with transparent pa
 
 To keep Lola in the Dock after closing its window, enable **Settings → General → Keep running when the player window closes**. Closing pauses playback; click the Dock icon to reopen, then press Play to resume. **⌘Q** quits the app. The setting is off by default.
 
-Drag media files or folders onto **Library → Playlist** to add them without starting playback. Folders include media in all subfolders; existing playlist items are not duplicated. Drag a Playlist card over the upper or lower half of another card to choose the insertion line; drop below the last item to move it to the end. The order is remembered. After more than one minute of playback, files show a green “Partially watched” label after the bookmark count; reaching the end changes it to “Watched”. Status is remembered between launches.
+Drag media files or folders onto **Library → Playlist** to add them without starting playback. Folders include media in all subfolders; existing playlist items are not duplicated. Drag a Playlist card over the upper or lower half of another card to choose the insertion line; drop below the last item to move it to the end. The order is remembered. Files with a saved playback position show a green “Watched till M:SS” label (H:MM:SS for files at least one hour long) after the bookmark count, with no minimum playback time; reaching the end changes it to “Watched”. Status is remembered between launches. Bookmark counts and watch status update in the open Playlist automatically.
 
 The menu and player window open before your library and playback engine finish loading.
 
@@ -113,7 +115,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.16.1, build 50 |
+| Version | 1.17.2, build 54 |
 
 
 See [release notes](versions.md) for what's changed.

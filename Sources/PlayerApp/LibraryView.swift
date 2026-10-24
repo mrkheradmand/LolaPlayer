@@ -160,10 +160,10 @@ struct LibraryView: View {
     private func symbol(_ tab: LibraryTab) -> String {
         switch tab { case .playlist: "list.bullet"; case .history: "clock"; case .bookmarks: "bookmark" }
     }
-    private var displayedRecords: [MediaRecord] {
+    var displayedRecords: [MediaRecord] {
         let records: [MediaRecord]
         switch model.tab {
-        case .playlist: records = model.queue.compactMap { model.library.record($0) }
+        case .playlist: records = model.playlistRecords
         case .history: records = model.historyRecords
         case .bookmarks: records = model.records
         }

@@ -7,26 +7,37 @@ struct LibraryTests {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         return (root, try MediaLibrary(fileURL: root.appendingPathComponent("library.json")))
     }
-    @Test func watchStatusThresholdCompletionAndPersistence() throws {
+    @Test func watchTimestampUsesFileDurationForHourField() {
+        var record = MediaRecord(location: URL(fileURLWithPath: "/tmp/format.mp4"))
+        record.position = 125
+        record.duration = 3599.9
+        #expect(record.watchStatus == "Watched till 2:05")
+        record.duration = 3600
+        #expect(record.watchStatus == "Watched till 0:02:05")
+        record.duration = 7200
+        #expect(record.watchStatus == "Watched till 0:02:05")
+        record.position = 3725
+        #expect(record.watchStatus == "Watched till 1:02:05")
+    }
+    @Test func watchPositionCompletionAndPersistence() throws {
         let (root, library) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         let id = try library.visit(URL(fileURLWithPath: "/tmp/watched.mp4"))
         #expect(library.record(id)?.watchStatus == nil)
-        try library.updatePosition(id, seconds: 900, duration: 1000)
-        #expect(library.record(id)?.watchStatus == nil)
-        try library.recordPlayback(id, seconds: 60)
-        #expect(library.record(id)?.watchStatus == nil)
-        try library.recordPlayback(id, seconds: 0.1)
-        #expect(library.record(id)?.watchStatus == "Partially watched")
-        try library.recordPlayback(id, seconds: 0, finished: true)
-        try library.updatePosition(id, seconds: 0, duration: 1000)
+        try library.updatePosition(id, seconds: 5, duration: 10000)
+        #expect(library.record(id)?.watchStatus == "Watched till 0:00:05")
+        try library.updatePosition(id, seconds: 3661.9, duration: 10000)
+        #expect(library.record(id)?.watchStatus == "Watched till 1:01:01")
         let reopened = try MediaLibrary(fileURL: library.fileURL)
+        #expect(reopened.record(id)?.watchStatus == "Watched till 1:01:01")
+        try reopened.updatePosition(id, seconds: 32, duration: 10000)
+        #expect(reopened.record(id)?.watchStatus == "Watched till 0:00:32")
+        try reopened.recordPlayback(id, seconds: 0, finished: true)
+        try reopened.updatePosition(id, seconds: 0, duration: 10000)
         #expect(reopened.record(id)?.watchStatus == "Watched")
-        try reopened.recordPlayback(id, seconds: 2)
-        #expect(reopened.record(id)?.watchStatus == "Watched")
+        #expect(try MediaLibrary(fileURL: library.fileURL).record(id)?.watchStatus == "Watched")
         let short = try reopened.visit(URL(fileURLWithPath: "/tmp/short.mp4"))
         try reopened.recordPlayback(short, seconds: 30, finished: true)
-        #expect(reopened.record(short)?.watchStatus == nil)
-        #expect(reopened.record(short)?.hasFinishedPlayback != true)
+        #expect(reopened.record(short)?.watchStatus == "Watched")
     }
     @Test func bookmarksSurviveFileSwitchingAndRelaunch() throws {
         let (root, library) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }

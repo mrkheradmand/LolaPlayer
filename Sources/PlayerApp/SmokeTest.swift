@@ -1,3 +1,4 @@
+import Observation
 import AppKit
 import Foundation
 import CoreGraphics
@@ -161,7 +162,57 @@ private final class DragProbeView: PlayerMouseView {
         }
     }
 
+    private static func runLibraryRefreshOnly(model: PlayerModel, root: URL) {
+        Task { @MainActor in
+            var checks: [String] = []
+            var failure: String?
+            do {
+                let id = try model.library.visit(root.appendingPathComponent("refresh.mp4"))
+                model.queue = [id]; model.currentID = id; model.tab = .playlist
+                let view = LibraryView(model: model)
+                // Exercise the same read that supplies the SwiftUI rows, not a separate revision read.
+                func verifyRefresh(_ name: String, change: () -> Void, valid: () -> Bool) throws {
+                    let notification = RefreshNotification()
+                    withObservationTracking {
+                        _ = view.displayedRecords
+                    } onChange: {
+                        notification.received = true
+                    }
+                    change()
+                    guard notification.received && valid() else { throw Failure(message: name) }
+                    checks.append(name)
+                }
+                try verifyRefresh("Playlist observes bookmark additions", change: {
+                    model.perform { try model.library.addBookmark(id, seconds: 10, title: "Refresh") }
+                }, valid: { view.displayedRecords.first?.bookmarks.count == 1 })
+                try verifyRefresh("Playlist observes saved watch position", change: {
+                    model.perform { try model.library.updatePosition(id, seconds: 5, duration: 100) }
+                }, valid: { view.displayedRecords.first?.watchStatus == "Watched till 0:05" })
+                try verifyRefresh("Playlist observes watched status", change: {
+                    model.perform { try model.library.recordPlayback(id, seconds: 0, finished: true) }
+                }, valid: { view.displayedRecords.first?.watchStatus == "Watched" })
+                try verifyRefresh("Playlist observes bookmark removals", change: {
+                    model.perform { try model.library.removeAllBookmarks(id) }
+                }, valid: { view.displayedRecords.first?.bookmarks.isEmpty == true })
+            } catch let error as Failure { failure = error.message }
+            catch { failure = error.localizedDescription }
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
+            }
+            model.shutdown(); NSApp.terminate(nil)
+        }
+    }
+
+    // Observation invokes onChange synchronously on the mutating thread in these checks.
+    private final class RefreshNotification: @unchecked Sendable {
+        nonisolated(unsafe) var received = false
+    }
+
     static func run(model: PlayerModel, root: URL) {
+        if ProcessInfo.processInfo.environment["LOLA_SMOKE_LIBRARY_REFRESH_ONLY"] == "1" {
+            runLibraryRefreshOnly(model: model, root: root); return
+        }
         if CommandLine.arguments.contains("--close-to-dock-only") {
             runCloseToDockOnly(model: model, root: root); return
         }

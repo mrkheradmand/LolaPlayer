@@ -22,8 +22,13 @@ public struct MediaRecord: Codable, Identifiable, Equatable, Sendable {
     public var playedSeconds: Double?
     public var hasFinishedPlayback: Bool?
     public var watchStatus: String? {
-        guard (playedSeconds ?? 0) > 60 else { return nil }
-        return hasFinishedPlayback == true ? "Watched" : "Partially watched"
+        if hasFinishedPlayback == true { return "Watched" }
+        guard position.isFinite, position > 0, position < Double(Int.max) else { return nil }
+        let seconds = Int(position)
+        if duration.isFinite && duration > 0 && duration < 3600 {
+            return String(format: "Watched till %d:%02d", seconds / 60, seconds % 60)
+        }
+        return String(format: "Watched till %d:%02d:%02d", seconds / 3600, (seconds / 60) % 60, seconds % 60)
     }
     /// Nil in older libraries means visible. History membership is independent of bookmarks/queue.
     public var isInHistory: Bool?
@@ -136,7 +141,7 @@ public final class MediaLibrary {
     public func recordPlayback(_ id: UUID, seconds: Double, finished: Bool = false) throws {
         guard seconds.isFinite, seconds >= 0, let i = records.firstIndex(where: { $0.id == id }) else { return }
         records[i].playedSeconds = (records[i].playedSeconds ?? 0) + seconds
-        if finished && (records[i].playedSeconds ?? 0) > 60 { records[i].hasFinishedPlayback = true }
+        if finished { records[i].hasFinishedPlayback = true }
         try save()
     }
     public func relocate(_ id: UUID, to input: URL) throws {

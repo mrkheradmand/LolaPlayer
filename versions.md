@@ -1,5 +1,61 @@
 # Lola Player versions
 
+## 1.17.2 (build 54) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Omit the hour field from Watched till timestamps for files shorter than one hour.
+
+### Removed
+
+- None.
+
+## 1.17.1 (build 53) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Replace Partially watched with Watched till H:MM:SS from the saved playback position, remove the one-minute threshold, and mark completed short files Watched.
+
+### Removed
+
+- None.
+
+## 1.17.0 (build 52) — 2026-10-24
+
+### Added
+
+- General setting to show or hide the last-played filename on the welcome screen; hiding it retains a generic Resume Last Media button.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
+## 1.16.2 (build 51) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Refresh open Playlist rows when bookmarks or watch status change, and observe current-file library updates consistently.
+
+### Removed
+
+- None.
+
 ## 1.16.1 (build 50) — 2026-10-24
 
 ### Added

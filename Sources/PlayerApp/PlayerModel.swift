@@ -86,6 +86,12 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             applyWindowLevel()
         }
     }
+    var showLastPlayedMediaName = UserDefaults.standard.object(forKey: "showLastPlayedMediaName") as? Bool ?? true {
+        didSet {
+            guard !CommandLine.arguments.contains("--smoke-test") else { return }
+            UserDefaults.standard.set(showLastPlayedMediaName, forKey: "showLastPlayedMediaName")
+        }
+    }
     var rememberPosition = UserDefaults.standard.object(forKey: "rememberPosition") as? Bool ?? true {
         didSet { UserDefaults.standard.set(rememberPosition, forKey: "rememberPosition") }
     }
@@ -138,7 +144,8 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         return result
     }()
 
-    var current: MediaRecord? { currentID.flatMap { library.record($0) } }
+    var current: MediaRecord? { _ = revision; return currentID.flatMap { library.record($0) } }
+    var playlistRecords: [MediaRecord] { _ = revision; return queue.compactMap { library.record($0) } }
     var records: [MediaRecord] { _ = revision; return library.recent }
     var historyRecords: [MediaRecord] { _ = revision; return library.history }
     var floating: Bool { PlaybackPolicy.shouldFloat(enabled: floatEnabled, loaded: loaded, paused: paused, buffering: buffering, ended: ended, failed: failed) }

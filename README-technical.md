@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.16.1, build 50 |
+| Version | 1.17.2, build 54 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -198,7 +198,7 @@ Selecting a folder with the Library **+** button or **Open… (⌘O)** recursive
 
 Drop media files or folders anywhere in the **Playlist** view to append supported audio/video files, including files inside subfolders. Folder discovery runs in the background, skips hidden files and package contents, and does not follow directory symlinks during recursion. Overlapping/repeated drops do not duplicate existing playlist entries. Dropping files does not change the current playback or add unplayed files to History. The Playlist highlights while a file drop is over it. Drag an existing Playlist card over the upper or lower half of another card to show an insertion line before or after it, or drop in the space below the last card to append it. Reordering updates the saved playlist order without restarting playback; when search is active, the destination refers to that card in the full playlist. History and Bookmarks cards do not offer playlist reordering.
 
-Playlist rows show green **Partially watched** or **Watched** text after the bookmark count after more than 60 seconds of cumulative active playback. Paused/buffering time and seeking do not count. Reaching the end after that threshold marks the file watched; replaying preserves completion. Status survives relaunch and playlist removal. Older library records start without a status.
+Playlist rows show green **Watched till M:SS** text for files shorter than one hour, or **Watched till H:MM:SS** for files at least one hour long (and when duration is unknown) after the bookmark count using the saved playback position, with no one-minute threshold. Position follows playback and seeking, updates on the regular position-save interval (about five seconds), and saves when paused or switching files. Files without a positive saved position have no label. Reaching the end marks the file **Watched**, including short files; replaying preserves completion. Status survives relaunch and playlist removal. Existing saved positions also show the timestamp. Bookmark counts and watch status update in the open Playlist automatically.
 
 During playback, a macOS display-sleep assertion and periodic user-activity declarations prevent idle system/display sleep and the screen saver, including audio and MIDI playback. Pausing, finishing, failure, or quitting releases them; buffering retains wake protection. Explicit Sleep remains available.
 
@@ -249,6 +249,8 @@ The engine attempts to find matching external subtitles automatically. Opening s
 
 ### Settings and defaults
 
+In **Settings → General → Opening media**, **Show last-played media name** controls the welcome screen’s Resume label. It is enabled by default and saved between launches. Disable it to show **Resume Last Media** instead of the filename; the button still resumes the most recent history item. Changes apply immediately.
+
 Open **Lola Player → Settings…**, press **⌘,**, or click the playback-settings button. The settings sheet uses a sidebar with **General**, **Playback**, and **Bookmarks** pages, grouped cards, descriptive switch rows with consistently right-aligned switches on every page, and a scrollable content area. Changes apply immediately; use **Done**, the close button, or Escape to dismiss it. General contains window and opening-media preferences; **Keep running when the player window closes** saves `keepRunningWhenWindowCloses` (off by default). When enabled, the red close button, ⌘W on the player, and the player context menu’s Close command pause playback, hide auxiliary windows, and retain the app in the Dock. Clicking the Dock icon restores the same player and loaded media without resuming automatically. Quit/⌘Q still flushes library changes and shuts down the playback engine. When disabled, closing the player quits as before. Playback contains speed, repeat, shuffle, synchronization, and A–B looping; Bookmarks contains naming and library actions. Update controls live in About.
 
 | Setting | Initial default | Saved between launches? |
@@ -256,6 +258,7 @@ Open **Lola Player → Settings…**, press **⌘,**, or click the playback-sett
 | Float on Top while media is playing | Off | Yes |
 | Keep running when the player window closes | Off | Yes |
 | Remember playback position for every file | On | Yes |
+| Show last-played media name on the welcome screen | On | Yes |
 | Play automatically when opening media | On | Yes |
 | Ask for a name when adding a bookmark | Off | Yes |
 | Automatically check for updates (About) | On | Yes |

@@ -41,7 +41,7 @@ struct PlayerView: View {
                             Button("Open File…") { model.openPanel() }.keyboardShortcut("o").controlSize(.large)
                             if let recent = model.historyRecords.first {
                                 Button { model.play(recent.id) } label: {
-                                    Label("Resume \(recent.name)", systemImage: "clock.arrow.circlepath").lineLimit(1)
+                                    Label(model.showLastPlayedMediaName ? "Resume \(recent.name)" : "Resume Last Media", systemImage: "clock.arrow.circlepath").lineLimit(1)
                                 }.buttonStyle(.plain).foregroundStyle(.white.opacity(0.8)).padding(.top, 6)
                             }
                         }.padding(40).shadow(color: .black.opacity(0.5), radius: 12, y: 2)

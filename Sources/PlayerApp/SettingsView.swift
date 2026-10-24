@@ -93,6 +93,8 @@ struct SettingsView: View {
                 preference("Play automatically", detail: "Start playback when you open a file.", value: $model.autoplay)
                 Divider()
                 preference("Remember playback position", detail: "Continue from where you left off in each file.", value: $model.rememberPosition)
+                Divider()
+                preference("Show last-played media name", detail: "Display the filename on the welcome screen’s Resume button.", value: $model.showLastPlayedMediaName)
             }
             HStack(spacing: 8) {
                 Image(systemName: "keyboard").foregroundStyle(.secondary)
