@@ -299,7 +299,68 @@ private final class DragProbeView: PlayerMouseView {
         }
     }
 
+    private static func runLibrarySortingOnly(model: PlayerModel, root: URL) {
+        Task { @MainActor in
+            var checks: [String] = []
+            var failure: String?
+            func check(_ valid: Bool, _ message: String) throws {
+                guard valid else { throw Failure(message: message) }
+                checks.append(message)
+            }
+            func scrollView(in view: NSView?) -> NSScrollView? {
+                guard let view else { return nil }
+                if let scroll = view as? NSScrollView { return scroll }
+                return view.subviews.compactMap { scrollView(in: $0) }.first
+            }
+            do {
+                var ids: [UUID] = []
+                for index in 0..<60 {
+                    let id = try model.library.visit(root.appendingPathComponent("folder/Item-\(index).mp4"))
+                    try model.library.addBookmark(id, seconds: 1, title: "Moment")
+                    ids.append(id)
+                }
+                let other = try model.library.visit(root.appendingPathComponent("other/Other.mp4"))
+                model.queue = ids + [other]; model.currentID = ids.last; model.revision += 1
+                model.show(.playlist)
+                try await Task.sleep(for: .seconds(1))
+                let panel = (NSApp.delegate as? AppDelegate)?.libraryController?.window
+                try check((scrollView(in: panel?.contentView)?.contentView.bounds.origin.y ?? 0) > 100,
+                          "Opening Playlist scrolls to the current media near the bottom")
+                model.onlyCurrentFolder = true
+                let view = LibraryView(model: model)
+                try check(view.displayedRecords.count == 60 && !view.displayedRecords.contains(where: { $0.id == other }),
+                          "Playlist current-folder filter excludes other folders")
+                model.playlistSort = .dateAdded
+                try check(view.displayedRecords.first?.id == ids.last, "Playlist Date added sorts newest first")
+                model.historyAscending = true; model.tab = .history
+                try await Task.sleep(for: .seconds(0.8))
+                try check((scrollView(in: panel?.contentView)?.contentView.bounds.origin.y ?? 0) > 100,
+                          "Switching to History reveals current media")
+                model.bookmarksAscending = true; model.tab = .bookmarks
+                try await Task.sleep(for: .seconds(0.8))
+                try check((scrollView(in: panel?.contentView)?.contentView.bounds.origin.y ?? 0) > 100,
+                          "Switching to Bookmarks reveals current file group")
+                model.sidebar = false; model.show(.playlist)
+                try await Task.sleep(for: .seconds(0.8))
+                try check(panel?.isVisible == true, "Library reopens and requests current-media reveal")
+                let count = model.library.record(ids[0])?.bookmarks.count
+                model.play(ids[0])
+                try check(model.error?.contains("unavailable") == true && model.library.record(ids[0])?.bookmarks.count == count,
+                          "Missing media reports unavailable and preserves bookmarks")
+            } catch let error as Failure { failure = error.message }
+            catch { failure = error.localizedDescription }
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
+            }
+            model.shutdown(); NSApp.terminate(nil)
+        }
+    }
+
     static func run(model: PlayerModel, root: URL) {
+        if ProcessInfo.processInfo.environment["LOLA_SMOKE_LIBRARY_SORTING_ONLY"] == "1" {
+            runLibrarySortingOnly(model: model, root: root); return
+        }
         if ProcessInfo.processInfo.environment["LOLA_SMOKE_BOOKMARK_NAMING_ONLY"] == "1" {
             runBookmarkNamingOnly(model: model, root: root); return
         }

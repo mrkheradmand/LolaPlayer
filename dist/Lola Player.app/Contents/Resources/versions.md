@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.20.0 (build 59) — 2026-10-24
+
+### Added
+
+- Library scrolls to the playing file on opening and tab changes; per-tab sorting, sort direction, and a Playlist current-folder filter.
+
+### Modified
+
+- Track media and bookmark addition dates separately from last-played dates; retain manual playlist order and legacy date fallbacks.
+
+### Removed
+
+- None.
+
 ## 1.19.0 (build 58) — 2026-10-24
 
 ### Added

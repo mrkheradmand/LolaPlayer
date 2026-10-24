@@ -5,8 +5,9 @@ public struct MediaBookmark: Codable, Identifiable, Equatable, Sendable {
     public var seconds: Double
     public var title: String
     public var discTitle: Int?
+    public var addedAt: Date?
     public init(seconds: Double, title: String) {
-        id = UUID(); self.seconds = max(0, seconds); self.title = title
+        id = UUID(); self.seconds = max(0, seconds); self.title = title; addedAt = Date()
     }
 }
 
@@ -15,6 +16,8 @@ public struct MediaRecord: Codable, Identifiable, Equatable, Sendable {
     public var location: URL
     public var fileIdentity: String?
     public var accessBookmark: Data?
+    public var addedAt: Date?
+    public var lastPlayedAt: Date?
     public var lastOpened: Date
     public var position: Double
     public var duration: Double
@@ -33,7 +36,7 @@ public struct MediaRecord: Codable, Identifiable, Equatable, Sendable {
     public var name: String { location.isFileURL ? location.lastPathComponent : location.absoluteString }
     public init(location: URL, fileIdentity: String? = nil) {
         id = UUID(); self.location = location; self.fileIdentity = fileIdentity
-        lastOpened = Date(); position = 0; duration = 0; bookmarks = []
+        lastOpened = Date(); addedAt = lastOpened; position = 0; duration = 0; bookmarks = []
     }
 }
 
@@ -101,6 +104,7 @@ public final class MediaLibrary {
         let index = records.firstIndex { $0.location == url || (identity != nil && $0.fileIdentity == identity) }
         let i: Int
         if let index { i = index } else { records.append(MediaRecord(location: url, fileIdentity: identity)); i = records.count - 1 }
+        if records[i].addedAt == nil { records[i].addedAt = records[i].lastOpened }
         records[i].location = url; records[i].fileIdentity = identity; records[i].lastOpened = Date()
         records[i].isInHistory = true
         if url.isFileURL { records[i].accessBookmark = try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil) }
@@ -125,6 +129,11 @@ public final class MediaLibrary {
     public func setDiscTitle(_ id: UUID, title: Int?) throws {
         guard let index = records.firstIndex(where: { $0.id == id }), records[index].discKind != nil else { return }
         records[index].discTitle = title
+        try save()
+    }
+    public func markPlayed(_ id: UUID) throws {
+        guard let i = records.firstIndex(where: { $0.id == id }) else { return }
+        records[i].lastPlayedAt = Date()
         try save()
     }
     public func updatePosition(_ id: UUID, seconds: Double, duration: Double) throws {

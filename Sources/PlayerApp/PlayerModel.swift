@@ -74,6 +74,30 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             else { UserDefaults.standard.removeObject(forKey: "playerWindowFrame") }
         }
     }
+    var libraryScrollRequest = 0
+    var playlistSort: LibrarySort = .playlistOrder
+    var historySort: LibrarySort = .datePlayed
+    var bookmarksSort: LibrarySort = .dateAdded
+    var playlistAscending = false
+    var historyAscending = false
+    var bookmarksAscending = false
+    var onlyCurrentFolder = false
+    var librarySort: LibrarySort {
+        get {
+            switch tab { case .playlist: playlistSort; case .history: historySort; case .bookmarks: bookmarksSort }
+        }
+        set {
+            switch tab { case .playlist: playlistSort = newValue; case .history: historySort = newValue; case .bookmarks: bookmarksSort = newValue }
+        }
+    }
+    var librarySortAscending: Bool {
+        get {
+            switch tab { case .playlist: playlistAscending; case .history: historyAscending; case .bookmarks: bookmarksAscending }
+        }
+        set {
+            switch tab { case .playlist: playlistAscending = newValue; case .history: historyAscending = newValue; case .bookmarks: bookmarksAscending = newValue }
+        }
+    }
     var tab: LibraryTab = .playlist
     var search = ""
     var error: String?
@@ -273,6 +297,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         }
     }
     func movePlaylistItem(_ id: UUID, before destination: UUID?) {
+        playlistSort = .playlistOrder
         let reordered = PlaybackOrder.moving(queue, item: id, before: destination)
         if reordered != queue { queue = reordered }
     }
@@ -379,7 +404,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         midi?.shutdown(); midi = nil
         guard engine?.engineReady == true else { pendingURLs.append(url); return }
         if !queue.contains(id) { queue.append(id) }
-        perform { _ = try library.visit(url) }
+        perform { _ = try library.visit(url); try library.markPlayed(id) }
         playbackClickFeedback.clear(); timelinePreview.clear(); mediaAspectRatio = 0
         unsavedPlayedSeconds = 0; playbackSampleTime = ProcessInfo.processInfo.systemUptime
         currentID = id; position = 0; duration = 0; loaded = false; ended = false; failed = false

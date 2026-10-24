@@ -54,6 +54,7 @@ final class LibraryWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func present() {
+        model.libraryScrollRequest += 1
         guard model.window?.styleMask.contains(.fullScreen) != true || NSApp.isActive else { return }
         sync()
         window?.makeKeyAndOrderFront(nil)

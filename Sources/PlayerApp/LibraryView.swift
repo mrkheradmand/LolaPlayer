@@ -43,8 +43,26 @@ struct LibraryView: View {
                 }.padding(.horizontal, 12).padding(.vertical, 10)
                     .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 9))
                     .overlay(RoundedRectangle(cornerRadius: 9).stroke(searchFocused ? Color.accentColor : .primary.opacity(0.08), lineWidth: searchFocused ? 2 : 1))
+                HStack {
+                    Picker("Sort", selection: $model.librarySort) {
+                        ForEach(sortOptions, id: \.self) { Text($0.rawValue).tag($0) }
+                    }.frame(maxWidth: 220)
+                    if model.librarySort != .playlistOrder {
+                        Button { model.librarySortAscending.toggle() } label: {
+                            Image(systemName: model.librarySortAscending ? "arrow.up" : "arrow.down")
+                        }.buttonStyle(.plain)
+                            .help(model.librarySortAscending ? "Ascending: click for descending" : "Descending: click for ascending")
+                            .accessibilityLabel(model.librarySortAscending ? "Sort ascending" : "Sort descending")
+                    }
+                    Spacer(minLength: 0)
+                }.controlSize(.small)
+                if model.tab == .playlist {
+                    Toggle("Only current folder", isOn: $model.onlyCurrentFolder).toggleStyle(.checkbox)
+                        .font(.caption).help("Show only media in the playing file’s folder")
+                }
             }.padding(20)
             Divider()
+            ScrollViewReader { scroll in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: model.tab == .playlist ? 0 : 10) {
                     if displayedRecords.isEmpty {
@@ -127,6 +145,7 @@ struct LibraryView: View {
                             .background(record.id == model.currentID ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(record.id == model.currentID ? Color.accentColor.opacity(0.3) : .primary.opacity(0.06), lineWidth: 1))
                             .modifier(PlaylistReorderRow(model: model, id: record.id))
+                            .id(record.id)
                     }
                     if model.tab == .playlist && !model.queue.isEmpty {
                         Color.clear.frame(height: 36).contentShape(Rectangle())
@@ -138,6 +157,14 @@ struct LibraryView: View {
                             }
                     }
                 }.padding(16)
+            }
+            .onAppear { revealPlaying(scroll) }
+            .onChange(of: model.tab) { _, _ in revealPlaying(scroll) }
+            .onChange(of: model.libraryScrollRequest) { _, _ in revealPlaying(scroll) }
+            .onChange(of: model.sidebar) { _, visible in if visible { revealPlaying(scroll) } }
+            .onChange(of: model.currentID) { _, _ in revealPlaying(scroll) }
+            .onChange(of: model.librarySort) { _, _ in revealPlaying(scroll) }
+            .onChange(of: model.onlyCurrentFolder) { _, _ in revealPlaying(scroll) }
             }
             Divider()
             HStack {
@@ -159,6 +186,17 @@ struct LibraryView: View {
             }
         }
     }
+    private var sortOptions: [LibrarySort] {
+        switch model.tab {
+        case .playlist: [.playlistOrder, .dateAdded, .lastPlayed, .watchedTill]
+        case .history: [.datePlayed]
+        case .bookmarks: [.dateAdded, .lastPlayed, .watchedTill]
+        }
+    }
+    private func revealPlaying(_ scroll: ScrollViewProxy) {
+        guard let id = model.currentID, displayedRecords.contains(where: { $0.id == id }) else { return }
+        DispatchQueue.main.async { scroll.scrollTo(id, anchor: .center) }
+    }
     private func symbol(_ tab: LibraryTab) -> String {
         switch tab { case .playlist: "list.bullet"; case .history: "clock"; case .bookmarks: "bookmark" }
     }
@@ -169,10 +207,14 @@ struct LibraryView: View {
         case .history: records = model.historyRecords
         case .bookmarks: records = model.records
         }
-        return records.filter { record in
+        let folderRecords = model.tab == .playlist && model.onlyCurrentFolder
+            ? LibrarySorting.inCurrentFolder(records, current: model.current) : records
+        let filtered = folderRecords.filter { record in
             (model.tab != .bookmarks || !record.bookmarks.isEmpty) &&
             (model.search.isEmpty || record.name.localizedCaseInsensitiveContains(model.search) || record.bookmarks.contains { $0.title.localizedCaseInsensitiveContains(model.search) })
         }
+        return LibrarySorting.sorted(filtered, by: model.librarySort, ascending: model.librarySortAscending,
+                                     bookmarkDates: model.tab == .bookmarks)
     }
     private func fileRemovalLabel(_ record: MediaRecord) -> String {
         switch model.tab {
