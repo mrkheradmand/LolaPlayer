@@ -21,15 +21,10 @@ public struct MediaRecord: Codable, Identifiable, Equatable, Sendable {
     public var bookmarks: [MediaBookmark]
     public var playedSeconds: Double?
     public var hasFinishedPlayback: Bool?
-    public var watchStatus: String? {
-        if hasFinishedPlayback == true { return "Watched" }
-        guard position.isFinite, position > 0, position < Double(Int.max) else { return nil }
-        let seconds = Int(position)
-        if duration.isFinite && duration > 0 && duration < 3600 {
-            return String(format: "Watched till %d:%02d", seconds / 60, seconds % 60)
-        }
-        return String(format: "Watched till %d:%02d:%02d", seconds / 3600, (seconds / 60) % 60, seconds % 60)
+    public var hasBeenPlayed: Bool {
+        hasFinishedPlayback == true || (playedSeconds ?? 0) > 0 || (position.isFinite && position > 0)
     }
+    public var watchStatus: String? { hasFinishedPlayback == true ? "Watched" : nil }
     /// Nil in older libraries means visible. History membership is independent of bookmarks/queue.
     public var isInHistory: Bool?
     /// Optional so libraries written before disc support remain readable.

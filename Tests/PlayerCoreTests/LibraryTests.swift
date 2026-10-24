@@ -7,30 +7,32 @@ struct LibraryTests {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         return (root, try MediaLibrary(fileURL: root.appendingPathComponent("library.json")))
     }
-    @Test func watchTimestampUsesFileDurationForHourField() {
-        var record = MediaRecord(location: URL(fileURLWithPath: "/tmp/format.mp4"))
-        record.position = 125
-        record.duration = 3599.9
-        #expect(record.watchStatus == "Watched till 2:05")
-        record.duration = 3600
-        #expect(record.watchStatus == "Watched till 0:02:05")
-        record.duration = 7200
-        #expect(record.watchStatus == "Watched till 0:02:05")
-        record.position = 3725
-        #expect(record.watchStatus == "Watched till 1:02:05")
+    @Test func playedIndicatorSurvivesPositionReset() throws {
+        let (root, library) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let id = try library.visit(URL(fileURLWithPath: "/tmp/played.mp4"))
+        #expect(library.record(id)?.hasBeenPlayed == false)
+        try library.recordPlayback(id, seconds: 0.2)
+        try library.updatePosition(id, seconds: 0, duration: 100)
+        #expect(library.record(id)?.hasBeenPlayed == true)
+        #expect(library.record(id)?.watchStatus == nil)
+        #expect(try MediaLibrary(fileURL: library.fileURL).record(id)?.hasBeenPlayed == true)
     }
     @Test func watchPositionCompletionAndPersistence() throws {
         let (root, library) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         let id = try library.visit(URL(fileURLWithPath: "/tmp/watched.mp4"))
         #expect(library.record(id)?.watchStatus == nil)
         try library.updatePosition(id, seconds: 5, duration: 10000)
-        #expect(library.record(id)?.watchStatus == "Watched till 0:00:05")
+        #expect(library.record(id)?.hasBeenPlayed == true)
+        #expect(library.record(id)?.watchStatus == nil)
         try library.updatePosition(id, seconds: 3661.9, duration: 10000)
-        #expect(library.record(id)?.watchStatus == "Watched till 1:01:01")
+        #expect(library.record(id)?.hasBeenPlayed == true)
+        #expect(library.record(id)?.watchStatus == nil)
         let reopened = try MediaLibrary(fileURL: library.fileURL)
-        #expect(reopened.record(id)?.watchStatus == "Watched till 1:01:01")
+        #expect(reopened.record(id)?.hasBeenPlayed == true)
+        #expect(reopened.record(id)?.watchStatus == nil)
         try reopened.updatePosition(id, seconds: 32, duration: 10000)
-        #expect(reopened.record(id)?.watchStatus == "Watched till 0:00:32")
+        #expect(reopened.record(id)?.hasBeenPlayed == true)
+        #expect(reopened.record(id)?.watchStatus == nil)
         try reopened.recordPlayback(id, seconds: 0, finished: true)
         try reopened.updatePosition(id, seconds: 0, duration: 10000)
         #expect(reopened.record(id)?.watchStatus == "Watched")

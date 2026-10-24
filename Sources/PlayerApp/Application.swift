@@ -202,7 +202,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     @discardableResult func item(_ menu: NSMenu, _ title: String, key: String = "", modifiers: NSEvent.ModifierFlags = .command, action: @escaping () -> Void) -> NSMenuItem {
         let target = MenuAction(action)
         if !["Quit Lola Player", "Hide Lola Player", "Close Window"].contains(title) {
-            target.available = { [weak self] in self?.model.libraryReady == true }
+            target.available = { [weak self] in
+                guard self?.model.libraryReady == true else { return false }
+                if title == "About Lola Player" {
+                    let responder = NSApp.keyWindow?.firstResponder
+                    return !(responder is NSTextView) && !(responder is NSTextField) && NSApp.modalWindow == nil
+                }
+                return true
+            }
         }
         let entry = NSMenuItem(title: title, action: #selector(MenuAction.invoke(_:)), keyEquivalent: key)
         entry.keyEquivalentModifierMask = modifiers; entry.target = target; entry.representedObject = target; menu.addItem(entry); return entry
@@ -223,7 +230,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func buildMenus() {
         let bar = PlayerMenu(); NSApp.mainMenu = bar
         let app = submenu(bar, "Lola Player")
-        item(app, "About Lola Player") { self.showAbout() }
+        item(app, "About Lola Player", key: "a") { self.showAbout() }
         item(app, "Settings…", key: ",") { self.model.settingsOpen = true }
         app.addItem(.separator()); item(app, "Hide Lola Player", key: "h") { NSApp.hide(nil) }
         item(app, "Quit Lola Player", key: "q") { NSApp.terminate(nil) }
@@ -322,7 +329,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         }
         item(help, "Keyboard Shortcuts") {
             let alert = NSAlert(); alert.messageText = "Keyboard Shortcuts"
-            alert.informativeText = "1 — Show full interface\n2 — Media only with progress bar\nSpace — Play / Pause\n← / → — Seek 10 seconds\n↑ / ↓ — Volume\n⌘B — Save bookmark\n⌥B — Save named bookmark\n⇧⌘B — All bookmarks\n⇧⌘H — History\n⌥⌘T — Float on Top while playing\n⌘L — Playlist\n⌘O — Open file\n⌃⌘F — Full screen\n⌘[ / ⌘] — Playback speed\n⌘\\ — Reset speed to 1×\nE / ⇧E — Next / previous frame"
+            alert.informativeText = "⌘A — About Lola Player (outside text fields)\n1 — Show full interface\n2 — Media only with progress bar\nSpace — Play / Pause\n← / → — Seek 10 seconds\n↑ / ↓ — Volume\n⌘B — Save bookmark\n⌥B — Save named bookmark\n⇧⌘B — All bookmarks\n⇧⌘H — History\n⌥⌘T — Float on Top while playing\n⌘L — Playlist\n⌘O — Open file\n⌃⌘F — Full screen\n⌘[ / ⌘] — Playback speed\n⌘\\ — Reset speed to 1×\nE / ⇧E — Next / previous frame"
             alert.runModal()
         }
     }

@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.17.2, build 54 |
+| Version | 1.17.4, build 56 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -198,7 +198,7 @@ Selecting a folder with the Library **+** button or **Open… (⌘O)** recursive
 
 Drop media files or folders anywhere in the **Playlist** view to append supported audio/video files, including files inside subfolders. Folder discovery runs in the background, skips hidden files and package contents, and does not follow directory symlinks during recursion. Overlapping/repeated drops do not duplicate existing playlist entries. Dropping files does not change the current playback or add unplayed files to History. The Playlist highlights while a file drop is over it. Drag an existing Playlist card over the upper or lower half of another card to show an insertion line before or after it, or drop in the space below the last card to append it. Reordering updates the saved playlist order without restarting playback; when search is active, the destination refers to that card in the full playlist. History and Bookmarks cards do not offer playlist reordering.
 
-Playlist rows show green **Watched till M:SS** text for files shorter than one hour, or **Watched till H:MM:SS** for files at least one hour long (and when duration is unknown) after the bookmark count using the saved playback position, with no one-minute threshold. Position follows playback and seeking, updates on the regular position-save interval (about five seconds), and saves when paused or switching files. Files without a positive saved position have no label. Reaching the end marks the file **Watched**, including short files; replaying preserves completion. Status survives relaunch and playlist removal. Existing saved positions also show the timestamp. Bookmark counts and watch status update in the open Playlist automatically.
+Playlist rows display the current-time value in green for played files; duration and bookmark count retain their normal color. A positive saved position or recorded playback marks a file played, with no minimum playback time. There is no “Watched till” label. Reaching the end adds green **Watched** text after the bookmark count, including short files; replaying preserves completion. Position and played status update on the regular position-save interval (about five seconds) and when pausing or switching files. Played status and completion survive relaunch and playlist removal. Bookmark counts and watch status update in the open Playlist automatically.
 
 During playback, a macOS display-sleep assertion and periodic user-activity declarations prevent idle system/display sleep and the screen saver, including audio and MIDI playback. Pausing, finishing, failure, or quitting releases them; buffering retains wake protection. Explicit Sleep remains available.
 
@@ -310,6 +310,7 @@ Space, 1, and 2 require Lola to be the active, frontmost application and its pla
 | --- | --- |
 | Show full interface | 1 |
 | Media only with progress bar | 2 |
+| About Lola Player (outside text fields; text editing retains Select All) | ⌘A |
 | Open files/folder/playlist | ⌘O |
 | Open media URL | ⇧⌘O |
 | Save playlist | ⌘S |

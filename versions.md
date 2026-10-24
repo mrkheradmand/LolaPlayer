@@ -1,5 +1,33 @@
 # Lola Player versions
 
+## 1.17.4 (build 56) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Replace Watched till labels with a green current-time value for played playlist files, retaining the Watched label for completed media.
+
+### Removed
+
+- None.
+
+## 1.17.3 (build 55) — 2026-10-24
+
+### Added
+
+- Command-A opens About Lola Player outside text fields; text editing retains Select All.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
 ## 1.17.2 (build 54) — 2026-10-24
 
 ### Added

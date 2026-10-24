@@ -187,7 +187,7 @@ private final class DragProbeView: PlayerMouseView {
                 }, valid: { view.displayedRecords.first?.bookmarks.count == 1 })
                 try verifyRefresh("Playlist observes saved watch position", change: {
                     model.perform { try model.library.updatePosition(id, seconds: 5, duration: 100) }
-                }, valid: { view.displayedRecords.first?.watchStatus == "Watched till 0:05" })
+                }, valid: { view.displayedRecords.first?.hasBeenPlayed == true && view.displayedRecords.first?.watchStatus == nil })
                 try verifyRefresh("Playlist observes watched status", change: {
                     model.perform { try model.library.recordPlayback(id, seconds: 0, finished: true) }
                 }, valid: { view.displayedRecords.first?.watchStatus == "Watched" })
