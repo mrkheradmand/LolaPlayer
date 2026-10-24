@@ -52,6 +52,12 @@ struct LibraryView: View {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField(model.tab == .bookmarks ? "Search files and bookmarks" : "Search files", text: $model.search)
                         .textFieldStyle(.plain).focused($searchFocused)
+                        .background {
+                            GeometryReader { geometry in
+                                LibraryPointerRegion(kind: .text, layoutRect: geometry.frame(in: .named("libraryContent")))
+                                    .frame(width: geometry.size.width, height: geometry.size.height)
+                            }
+                        }
                         .background(SearchFocusDismissal(isFocused: searchFocused) { searchFocused = false })
                     if !model.search.isEmpty {
                         icon("xmark.circle.fill", "Clear search") { model.search = "" }
@@ -118,7 +124,7 @@ struct LibraryView: View {
                                     }
                                     Spacer(minLength: 0)
                                 }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                              }.buttonStyle(LibraryButtonStyle()).help(record.location.path)
+                              }.buttonStyle(LibraryRowButtonStyle()).help(record.location.path)
                               Button(role: .destructive) {
                                   switch model.tab {
                                   case .playlist: model.removeFromPlaylist(record)
@@ -170,8 +176,7 @@ struct LibraryView: View {
                                 }
                             }
                         }.padding(.bottom, model.tab == .bookmarks ? 8 : 0)
-                            .background(record.id == model.currentID ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(record.id == model.currentID ? Color.accentColor.opacity(0.3) : .primary.opacity(0.06), lineWidth: 1))
+                            .modifier(LibraryCardAppearance(model: model, id: record.id))
                             .modifier(PlaylistReorderRow(model: model, id: record.id))
                             .id(record.id)
                     }
@@ -201,11 +206,11 @@ struct LibraryView: View {
             HStack {
                 Text("\(displayedRecords.count) files" + (model.tab == .bookmarks ? " · \(displayedRecords.reduce(0) { $0 + $1.bookmarks.count }) bookmarks" : "")).font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                if model.tab == .bookmarks { Button("Export…") { model.exportBookmarks() } }
-                if model.tab == .playlist { Button("Empty Playlist", role: .destructive) { model.queue = [] }.disabled(model.queue.isEmpty) }
-                if model.tab == .history { Button("Empty History", role: .destructive) { model.emptyHistory() }.disabled(model.historyRecords.isEmpty) }
+                if model.tab == .bookmarks { Button("Export…") { model.exportBookmarks() }.buttonStyle(LibraryFooterButtonStyle()).fixedSize() }
+                if model.tab == .playlist { Button("Empty Playlist", role: .destructive) { model.queue = [] }.buttonStyle(LibraryFooterButtonStyle()).fixedSize().disabled(model.queue.isEmpty) }
+                if model.tab == .history { Button("Empty History", role: .destructive) { model.emptyHistory() }.buttonStyle(LibraryFooterButtonStyle()).fixedSize().disabled(model.historyRecords.isEmpty) }
             }.controlSize(.small).padding(16)
-        }.buttonStyle(LibraryButtonStyle()).background(Color(nsColor: .windowBackgroundColor))
+        }.coordinateSpace(name: "libraryContent").buttonStyle(LibraryButtonStyle()).background(Color(nsColor: .windowBackgroundColor))
         .onDrop(of: [.fileURL], isTargeted: $model.playlistDropTarget) { providers in
             guard model.tab == .playlist else { return false }
             return model.dropOnPlaylist(providers)
@@ -255,7 +260,7 @@ struct LibraryView: View {
                     Text("Only current folder").font(.system(size: 11, weight: .medium))
                     Spacer(minLength: 12)
                     Toggle("Only current folder", isOn: $model.onlyCurrentFolder)
-                        .labelsHidden().toggleStyle(.switch).controlSize(.small).modifier(LibraryHoverFeedback())
+                        .labelsHidden().toggleStyle(.switch).controlSize(.small).fixedSize().modifier(LibraryHoverFeedback())
                 }.help("Show only media in the playing file’s immediate folder")
             }
         }.padding(12)
@@ -392,6 +397,24 @@ final class PlaylistDragSurfaceView: NSView, NSDraggingSource {
         registerForDraggedTypes([NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)])
     }
     required init?(coder: NSCoder) { super.init(coder: coder); registerForDraggedTypes([NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)]) }
+    private var hoverTracking: NSTrackingArea?
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverTracking { removeTrackingArea(hoverTracking) }
+        let area = NSTrackingArea(rect: .zero,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect], owner: self)
+        addTrackingArea(area); hoverTracking = area
+    }
+    override func mouseEntered(with event: NSEvent) { updateHover() }
+    override func mouseMoved(with event: NSEvent) { updateHover() }
+    override func mouseExited(with event: NSEvent) {
+        if let source, model?.hoveredLibraryRecordID == source { model?.hoveredLibraryRecordID = nil }
+    }
+    private func updateHover() {
+        guard let source else { return }
+        model?.hoveredLibraryRecordID = source
+        NSCursor.pointingHand.set()
+    }
     override func resetCursorRects() {
         super.resetCursorRects()
         if source != nil { addCursorRect(bounds, cursor: .pointingHand) }

@@ -32,6 +32,14 @@ private final class DragProbeView: PlayerMouseView {
                 surface.model = model
                 try check(surface.registeredDraggedTypes.contains(NSPasteboard.PasteboardType(PlaylistReorderDrop.typeIdentifier)),
                     "Native card registers the actual pasteboard drag type")
+                surface.source = ids[0]
+                let hover = NSEvent.mouseEvent(with: .mouseMoved, location: .zero, modifierFlags: [], timestamp: 0,
+                    windowNumber: 0, context: nil, eventNumber: 0, clickCount: 0, pressure: 0)!
+                surface.mouseEntered(with: hover)
+                try check(model.hoveredLibraryRecordID == ids[0], "Native Playlist hover activates full-card feedback")
+                surface.mouseExited(with: hover)
+                try check(model.hoveredLibraryRecordID == nil, "Leaving native Playlist row clears full-card feedback")
+
                 surface.showInsertion(before: ids[1])
                 try check(model.playlistReorderTargeted && model.playlistDropBefore == ids[1],
                     "Native drag hover activates the insertion indicator")
@@ -344,6 +352,55 @@ private final class DragProbeView: PlayerMouseView {
                 let panel = (NSApp.delegate as? AppDelegate)?.libraryController?.window
                 try check((scrollView(in: panel?.contentView)?.contentView.bounds.origin.y ?? 0) > 100,
                           "Opening Playlist scrolls to the current media near the bottom")
+                model.librarySearchVisible = true; model.sortOptionsVisible = true
+                try await Task.sleep(for: .seconds(0.4))
+                guard let libraryPanel = panel as? LibraryPanel else { throw Failure(message: "Missing native Library cursor panel") }
+                let regions = libraryPanel.pointerRegions.allObjects.filter {
+                    $0.window === libraryPanel && $0.pointerEnabled && !$0.isHiddenOrHasHiddenAncestor && !$0.layoutRect.isEmpty && !$0.visibleRect.isEmpty
+                }
+                try check(regions.count >= 10, "Header, tabs, sorting, and footer expose native pointer regions")
+                for region in regions {
+                    var local = NSPoint(x: region.layoutRect.midX, y: region.layoutRect.midY)
+                    if libraryPanel.contentView?.isFlipped != true { local.y = libraryPanel.contentView!.bounds.height - local.y }
+                    let point = libraryPanel.contentView!.convert(local, to: nil)
+                    guard let event = NSEvent.mouseEvent(with: .mouseMoved, location: point, modifierFlags: [],
+                        timestamp: 0, windowNumber: libraryPanel.windowNumber, context: nil,
+                        eventNumber: 0, clickCount: 0, pressure: 0) else { throw Failure(message: "Missing cursor event") }
+                    NSCursor.arrow.set()
+                    libraryPanel.sendEvent(event)
+                    let isText = libraryPanel.pointerRegions.allObjects.contains { $0.kind == .text && $0.containsPointer(point) }
+                    try check(NSCursor.current == (isText ? NSCursor.iBeam : NSCursor.pointingHand),
+                              "Library pointer dispatch preserves text-input precedence and button cursors")
+                }
+                // Empty header/panel space must clear a hand left by the preceding button.
+                var neutralPoint: NSPoint?
+                for y in stride(from: libraryPanel.contentView!.bounds.height - 140, through: libraryPanel.contentView!.bounds.height - 330, by: -8) {
+                    let point = NSPoint(x: libraryPanel.contentView!.bounds.width - 24, y: y)
+                    if !regions.contains(where: { $0.containsPointer(point) }) { neutralPoint = point; break }
+                }
+                guard let neutralPoint, let neutralEvent = NSEvent.mouseEvent(with: .mouseMoved,
+                    location: neutralPoint, modifierFlags: [], timestamp: 0, windowNumber: libraryPanel.windowNumber,
+                    context: nil, eventNumber: 0, clickCount: 0, pressure: 0) else { throw Failure(message: "Missing neutral hover target: " + regions.map { String(describing: $0.convert($0.visibleRect, to: nil)) }.joined(separator: "; ")) }
+                NSCursor.pointingHand.set(); libraryPanel.sendEvent(neutralEvent)
+                try check(NSCursor.current == NSCursor.arrow, "Empty Library panel space restores the arrow cursor")
+                try check(regions.contains(where: { $0.kind == .text }), "Search input has a text cursor region")
+                guard let footer = libraryPanel.pointerRegions.allObjects.first(where: { $0.kind == .footer && $0.pointerEnabled }) else {
+                    throw Failure(message: "Missing footer action cursor region")
+                }
+                try check(footer.layoutRect.width < libraryPanel.contentView!.bounds.width / 2,
+                          "Footer action cursor region is limited to its text width")
+                for x in [24.0, libraryPanel.contentView!.bounds.width / 2] {
+                    let point = NSPoint(x: x, y: 24)
+                    guard let event = NSEvent.mouseEvent(with: .mouseMoved, location: point,
+                        modifierFlags: [], timestamp: 0, windowNumber: libraryPanel.windowNumber,
+                        context: nil, eventNumber: 0, clickCount: 0, pressure: 0) else {
+                        throw Failure(message: "Missing footer cursor event")
+                    }
+                    NSCursor.pointingHand.set(); libraryPanel.sendEvent(event)
+                    try check(NSCursor.current == NSCursor.arrow, "Footer file count and empty space keep arrow cursor")
+                }
+
+                model.librarySearchVisible = false; model.sortOptionsVisible = false
                 model.onlyCurrentFolder = true
                 let view = LibraryView(model: model)
                 try check(view.displayedRecords.count == 60 && !view.displayedRecords.contains(where: { $0.id == other }),

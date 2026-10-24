@@ -88,6 +88,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             else { UserDefaults.standard.removeObject(forKey: "playerWindowFrame") }
         }
     }
+    var hoveredLibraryRecordID: UUID?
     var librarySearchVisible = false
     var sortOptionsVisible = false
     var libraryScrollRequest = 0

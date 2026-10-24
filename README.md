@@ -22,7 +22,7 @@ After saving a bookmark, click its confirmation within three seconds to name it.
 
 Settings shows the app version and build beneath Lola Player in its sidebar.
 
-The Settings button sits beside the volume slider. Playback buttons turn green and show a pointing-hand cursor on hover. Small yellow ticks on the seek bar mark the current file’s bookmarks and update when bookmarks change.
+The Settings button sits beside the volume slider. Playback buttons turn green and show a pointing-hand cursor on hover, without a background highlight. Small yellow ticks on the seek bar mark the current file’s bookmarks and update when bookmarks change.
 
 ## Install
 
@@ -123,7 +123,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.22.1, build 68 |
+| Version | 1.22.2, build 69 |
 
 
 See [release notes](versions.md) for what's changed.

@@ -1,5 +1,22 @@
 # Lola Player versions
 
+## 1.22.2 (build 69) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Remove playback-control hover background highlights while retaining green icons; continuously apply the pointing-hand cursor so AppKit cannot reset it during hover.
+- Unify Library card hover feedback across Playlist, History, and Bookmarks with full-card tint and border transitions; remove the partial header highlight and fix pointer handling over native playlist rows.
+- Use native cursor regions and Library-panel mouse dispatch for reliable pointing-hand feedback on header, tabs, sort controls, and footer actions; make footer actions background-free with yellow hover text.
+- Restore the arrow cursor over noninteractive Library space and preserve the text cursor inside Search instead of leaving a pointing hand after buttons; constrain footer action hit areas to the link text so the file count and blank footer stay noninteractive.
+
+### Removed
+
+- None.
+
 ## 1.22.1 (build 68) — 2026-10-24
 
 ### Added

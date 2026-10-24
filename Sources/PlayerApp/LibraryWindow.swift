@@ -8,8 +8,9 @@ final class LibraryWindowController: NSWindowController, NSWindowDelegate {
 
     init(model: PlayerModel) {
         self.model = model
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 440, height: 620),
+        let panel = LibraryPanel(contentRect: NSRect(x: 0, y: 0, width: 440, height: 620),
                             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        panel.acceptsMouseMovedEvents = true
         panel.title = "Library"
         panel.titlebarAppearsTransparent = true
         panel.isReleasedWhenClosed = false
