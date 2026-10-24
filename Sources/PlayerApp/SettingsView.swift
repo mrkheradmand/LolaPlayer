@@ -48,14 +48,14 @@ struct SettingsView: View {
                 List(SettingsPage.allCases, selection: $selection) { item in
                     Label(item.rawValue, systemImage: item.symbol)
                         .padding(.vertical, 5).tag(item)
-                }.listStyle(.sidebar).scrollDisabled(true)
+                }.listStyle(.sidebar).scrollDisabled(true).scrollContentBackground(.hidden)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Lola Player").font(.caption)
                     Text(versionText).font(.system(size: 10)).lineLimit(1)
                 }.foregroundStyle(.secondary)
                     .padding(.horizontal, 20).padding(.bottom, 20)
             }
-            .frame(width: 172).background(.regularMaterial)
+            .frame(width: 172).background(SettingsSidebarBackground())
             Divider()
             VStack(spacing: 0) {
                 HStack(alignment: .top) {
@@ -202,4 +202,16 @@ struct SettingsView: View {
             Stepper(label, value: value, in: -60...60, step: 0.1).labelsHidden()
         }
     }
+}
+
+
+private struct SettingsSidebarBackground: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .sidebar
+        view.blendingMode = .withinWindow
+        view.state = .followsWindowActiveState
+        return view
+    }
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
 }

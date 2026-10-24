@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.20.5, build 64 |
+| Version | 1.20.6, build 65 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -252,7 +252,7 @@ In full screen, playback controls overlay the media and hide after five seconds 
 
 ### Settings and defaults
 
-The sidebar shows the running bundle’s version beneath Lola Player as `v<version> (build <build>)`. About uses the same dark theme as Settings.
+The sidebar uses a continuous native sidebar background across its heading, navigation, and footer. It shows the running bundle’s version beneath Lola Player as `v<version> (build <build>)`. About uses the same dark theme as Settings.
 
 In **Settings → General → Opening media**, **Show last-played media name** controls the welcome screen’s Resume label. It is enabled by default and saved between launches. Disable it to show **Resume Last Media** instead of the filename; the button still resumes the most recent history item. Changes apply immediately.
 

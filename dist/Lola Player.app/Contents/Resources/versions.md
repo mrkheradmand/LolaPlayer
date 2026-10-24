@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.20.6 (build 65) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Unify the Settings sidebar heading, navigation, and footer under one native sidebar background.
+
+### Removed
+
+- None.
+
 ## 1.20.5 (build 64) — 2026-10-24
 
 ### Added

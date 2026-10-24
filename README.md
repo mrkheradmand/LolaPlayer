@@ -121,7 +121,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.20.5, build 64 |
+| Version | 1.20.6, build 65 |
 
 
 See [release notes](versions.md) for what's changed.
