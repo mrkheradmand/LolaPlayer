@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.16.0, build 49 |
+| Version | 1.16.1, build 50 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -198,7 +198,7 @@ Selecting a folder with the Library **+** button or **Open… (⌘O)** recursive
 
 Drop media files or folders anywhere in the **Playlist** view to append supported audio/video files, including files inside subfolders. Folder discovery runs in the background, skips hidden files and package contents, and does not follow directory symlinks during recursion. Overlapping/repeated drops do not duplicate existing playlist entries. Dropping files does not change the current playback or add unplayed files to History. The Playlist highlights while a file drop is over it. Drag an existing Playlist card over the upper or lower half of another card to show an insertion line before or after it, or drop in the space below the last card to append it. Reordering updates the saved playlist order without restarting playback; when search is active, the destination refers to that card in the full playlist. History and Bookmarks cards do not offer playlist reordering.
 
-Playlist rows show green **Partially watched** or **Watched** text before the bookmark count after more than 60 seconds of cumulative active playback. Paused/buffering time and seeking do not count. Reaching the end after that threshold marks the file watched; replaying preserves completion. Status survives relaunch and playlist removal. Older library records start without a status.
+Playlist rows show green **Partially watched** or **Watched** text after the bookmark count after more than 60 seconds of cumulative active playback. Paused/buffering time and seeking do not count. Reaching the end after that threshold marks the file watched; replaying preserves completion. Status survives relaunch and playlist removal. Older library records start without a status.
 
 During playback, a macOS display-sleep assertion and periodic user-activity declarations prevent idle system/display sleep and the screen saver, including audio and MIDI playback. Pausing, finishing, failure, or quitting releases them; buffering retains wake protection. Explicit Sleep remains available.
 

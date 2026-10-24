@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.16.1 (build 50) — 2026-10-24
+
+### Added
+
+- None.
+
+### Modified
+
+- Move the green playlist watch status after the bookmark count.
+
+### Removed
+
+- None.
+
 ## 1.16.0 (build 49) — 2026-10-24
 
 ### Added
