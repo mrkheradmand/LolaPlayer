@@ -212,6 +212,7 @@ private final class DragProbeView: PlayerMouseView {
     private static func runControlsTimeoutOnly(model: PlayerModel, root: URL) {
         Task { @MainActor in
             var checks: [String] = []
+            var skipped: [String] = []
             var failure: String?
             func check(_ valid: Bool, _ message: String) throws {
                 guard valid else { throw Failure(message: message) }
@@ -222,28 +223,45 @@ private final class DragProbeView: PlayerMouseView {
                 let pointerActivity = player?.pointerActivity
                 player?.pointerActivity = nil
                 defer { player?.pointerActivity = pointerActivity }
+                model.window?.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+                if let window = model.window {
+                    let point = CGPoint(x: window.frame.midX, y: (NSScreen.screens.first?.frame.maxY ?? 0) - window.frame.midY)
+                    CGWarpMouseCursorPosition(point)
+                }
                 model.setFullScreenControls(true)
                 try check(!model.fullScreenControlsHidden, "Controls visible on entering full screen")
                 try await Task.sleep(for: .seconds(3))
+                model.window?.makeKeyAndOrderFront(nil)
+                if let window = model.window {
+                    let point = CGPoint(x: window.frame.midX, y: (NSScreen.screens.first?.frame.maxY ?? 0) - window.frame.midY)
+                    CGWarpMouseCursorPosition(point)
+                }
                 model.revealFullScreenControls()
                 try await Task.sleep(for: .seconds(3))
                 try check(!model.fullScreenControlsHidden, "Pointer activity resets the five-second deadline")
                 try await Task.sleep(for: .seconds(2.3))
                 try check(model.fullScreenControlsHidden, "Controls hide five seconds after the latest activity")
+                if NSApp.isActive && model.window?.isKeyWindow == true {
+                    try check(model.fullScreenPointerHidden, "Inactive pointer hides over the active full-screen player")
+                } else {
+                    try check(!model.fullScreenPointerHidden, "Inactive app does not hide the mouse pointer")
+                    skipped.append("Active-player pointer hiding requires the test app to hold foreground focus")
+                }
                 player?.pointerActivity = pointerActivity
                 if let window = player,
                    let event = NSEvent.mouseEvent(with: .mouseMoved, location: .zero, modifierFlags: [],
                         timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
                         context: nil, eventNumber: 0, clickCount: 0, pressure: 0) {
                     window.sendEvent(event)
-                    try check(!model.fullScreenControlsHidden, "Native mouse movement reveals hidden controls")
+                    try check(!model.fullScreenControlsHidden && !model.fullScreenPointerHidden, "Native mouse movement reveals controls and pointer")
                 } else { throw Failure(message: "Could not send mouse movement to player") }
                 model.setFullScreenControls(false)
                 try await Task.sleep(for: .seconds(5.3))
-                try check(!model.fullScreenControlsHidden && !model.isFullScreen, "Windowed controls remain visible after timeout")
+                try check(!model.fullScreenControlsHidden && !model.fullScreenPointerHidden && !model.isFullScreen, "Windowed controls and pointer remain visible after timeout")
             } catch let error as Failure { failure = error.message }
             catch { failure = error.localizedDescription }
-            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": skipped, "failure": failure ?? NSNull()]
             if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
                 try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
             }

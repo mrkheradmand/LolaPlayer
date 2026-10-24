@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.20.5 (build 64) — 2026-10-24
+
+### Added
+
+- Hide the mouse pointer with inactive full-screen controls after five seconds; restore it on movement, focus loss, full-screen exit, or quit.
+
+### Modified
+
+- Align the Only current folder switch to the right edge of the sorting panel.
+
+### Removed
+
+- None.
+
 ## 1.20.4 (build 63) — 2026-10-24
 
 ### Added

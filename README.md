@@ -16,7 +16,7 @@ Playback keeps your Mac awake and prevents the screen saver until you pause or f
 
 Hide the last-played filename on the welcome screen in **Settings → General → Show last-played media name**. You can still resume with **Resume Last Media**.
 
-In full screen, playback controls hide after five seconds without mouse movement. Move the mouse to show them again.
+In full screen, playback controls and the pointer hide after five seconds without mouse movement. Move the mouse to show them again.
 
 After saving a bookmark, click its confirmation within three seconds to name it. Enter saves the name; Escape or an empty name keeps the saved bookmark.
 
@@ -121,7 +121,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.20.4, build 63 |
+| Version | 1.20.5, build 64 |
 
 
 See [release notes](versions.md) for what's changed.

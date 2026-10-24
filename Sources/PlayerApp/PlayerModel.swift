@@ -12,6 +12,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     private var unsavedPlayedSeconds = 0.0
     private(set) var fullScreenControlsHidden = false
     private(set) var isFullScreen = false
+    private(set) var fullScreenPointerHidden = false
     @ObservationIgnored private var controlsHideTimer: Timer?
 
     func setFullScreenControls(_ fullScreen: Bool) {
@@ -21,13 +22,26 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
 
     func revealFullScreenControls() {
         controlsHideTimer?.invalidate()
+        restoreFullScreenPointer()
         fullScreenControlsHidden = false
         guard isFullScreen else { return }
         controlsHideTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, self.isFullScreen else { return }
                 self.fullScreenControlsHidden = true
+                if NSApp.isActive, let window = self.window, window.isKeyWindow,
+                   window.frame.contains(NSEvent.mouseLocation),
+                   !self.settingsOpen, self.bookmarkNameTarget == nil, NSApp.modalWindow == nil {
+                    NSCursor.setHiddenUntilMouseMoves(true)
+                    self.fullScreenPointerHidden = true
+                }
             }
+        }
+    }
+    func restoreFullScreenPointer() {
+        if fullScreenPointerHidden {
+            NSCursor.setHiddenUntilMouseMoves(false)
+            fullScreenPointerHidden = false
         }
     }
     var playlistReorderTargeted = false
@@ -844,5 +858,5 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         alert.window.initialFirstResponder = input
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }; return input.stringValue
     }
-    func shutdown() { shuttingDown = true; controlsHideTimer?.invalidate(); playbackWake.update(active: false); samplePlaybackTime(); playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); do { try library.flush() } catch { NSLog("Library save failed: %@", error.localizedDescription) }; midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
+    func shutdown() { shuttingDown = true; controlsHideTimer?.invalidate(); restoreFullScreenPointer(); playbackWake.update(active: false); samplePlaybackTime(); playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); do { try library.flush() } catch { NSLog("Library save failed: %@", error.localizedDescription) }; midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
 }

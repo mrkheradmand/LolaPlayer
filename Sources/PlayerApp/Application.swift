@@ -203,6 +203,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
         model.mediaOnly && !fullScreenTransition && !sender.styleMask.contains(.fullScreen) ? model.mediaOnlySize(for: frameSize) : frameSize
     }
+    func windowDidResignKey(_ notification: Notification) { model.restoreFullScreenPointer() }
+    func windowDidBecomeKey(_ notification: Notification) {
+        if model.isFullScreen { model.revealFullScreenControls() }
+    }
     func windowWillEnterFullScreen(_ notification: Notification) { model.saveWindowGeometry(); fullScreenTransition = true; libraryController?.hideForFullScreenTransition() }
     func windowDidEnterFullScreen(_ notification: Notification) { fullScreenTransition = false; model.setFullScreenControls(true); libraryController?.sync(reposition: true) }
     func windowWillExitFullScreen(_ notification: Notification) { fullScreenTransition = true; model.setFullScreenControls(false); libraryController?.hideForFullScreenTransition() }

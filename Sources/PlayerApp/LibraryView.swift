@@ -232,9 +232,10 @@ struct LibraryView: View {
                 Divider().overlay(.white.opacity(0.03))
                 HStack(spacing: 10) {
                     Image(systemName: "folder").font(.system(size: 13)).foregroundStyle(.secondary)
+                    Text("Only current folder").font(.system(size: 11, weight: .medium))
+                    Spacer(minLength: 12)
                     Toggle("Only current folder", isOn: $model.onlyCurrentFolder)
-                        .toggleStyle(.switch).controlSize(.small)
-                        .font(.system(size: 11, weight: .medium))
+                        .labelsHidden().toggleStyle(.switch).controlSize(.small)
                 }.help("Show only media in the playing file’s immediate folder")
             }
         }.padding(12)
