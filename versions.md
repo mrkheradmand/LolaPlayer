@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.20.4 (build 63) — 2026-10-24
+
+### Added
+
+- Display the running app version and build beneath the app name in the Settings sidebar.
+
+### Modified
+
+- Match the About window to the dark Settings color theme while preserving its redesigned layout.
+
+### Removed
+
+- None.
+
 ## 1.20.3 (build 62) — 2026-10-24
 
 ### Added

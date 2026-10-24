@@ -34,6 +34,12 @@ struct SettingsView: View {
         _selection = SettingsState(initialValue: initialPage)
     }
 
+    var versionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Development"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        return "v\(version) (build \(build))"
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 20) {
@@ -43,7 +49,10 @@ struct SettingsView: View {
                     Label(item.rawValue, systemImage: item.symbol)
                         .padding(.vertical, 5).tag(item)
                 }.listStyle(.sidebar).scrollDisabled(true)
-                Text("Lola Player").font(.caption).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Lola Player").font(.caption)
+                    Text(versionText).font(.system(size: 10)).lineLimit(1)
+                }.foregroundStyle(.secondary)
                     .padding(.horizontal, 20).padding(.bottom, 20)
             }
             .frame(width: 172).background(.regularMaterial)

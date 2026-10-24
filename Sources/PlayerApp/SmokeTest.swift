@@ -379,8 +379,16 @@ private final class DragProbeView: PlayerMouseView {
                           "Redesigned About hosts the live SwiftUI view")
                 try check(controller.window?.contentView?.bounds.size == NSSize(width: 560, height: 520),
                           "About uses the reference-style compact layout dimensions")
-                try check(controller.window?.appearance?.name == .aqua && controller.window?.styleMask.contains(.fullSizeContentView) == true,
-                          "About uses a light surface with integrated title bar")
+                try check(controller.window?.appearance?.name == .darkAqua && controller.window?.styleMask.contains(.fullSizeContentView) == true,
+                          "About matches the dark Settings theme with integrated title bar")
+                let settings = SettingsView(model: model)
+                let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Development"
+                let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+                try check(settings.versionText == "v\(version) (build \(build))",
+                          "Settings sidebar version and build match the running bundle")
+                let settingsHost = NSHostingView(rootView: settings)
+                settingsHost.frame = NSRect(x: 0, y: 0, width: 720, height: 530)
+                settingsHost.layoutSubtreeIfNeeded()
                 try check(about.versionText.contains("(Build ") && about.copyrightText.contains("J Kheradmand"),
                           "About retains bundle version, build, and author metadata")
                 model.updateAvailability = .current

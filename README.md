@@ -20,6 +20,8 @@ In full screen, playback controls hide after five seconds without mouse movement
 
 After saving a bookmark, click its confirmation within three seconds to name it. Enter saves the name; Escape or an empty name keeps the saved bookmark.
 
+Settings shows the app version and build beneath Lola Player in its sidebar.
+
 ## Install
 
 1. Download the latest **.dmg** from the link above.
@@ -109,7 +111,7 @@ Settings (**⌘,**) groups your preferences into **General**, **Playback**, and 
 
 Lola checks for new releases when it opens and once a day while running. When an update is available, click **View Release** in the notice to open the download page.
 
-To turn automatic checks off, uncheck **Automatically check for updates** in **Lola Player → About Lola Player**. Use **Check for Updates…** in About to check manually at any time. Press **⌘A** outside text fields to open About (in text fields it still selects all). **About Lola Player** has a light layout with the app icon, update controls, and repository, release, and license links. It also shows **Latest Version** or **New version available!** with the version information. Click the new-version message to open its release page. Updates are downloaded and installed manually. About closes when you return to the player or switch apps; open it again from the app menu.
+To turn automatic checks off, uncheck **Automatically check for updates** in **Lola Player → About Lola Player**. Use **Check for Updates…** in About to check manually at any time. Press **⌘A** outside text fields to open About (in text fields it still selects all). **About Lola Player** uses the same dark theme as Settings, with the app icon, update controls, and repository, release, and license links. It also shows **Latest Version** or **New version available!** with the version information. Click the new-version message to open its release page. Updates are downloaded and installed manually. About closes when you return to the player or switch apps; open it again from the app menu.
 
 ## License
 
@@ -119,7 +121,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.20.3, build 62 |
+| Version | 1.20.4, build 63 |
 
 
 See [release notes](versions.md) for what's changed.

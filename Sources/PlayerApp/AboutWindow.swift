@@ -6,8 +6,8 @@ final class AboutWindowController: NSWindowController, NSWindowDelegate {
     init(model: PlayerModel) {
         let window = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 560, height: 520),
             styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
-        window.appearance = NSAppearance(named: .aqua)
-        window.backgroundColor = .white
+        window.appearance = NSAppearance(named: .darkAqua)
+        window.backgroundColor = .windowBackgroundColor
         window.isFloatingPanel = true
         window.level = .floating
         // Close on focus/app changes instead of leaving an automatically restored hidden panel.
@@ -105,6 +105,6 @@ struct AboutView: View {
             }.frame(maxWidth: .infinity).padding(.bottom, 20)
         }
         .padding(.horizontal, 24).frame(width: 560, height: 520)
-        .background(.white).preferredColorScheme(.light)
+        .background(Color(nsColor: .windowBackgroundColor)).preferredColorScheme(.dark)
     }
 }
