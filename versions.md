@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.22.4 (build 71) — 2026-10-25
+
+### Added
+
+- None.
+
+### Modified
+
+- Keep left/right arrows available for caret movement in Library search and bookmark naming; disable arrow-key seeking while text entry is active.
+
+### Removed
+
+- None.
+
 ## 1.22.3 (build 70) — 2026-10-25
 
 ### Added

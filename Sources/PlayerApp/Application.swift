@@ -39,6 +39,11 @@ nonisolated final class PlayerMenu: NSMenu {
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let appIsFrontmost = MainActor.assumeIsolated { (NSApp.delegate as? AppDelegate)?.isPlayerAppFrontmost == true }
         guard appIsFrontmost else { return false }
+        let isHorizontalArrow = [123, 124].contains(event.keyCode)
+            || ["\u{f702}", "\u{f703}"].contains(event.charactersIgnoringModifiers ?? "")
+        if isHorizontalArrow, MainActor.assumeIsolated({
+            (NSApp.delegate as? AppDelegate)?.isEditingText == true
+        }) { return false }
         let plainKey = event.charactersIgnoringModifiers?.lowercased()
         let shortcutModifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
         if plainKey == "b" && shortcutModifiers == .option {
@@ -95,6 +100,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     var isFullScreenTransitioning: Bool { fullScreenTransition }
     var isPlayerAppFrontmost: Bool {
         NSApp.isActive && NSWorkspace.shared.frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier
+    }
+    var isEditingText: Bool {
+        let responder = NSApp.keyWindow?.firstResponder
+        return responder is NSTextView || responder is NSTextField || model.bookmarkNameTarget != nil
     }
     var canUseFocusedPlaybackShortcuts: Bool {
         guard isPlayerAppFrontmost, let window, window.isKeyWindow,
@@ -217,6 +226,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         if !["Quit Lola Player", "Hide Lola Player", "Close Window"].contains(title) {
             target.available = { [weak self] in
                 guard self?.model.libraryReady == true else { return false }
+                if ["\u{f702}", "\u{f703}"].contains(key), self?.isEditingText == true { return false }
                 if title == "About Lola Player" {
                     let responder = NSApp.keyWindow?.firstResponder
                     return !(responder is NSTextView) && !(responder is NSTextField) && NSApp.modalWindow == nil

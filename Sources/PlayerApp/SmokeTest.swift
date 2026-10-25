@@ -527,7 +527,64 @@ private final class DragProbeView: PlayerMouseView {
         }
     }
 
+    private static func runTypingArrowsOnly(model: PlayerModel, root: URL) {
+        Task { @MainActor in
+            var checks: [String] = []
+            var failure: String?
+            func check(_ valid: Bool, _ message: String) throws {
+                guard valid else { throw Failure(message: message) }
+                checks.append(message)
+            }
+            func field(in view: NSView?) -> NSTextField? {
+                guard let view else { return nil }
+                if let field = view as? NSTextField, field.isEditable { return field }
+                return view.subviews.compactMap { field(in: $0) }.first
+            }
+            do {
+                guard let delegate = NSApp.delegate as? AppDelegate else { throw Failure(message: "Missing delegate") }
+                model.librarySearchVisible = true; model.show(.playlist)
+                try await Task.sleep(for: .seconds(0.5))
+                let libraryWindow = delegate.libraryController!.window!
+                guard let search = field(in: libraryWindow.contentView) else { throw Failure(message: "Missing search input") }
+                search.stringValue = "abcdef"; libraryWindow.makeKeyAndOrderFront(nil); libraryWindow.makeFirstResponder(search)
+                guard let editor = libraryWindow.firstResponder as? NSTextView else { throw Failure(message: "Missing search field editor") }
+                editor.setSelectedRange(NSRange(location: 3, length: 0))
+                let position = model.position
+                for (key, code, expected) in [("\u{f702}", UInt16(123), 2), ("\u{f703}", UInt16(124), 3)] {
+                    let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                        windowNumber: libraryWindow.windowNumber, context: nil, characters: key,
+                        charactersIgnoringModifiers: key, isARepeat: false, keyCode: code)!
+                    try check(NSApp.mainMenu?.performKeyEquivalent(with: event) == false,
+                              "Arrow key is not consumed by playback menu during search editing")
+                    libraryWindow.sendEvent(event)
+                    try check(editor.selectedRange().location == expected && model.position == position,
+                              "Search arrow moves caret without seeking")
+                }
+                model.bookmarkNameTarget = PlayerModel.BookmarkNameTarget(recordID: UUID(), bookmarkID: UUID(), seconds: 0)
+                try check(delegate.isEditingText, "Bookmark naming suppresses seek shortcuts")
+                let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                    windowNumber: model.window!.windowNumber, context: nil, characters: "\u{f703}",
+                    charactersIgnoringModifiers: "\u{f703}", isARepeat: false, keyCode: 124)!
+                try check(NSApp.mainMenu?.performKeyEquivalent(with: event) == false && model.position == position,
+                          "Bookmark naming arrow does not seek")
+                model.bookmarkNameTarget = nil
+                libraryWindow.makeFirstResponder(nil); model.window?.makeKeyAndOrderFront(nil)
+                try check(!delegate.isEditingText, "Seek shortcuts become available after text editing ends")
+            } catch let error as Failure { failure = error.message }
+            catch { failure = error.localizedDescription }
+            model.bookmarkNameTarget = nil
+            let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]) {
+                try? data.write(to: root.appendingPathComponent("smoke-result.json"), options: .atomic)
+            }
+            model.shutdown(); NSApp.terminate(nil)
+        }
+    }
+
     static func run(model: PlayerModel, root: URL) {
+        if ProcessInfo.processInfo.environment["LOLA_SMOKE_TYPING_ARROWS_ONLY"] == "1" {
+            runTypingArrowsOnly(model: model, root: root); return
+        }
         if ProcessInfo.processInfo.environment["LOLA_SMOKE_BOOKMARK_MARKERS_ONLY"] == "1" {
             runBookmarkMarkersOnly(model: model, root: root); return
         }

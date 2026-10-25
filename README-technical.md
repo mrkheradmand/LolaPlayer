@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.22.3, build 70 |
+| Version | 1.22.4, build 71 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -310,6 +310,8 @@ A newer release displays a persistent in-app notice, including in media-only vie
 **About Lola Player** displays `Version <version> (Build <build>)` with an update section showing **Latest Version** after a successful check with no newer release, or a clickable **New version available!** link when a newer release exists. Its status updates live through the shared checker and remains available after the main notice is dismissed. Pending, unchecked, and failed checks have distinct labels and never claim the installed version is latest. **Check for Updates…** in About runs a manual check. The automatic-check checkbox is also in About; there is no separate Check for Updates app-menu command. The custom About panel uses the same dark theme as Settings in a 560 × 520 layout with a centered app icon, name, tagline, and monospaced version/build read from the running bundle. A separated update section contains the manual-check button, automatic-check checkbox, and live status. Repository, Releases, and MIT License links sit above copyright and native-technology credits in the footer. It closes when it loses key focus or the app becomes inactive, rather than using hide-on-deactivate restoration. Returning to the player or changing playback/window level cannot reopen the dismissed panel; choose About from the app menu to open it again.
 
 Requests use an ephemeral session with no app-provided credentials or cookies. GitHub receives a normal HTTPS request and a User-Agent containing the app version; media files, library records, and bookmarks are not sent. Normal playback does not depend on successful update checks. Smoke-test launches suppress automatic checks.
+
+Left and right arrows move the text cursor while editing Library search or a bookmark name; playback seeking is disabled during text entry.
 
 ## Keyboard shortcuts
 

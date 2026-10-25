@@ -26,6 +26,8 @@ Settings shows the app version and build beneath Lola Player in its sidebar.
 
 The Settings button sits beside the volume slider. Playback buttons turn green and show a pointing-hand cursor on hover, without a background highlight. Small yellow ticks on the seek bar mark the current file’s bookmarks and update when bookmarks change.
 
+Left and right arrows move the text cursor while editing Library search or a bookmark name; playback seeking is disabled during text entry.
+
 ## Install
 
 1. Download the latest **.dmg** from the link above.
@@ -126,7 +128,7 @@ Copyright © 2026 J Kheradmand. Bundled playback libraries retain their own lice
 
 | App | Release |
 | --- | --- |
-| Version | 1.22.3, build 70 |
+| Version | 1.22.4, build 71 |
 
 
 See [release notes](versions.md) for what's changed.<br>
