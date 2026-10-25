@@ -1,4 +1,4 @@
-[Features](#features) | [Supported file types](#supported-file-types) | [Quick controls](#quick-controls) | [Download](https://github.com/mrkheradmand/LolaPlayer/releases/latest) | [Versions](versions.md) | [License](LICENSE)
+[✨ Features](#features) | [🎞️ Supported file types](#supported-file-types) | [⌨️ Quick controls](#quick-controls) | [⬇️ Download](https://github.com/mrkheradmand/LolaPlayer/releases/latest) | [🕘 Versions](versions.md) | [⚖️ License](LICENSE)
 
 # Lola Player
 
@@ -129,4 +129,5 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 
 See [release notes](versions.md) for what's changed.
+
 See [Technical README](README-technical.md) for advanced users.
