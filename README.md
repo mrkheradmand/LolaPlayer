@@ -52,7 +52,7 @@ The app uses a flat mint-green play icon on a charcoal tile, with transparent pa
 
 To keep Lola in the Dock after closing its window, enable **Settings → General → Keep running when the player window closes**. Closing pauses playback; click the Dock icon to reopen, then press Play to resume. **⌘Q** quits the app. The setting is off by default.
 
-Drag media files or folders onto **Library → Playlist** to add them without starting playback. Folders include media in all subfolders; existing playlist items are not duplicated. Drag a Playlist card over the upper or lower half of another card to choose the insertion line; drop below the last item to move it to the end. The order is remembered. Played files show their current-time value in green. Fully watched files also show a green “Watched” label after the bookmark count. Status is remembered between launches. Bookmark counts and watch status update in the open Playlist automatically. Opening Library or switching tabs scrolls the playing file near the top when it is in the visible results. Click the search icon beside + to show or hide the search area with a short fade. Its existing search field and sorting panel are unchanged. Click the sorting icon at the right of Search to reveal sorting options below it. Choose a sort button; click it again to reverse the direction shown by its arrow. Playlist also offers an Only current folder switch.
+Drag media files or folders onto **Library → Playlist** to add them without starting playback. Folders include media in all subfolders; existing playlist items are not duplicated. Drag a Playlist card over the upper or lower half of another card to choose the insertion line; drop below the last item to move it to the end. The order is remembered. Partially played files show their current-time value in green. Fully watched files return that time to gray and show a green “Watched” label after the bookmark count. Status is remembered between launches. Bookmark counts and watch status update in the open Playlist automatically. Opening Library or switching tabs scrolls the playing file near the top when it is in the visible results. Click the search icon beside + to show or hide the search area with a short fade. Its existing search field and sorting panel are unchanged. Click the sorting icon at the right of Search to reveal sorting options below it. Choose a sort button; click it again to reverse the direction shown by its arrow. Playlist also offers an Only current folder switch.
 
 The menu and player window open before your library and playback engine finish loading.
 
@@ -128,7 +128,7 @@ Copyright © 2026 J Kheradmand. Bundled playback libraries retain their own lice
 
 | App | Release |
 | --- | --- |
-| Version | 1.22.4, build 71 |
+| Version | 1.22.5, build 72 |
 
 
 See [release notes](versions.md) for what's changed.<br>

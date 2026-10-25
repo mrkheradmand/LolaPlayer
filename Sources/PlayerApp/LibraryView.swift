@@ -117,7 +117,7 @@ struct LibraryView: View {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(record.name).font(.system(size: 13, weight: .medium)).lineLimit(2).multilineTextAlignment(.leading)
                                         (Text(timestamp(record.position))
-                                            .foregroundColor(model.tab == .playlist && record.hasBeenPlayed ? .green : nil)
+                                            .foregroundColor(model.tab == .playlist && record.hasBeenPlayed && record.hasFinishedPlayback != true ? .green : nil)
                                             + Text(" / \(timestamp(record.duration)) · \(record.bookmarks.count) bookmarks")
                                             + Text(model.tab == .playlist ? record.watchStatus.map { " · " + $0 } ?? "" : "").foregroundColor(.green))
                                             .font(.system(size: 11)).foregroundStyle(.secondary)

@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.22.5 (build 72) — 2026-10-25
+
+### Added
+
+- None.
+
+### Modified
+
+- Return the playlist current-time value to gray for completed files while retaining the green Watched label.
+
+### Removed
+
+- None.
+
 ## 1.22.4 (build 71) — 2026-10-25
 
 ### Added
