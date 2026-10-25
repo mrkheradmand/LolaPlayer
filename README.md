@@ -1,3 +1,5 @@
+[Features](#features) | [Supported file types](#supported-file-types) | [Quick controls](#quick-controls) | [Download](https://github.com/mrkheradmand/LolaPlayer/releases/latest) | [Versions](versions.md) | [License](LICENSE)
+
 # Lola Player
 
 A video and audio player for Mac. Save and name your favorite moments with bookmarks, find them across your files, and jump straight back to them. Keep the player on top while a video plays; it returns to normal when paused.
@@ -18,7 +20,7 @@ Hide the last-played filename on the welcome screen in **Settings → General �
 
 In full screen, playback controls and the pointer hide after five seconds without mouse movement. Move the mouse to show them again.
 
-After saving a bookmark, click its confirmation within three seconds to name it. Enter saves the name; Escape or an empty name keeps the saved bookmark.
+After saving a bookmark, click its confirmation within three seconds to open the frosted-glass naming bar. Type in **Name this bookmark** and press **Add** or Enter to save the name; Escape or an empty name keeps the saved bookmark.
 
 Settings shows the app version and build beneath Lola Player in its sidebar.
 
@@ -123,7 +125,7 @@ Lola Player’s original code and documentation are available under the [MIT Lic
 
 | App | Release |
 | --- | --- |
-| Version | 1.22.2, build 69 |
+| Version | 1.22.3, build 70 |
 
 
 See [release notes](versions.md) for what's changed.

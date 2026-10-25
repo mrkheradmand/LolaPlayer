@@ -8,26 +8,34 @@ struct BookmarkNamePrompt: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.12).contentShape(Rectangle())
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Name Bookmark").font(.headline)
-                TextField("Bookmark name", text: $name)
-                    .textFieldStyle(.roundedBorder).focused($focused)
-                    .onSubmit { model.finishBookmarkNaming(name) }
-                    .accessibilityLabel("Bookmark name")
-                HStack {
-                    Text("Leave empty to keep the saved bookmark.")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Spacer()
-                    Button("Cancel") { model.finishBookmarkNaming(nil) }.keyboardShortcut(.cancelAction)
-                    Button("Save") { model.finishBookmarkNaming(name) }.keyboardShortcut(.defaultAction)
+        GeometryReader { geometry in
+            ZStack {
+                Color.black.opacity(0.12).contentShape(Rectangle())
+                HStack(spacing: 14) {
+                    Image(systemName: "bubble.and.pencil")
+                        .font(.system(size: 22, weight: .regular))
+                        .foregroundStyle(.primary.opacity(0.8))
+                        .accessibilityHidden(true)
+                    TextField("Name this bookmark", text: $name)
+                        .textFieldStyle(.plain).font(.system(size: 14))
+                        .foregroundStyle(.white)
+                        .focused($focused)
+                        .onSubmit { model.finishBookmarkNaming(name) }
+                        .accessibilityLabel("Name this bookmark")
+                    Button { model.finishBookmarkNaming(name) } label: {
+                        Text("Add").font(.system(size: 13, weight: .semibold))
+                            .frame(minWidth: 48, minHeight: 26)
+                    }
+                    .buttonStyle(.borderedProminent).tint(.blue).controlSize(.large)
+                    .keyboardShortcut(.defaultAction)
+                    .accessibilityLabel("Add bookmark name")
                 }
-            }
-            .padding(18).frame(width: 360)
-            .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.18)))
-            .shadow(color: .black.opacity(0.3), radius: 16, y: 6)
+                .padding(12)
+                .frame(width: min(520, max(0, geometry.size.width - 40)))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                .shadow(color: .black.opacity(0.25), radius: 16, y: 6)
+                .environment(\.colorScheme, .light)
+            }.frame(width: geometry.size.width, height: geometry.size.height)
         }
         .onAppear { focused = true }
         .onExitCommand { model.finishBookmarkNaming(nil) }

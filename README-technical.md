@@ -26,7 +26,7 @@ This is an independent implementation of the core free-player workflow. It is **
 
 | App information | Value |
 | --- | --- |
-| Version | 1.22.2, build 69 |
+| Version | 1.22.3, build 70 |
 | Bundle identifier | `local.lolaplayer.app` |
 | Current packaged architecture | Apple Silicon / arm64 |
 | macOS requirement | macOS 27 or later |
@@ -94,7 +94,7 @@ Save multiple moments in each video, name them for easy reference, and keep them
 
 - **Save a selected time:** seek to the moment you want, then press **⌘B** or click the bookmark button.
 - **Save with a name:** press **⌥B** to enter a name before saving, regardless of the bookmark-naming preference. Cancel leaves bookmarks unchanged.
-- **Name after saving:** click the saved-bookmark confirmation within three seconds to open a small centered dialog with an 80% opaque background. Enter saves the name; Escape, Cancel, or an empty/whitespace-only Enter dismisses it while retaining the saved bookmark. Naming edits that exact bookmark, even if playback moves or another file opens. This works in full screen and media-only mode.
+- **Name after saving:** click the saved-bookmark confirmation within three seconds to open a compact centered borderless frosted-glass bar with white entered text, a comment icon, a **Name this bookmark** text field, and an **Add** button. Add or Enter saves the name; Escape or an empty/whitespace-only submission dismisses it while retaining the saved bookmark. Naming edits that exact bookmark, even if playback moves or another file opens. This works in full screen and media-only mode.
 - **Give it a name:** choose **… → Edit…** to enter a descriptive name, such as “Favorite scene” or “Chapter 2 explanation.” You can also adjust its saved time in seconds.
 - **Keep every bookmark in one list:** open **View → Show All Bookmarks** or press **⇧⌘B** to browse bookmarks from all files, grouped by video.
 - **Search your saved moments:** filter the list by bookmark name or filename.

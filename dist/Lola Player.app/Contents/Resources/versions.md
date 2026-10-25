@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.22.3 (build 70) — 2026-10-25
+
+### Added
+
+- None.
+
+### Modified
+
+- Redesign bookmark naming as a compact centered frosted-glass bar with a comment icon, Name this bookmark placeholder, and Add button, without title or footer text; use a borderless surface and white entered text.
+
+### Removed
+
+- None.
+
 ## 1.22.2 (build 69) — 2026-10-24
 
 ### Added

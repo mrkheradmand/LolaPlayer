@@ -3,7 +3,7 @@
 Research/*
 !Research/test-media/
 Screenshots/
-AGENTS.md
+#AGENTS.md
 Runtime/Frameworks/
 Runtime/source.json
 __pycache__/
@@ -12,4 +12,4 @@ dist/releases/
 DeveloperDocs/
 dist/releases/old/
 /.codex/
-docs/
+#docs/
