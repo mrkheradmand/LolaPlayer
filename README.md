@@ -1,4 +1,6 @@
-[✨ Features](#features) | [🎞️ Supported file types](#supported-file-types) | [⌨️ Quick controls](#quick-controls) | [⬇️ Download](https://github.com/mrkheradmand/LolaPlayer/releases/latest) | [🕘 Versions](versions.md) | [⚖️ License](LICENSE)
+[Features](#features) | [Supported file types](#supported-file-types) | [⌨Quick controls](#quick-controls) | [⬇Download](https://github.com/mrkheradmand/LolaPlayer/releases/latest) | [Versions](versions.md) | [License](LICENSE)
+
+✨ [Features](#features) | 🎞️ [Supported file types](#supported-file-types) | ⌨️ [Quick controls](#quick-controls) | ⬇️ [Download](https://github.com/mrkheradmand/LolaPlayer/releases/latest) | 🕘 [Versions](versions.md) | ⚖️ [License](LICENSE)
 
 # Lola Player
 
@@ -119,7 +121,8 @@ To turn automatic checks off, uncheck **Automatically check for updates** in **L
 
 ## License
 
-Lola Player’s original code and documentation are available under the [MIT License](LICENSE). Copyright © 2026 J Kheradmand. Bundled playback libraries retain their own licenses.
+Lola Player’s original code and documentation are available under the [MIT License](LICENSE). <br>
+Copyright © 2026 J Kheradmand. Bundled playback libraries retain their own licenses.
 
 ## Version
 
