@@ -20,7 +20,7 @@ Please include:
 - The potential security impact.
 - Any relevant logs or screenshots, excluding sensitive personal information.
 
-[Report a Security Vulnerability](/security)
+[Report a Security Vulnerability](../../security)
 
 **Do not publicly disclose security vulnerabilities** through GitHub Issues or Discussions before the developer has had an opportunity to investigate them.
 
