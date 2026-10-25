@@ -1,5 +1,3 @@
-[Features](#features) | [Supported file types](#supported-file-types) | [⌨Quick controls](#quick-controls) | [⬇Download](https://github.com/mrkheradmand/LolaPlayer/releases/latest) | [Versions](versions.md) | [License](LICENSE)
-
 ✨ [Features](#features) | 🎞️ [Supported file types](#supported-file-types) | ⌨️ [Quick controls](#quick-controls) | ⬇️ [Download](https://github.com/mrkheradmand/LolaPlayer/releases/latest) | 🕘 [Versions](versions.md) | ⚖️ [License](LICENSE)
 
 # Lola Player
