@@ -109,7 +109,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     }
     func selectLibrarySort(_ option: LibrarySort) {
         if librarySort == option { librarySortAscending.toggle() }
-        else { librarySort = option; librarySortAscending = false }
+        else { librarySort = option; librarySortAscending = option == .name }
     }
     var librarySortAscending: Bool {
         get {

@@ -238,7 +238,7 @@ struct LibraryView: View {
                                 .frame(width: 16).foregroundStyle(model.librarySort == option ? Color.accentColor : .secondary)
                             Text(option.rawValue).font(.system(size: 11, weight: .medium)).lineLimit(1)
                             Spacer(minLength: 0)
-                            Image(systemName: model.librarySort == option && model.librarySortAscending ? "arrow.up" : "arrow.down")
+                            Image(systemName: (model.librarySort == option ? model.librarySortAscending : option == .name) ? "arrow.up" : "arrow.down")
                                 .font(.system(size: 10, weight: .semibold))
                                 .foregroundStyle(model.librarySort == option ? Color.accentColor : .secondary)
                         }.padding(.horizontal, 10).padding(.vertical, 9).frame(maxWidth: .infinity)
@@ -270,6 +270,7 @@ struct LibraryView: View {
     }
     private func sortSymbol(_ option: LibrarySort) -> String {
         switch option {
+        case .name: "textformat.abc"
         case .playlistOrder: "list.bullet"
         case .dateAdded: "calendar.badge.plus"
         case .lastPlayed, .datePlayed: "clock"
@@ -278,9 +279,9 @@ struct LibraryView: View {
     }
     private var sortOptions: [LibrarySort] {
         switch model.tab {
-        case .playlist: [.dateAdded, .lastPlayed, .watchedTill]
+        case .playlist: [.name, .dateAdded, .lastPlayed, .watchedTill]
         case .history: [.datePlayed]
-        case .bookmarks: [.dateAdded, .lastPlayed, .watchedTill]
+        case .bookmarks: [.name, .dateAdded, .lastPlayed, .watchedTill]
         }
     }
     private func revealPlaying(_ scroll: ScrollViewProxy) {

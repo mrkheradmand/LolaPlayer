@@ -3,6 +3,19 @@ import Testing
 @testable import PlayerCore
 
 struct LibrarySortingTests {
+    @Test func filenameSortingUsesNaturalOrderAndReverses() {
+        let names = ["Episode 10.mp4", "episode 2.mp4", "Episode 1.mp4"]
+        let records = names.map { MediaRecord(location: URL(fileURLWithPath: "/tmp/" + $0)) }
+        #expect(LibrarySorting.sorted(records, by: .name, ascending: true).map(\.name)
+            == ["Episode 1.mp4", "episode 2.mp4", "Episode 10.mp4"])
+        #expect(LibrarySorting.sorted(records, by: .name, ascending: false).map(\.name)
+            == ["Episode 10.mp4", "episode 2.mp4", "Episode 1.mp4"])
+        var duplicate = records[0]
+        duplicate.id = UUID()
+        #expect(LibrarySorting.sorted([records[0], duplicate], by: .name, ascending: true).map(\.id)
+            == [records[0].id, duplicate.id])
+    }
+
     @Test func sortsDatesPositionsAndKeepsStableTies() {
         var a = MediaRecord(location: URL(fileURLWithPath: "/tmp/a.mp4"))
         var b = MediaRecord(location: URL(fileURLWithPath: "/tmp/b.mp4"))

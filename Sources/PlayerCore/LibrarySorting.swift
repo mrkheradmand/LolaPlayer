@@ -1,6 +1,7 @@
 import Foundation
 
 public enum LibrarySort: String, CaseIterable, Sendable {
+    case name = "Name"
     case playlistOrder = "Playlist order"
     case dateAdded = "Date added"
     case lastPlayed = "Last played"
@@ -14,7 +15,7 @@ public enum LibrarySorting {
         guard sort != .playlistOrder else { return records }
         func value(_ record: MediaRecord) -> Double {
             switch sort {
-            case .playlistOrder: return 0
+            case .name, .playlistOrder: return 0
             case .dateAdded:
                 let date = bookmarkDates ? record.bookmarks.compactMap(\.addedAt).max() : record.addedAt
                 return (date ?? record.addedAt ?? record.lastOpened).timeIntervalSinceReferenceDate
@@ -26,6 +27,11 @@ public enum LibrarySorting {
             }
         }
         return records.enumerated().sorted {
+            if sort == .name {
+                let order = $0.element.name.localizedStandardCompare($1.element.name)
+                if order == .orderedSame { return $0.offset < $1.offset }
+                return ascending ? order == .orderedAscending : order == .orderedDescending
+            }
             let a = value($0.element), b = value($1.element)
             if a == b { return $0.offset < $1.offset }
             return ascending ? a < b : a > b

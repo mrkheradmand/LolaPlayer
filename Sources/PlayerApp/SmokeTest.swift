@@ -412,11 +412,19 @@ private final class DragProbeView: PlayerMouseView {
                           "Selecting the active sort button reverses direction")
                 model.selectLibrarySort(.lastPlayed)
                 try check(!model.librarySortAscending, "Selecting another sort starts descending")
+                model.selectLibrarySort(.name)
+                try check(model.librarySortAscending && view.displayedRecords.first?.id == ids.first,
+                          "Playlist Name sorting starts A–Z")
+                model.selectLibrarySort(.name)
+                try check(!model.librarySortAscending && view.displayedRecords.first?.id == ids.last,
+                          "Playlist Name sorting reverses to Z–A")
+
                 model.historyAscending = true; model.tab = .history
                 try await Task.sleep(for: .seconds(0.8))
                 try check((scrollView(in: panel?.contentView)?.contentView.bounds.origin.y ?? 0) > 100,
                           "Switching to History reveals current media")
-                model.bookmarksAscending = true; model.tab = .bookmarks
+                model.bookmarksSort = .name; model.bookmarksAscending = true; model.tab = .bookmarks
+                try check(view.displayedRecords.first?.id == ids.first, "Bookmarks Name sorting uses filenames")
                 try await Task.sleep(for: .seconds(0.8))
                 try check((scrollView(in: panel?.contentView)?.contentView.bounds.origin.y ?? 0) > 100,
                           "Switching to Bookmarks reveals current file group")

@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.23.0 (build 73) — 2026-10-25
+
+### Added
+
+- Name sorting as the first option in Playlist and Bookmarks, using natural filename order with A–Z/Z–A reversal.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
 ## 1.22.5 (build 72) — 2026-10-25
 
 ### Added
