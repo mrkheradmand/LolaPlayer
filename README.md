@@ -1,6 +1,18 @@
-✨ [Features](#features) | 🎞️ [Supported file types](#supported-file-types) | ⌨️ [Quick controls](#quick-controls) | ⬇️ [Download](https://github.com/mrkheradmand/LolaPlayer/releases/latest) | 🕘 [Versions](versions.md) | ⚖️ [License](LICENSE)
+<p align="center">
+  <img src="Resources/LolaPlayerIcon.png" alt="Lola Player welcome screen" width="75">
+ </p>
+ 
+ <p align="center" style="font-size: 1.5em; font-weight: bold;">
+  Lola Player
+  </p>
+  
+ 
+<p align="center">
+  ✨ <a href="#features">Features</a> | 🎞️ <a href="#supported-file-types">Supported file types</a> | ⌨️ <a href="#quick-controls">Quick controls</a> | ⬇️ <a href="https://github.com/mrkheradmand/LolaPlayer/releases/latest">Download</a> | 🕘 <a href="versions.md">Versions</a> | ⚖️ <a href="LICENSE">License</a>
+</p>
+  
 
-# Lola Player
+<br />
 
 A video and audio player for Mac. Save and name your favorite moments with bookmarks, find them across your files, and jump straight back to them. Keep the player on top while a video plays; it returns to normal when paused.
 
