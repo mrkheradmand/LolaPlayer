@@ -229,8 +229,7 @@ struct LibraryView: View {
                 Spacer()
                 Text(model.tab.rawValue).font(.system(size: 10, weight: .medium)).foregroundStyle(.tertiary)
             }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6),
-                                    count: sortOptions.count == 1 ? 1 : 2), spacing: 6) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 2), spacing: 6) {
                 ForEach(sortOptions, id: \.self) { option in
                     Button { model.selectLibrarySort(option) } label: {
                         HStack(spacing: 8) {
@@ -280,7 +279,7 @@ struct LibraryView: View {
     private var sortOptions: [LibrarySort] {
         switch model.tab {
         case .playlist: [.name, .dateAdded, .lastPlayed, .watchedTill]
-        case .history: [.datePlayed]
+        case .history: [.name, .datePlayed]
         case .bookmarks: [.name, .dateAdded, .lastPlayed, .watchedTill]
         }
     }

@@ -87,6 +87,72 @@ struct LibraryTests {
         #expect(throws: (any Error).self) { _ = try MediaLibrary(fileURL: library.fileURL) }
         #expect(try Data(contentsOf: library.fileURL) == invalid)
     }
+    @Test func legacyLibraryCompactsWithoutLosingRecords() throws {
+        let (root, library) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let media = root.appendingPathComponent("file.mp4")
+        try Data("fixture".utf8).write(to: media)
+        let id = try library.visit(media)
+        try library.updatePosition(id, seconds: 42, duration: 300)
+        try library.addBookmark(id, seconds: 20, title: "Saved moment")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let legacy = try encoder.encode(library.records)
+        try legacy.write(to: library.fileURL)
+
+        let reopened = try MediaLibrary(fileURL: library.fileURL)
+        let compact = try Data(contentsOf: library.fileURL)
+        #expect(compact.count < legacy.count)
+        #expect(reopened.fileSize == Int64(compact.count))
+        #expect(try JSONDecoder().decode([MediaRecord].self, from: compact) == library.records)
+        #expect(reopened.records == library.records)
+    }
+
+    @Test func legacyStorageMovesOnceWithoutOverwritingCurrentLibrary() throws {
+        let (root, _) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let legacy = root.appendingPathComponent("LumenPlayer", isDirectory: true)
+        let current = root.appendingPathComponent("LolaPlayer", isDirectory: true)
+        let old = try MediaLibrary(fileURL: legacy.appendingPathComponent("library.json"))
+        let id = try old.visit(try #require(URL(string: "https://example.com/video.mp4")))
+        try old.addBookmark(id, seconds: 42, title: "Saved moment")
+        let recoveryName = "library-recovery-\(UUID()).json"
+        try FileManager.default.copyItem(at: old.fileURL, to: legacy.appendingPathComponent(recoveryName))
+
+        try MediaLibrary.migrateDirectory(from: legacy, to: current)
+        let migrated = try MediaLibrary(fileURL: current.appendingPathComponent("library.json"))
+        #expect(migrated.records == old.records)
+        #expect(FileManager.default.fileExists(atPath: current.appendingPathComponent(recoveryName).path))
+        #expect(!FileManager.default.fileExists(atPath: legacy.path))
+
+        try old.removeAll()
+        try old.save()
+        try MediaLibrary.migrateDirectory(from: legacy, to: current)
+        #expect(try MediaLibrary(fileURL: migrated.fileURL).records == migrated.records)
+        #expect(FileManager.default.fileExists(atPath: old.fileURL.path))
+    }
+
+    @Test func removingLibraryDiscardsQueuedSavesAndLeavesMediaIntact() throws {
+        let (root, library) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let media = root.appendingPathComponent("file.mp4")
+        try Data("fixture".utf8).write(to: media)
+        let id = try library.visit(media)
+        library.enableBackgroundSaving()
+        try library.addBookmark(id, seconds: 20, title: "Pending")
+
+        try library.removeAll()
+        try library.flush()
+        #expect(library.records.isEmpty)
+        #expect(library.fileSize == 0)
+        #expect(!FileManager.default.fileExists(atPath: library.fileURL.path))
+        #expect(try MediaLibrary(fileURL: library.fileURL).records.isEmpty)
+        #expect(FileManager.default.fileExists(atPath: media.path))
+        try library.removeAll()
+        let newID = try library.visit(media)
+        try library.flush()
+        #expect(newID != id)
+        #expect(try MediaLibrary(fileURL: library.fileURL).record(newID)?.bookmarks.isEmpty == true)
+    }
     @Test func bookmarkEditingAndDeletionArePerFile() throws {
         let (root, library) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         let a = try library.visit(URL(fileURLWithPath: "/tmp/a.mp4"))

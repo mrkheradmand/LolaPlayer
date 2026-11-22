@@ -267,6 +267,38 @@ private final class DragProbeView: PlayerMouseView {
                 model.setFullScreenControls(false)
                 try await Task.sleep(for: .seconds(5.3))
                 try check(!model.fullScreenControlsHidden && !model.fullScreenPointerHidden && !model.isFullScreen, "Windowed controls and pointer remain visible after timeout")
+
+                guard let player, let screen = NSScreen.screens.first else {
+                    throw Failure(message: "No player window or screen for media-only pointer test")
+                }
+                player.setFrame(NSRect(x: screen.visibleFrame.minX + 50, y: screen.visibleFrame.minY + 50,
+                                       width: 800, height: 420), display: true)
+                func movePointer(to point: CGPoint) {
+                    let location = CGPoint(x: point.x, y: screen.frame.maxY - point.y)
+                    CGWarpMouseCursorPosition(location)
+                    CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: location,
+                            mouseButton: .left)?.post(tap: .cghidEventTap)
+                }
+                model.setMediaOnly(true)
+                let inside = CGPoint(x: player.frame.midX, y: player.frame.midY)
+                let outside = CGPoint(x: player.frame.minX - 20, y: player.frame.midY)
+                movePointer(to: inside)
+                try await Task.sleep(for: .seconds(5.3))
+                try check(!model.mediaOnlySeekBarHidden, "Media-only seek bar stays visible while the pointer is inside")
+                movePointer(to: outside)
+                try await Task.sleep(for: .seconds(3))
+                try check(!player.frame.contains(NSEvent.mouseLocation), "Native pointer moved outside the media-only window")
+                try check(!model.mediaOnlySeekBarHidden, "Media-only seek bar stays visible during the five-second grace period")
+                movePointer(to: inside)
+                try await Task.sleep(for: .seconds(2.5))
+                try check(!model.mediaOnlySeekBarHidden, "Pointer reentry cancels the pending media-only hide")
+                movePointer(to: outside)
+                try await Task.sleep(for: .seconds(5.3))
+                try check(model.mediaOnlySeekBarHidden, "Media-only seek bar hides after five seconds outside the player")
+                movePointer(to: inside)
+                try await Task.sleep(for: .seconds(0.2))
+                try check(!model.mediaOnlySeekBarHidden, "Pointer reentry reveals the media-only seek bar immediately")
+                model.setMediaOnly(false)
             } catch let error as Failure { failure = error.message }
             catch { failure = error.localizedDescription }
             let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": skipped, "failure": failure ?? NSNull()]
@@ -423,6 +455,12 @@ private final class DragProbeView: PlayerMouseView {
                 try await Task.sleep(for: .seconds(0.8))
                 try check((scrollView(in: panel?.contentView)?.contentView.bounds.origin.y ?? 0) > 100,
                           "Switching to History reveals current media")
+                model.selectLibrarySort(.name)
+                try check(model.librarySortAscending && view.displayedRecords.first?.id == ids.first,
+                          "History Name sorting starts A–Z")
+                model.selectLibrarySort(.name)
+                try check(!model.librarySortAscending && view.displayedRecords.prefix(2).map(\.id) == [other, ids[59]],
+                          "History Name sorting reverses to Z–A")
                 model.bookmarksSort = .name; model.bookmarksAscending = true; model.tab = .bookmarks
                 try check(view.displayedRecords.first?.id == ids.first, "Bookmarks Name sorting uses filenames")
                 try await Task.sleep(for: .seconds(0.8))
@@ -435,6 +473,18 @@ private final class DragProbeView: PlayerMouseView {
                 model.play(ids[0])
                 try check(model.error?.contains("unavailable") == true && model.library.record(ids[0])?.bookmarks.count == count,
                           "Missing media reports unavailable and preserves bookmarks")
+                model.error = nil
+                try model.library.flush()
+                let libraryFile = model.library.fileURL
+                let recovery = libraryFile.deletingLastPathComponent().appendingPathComponent("library-recovery-\(UUID()).json")
+                try FileManager.default.copyItem(at: libraryFile, to: recovery)
+                try check((model.library.fileSize ?? 0) > 0, "Library data has a measurable saved file size")
+                try model.removeLibraryData()
+                try model.library.flush()
+                try check(model.playlistRecords.isEmpty && model.historyRecords.isEmpty && model.records.isEmpty && model.currentID == nil,
+                          "Removing data clears Playlist, History, Bookmarks, and the current item")
+                try check(model.library.fileSize == 0 && !FileManager.default.fileExists(atPath: recovery.path),
+                          "Removing data deletes the saved library and its recovery files")
             } catch let error as Failure { failure = error.message }
             catch { failure = error.localizedDescription }
             let report: [String: Any] = ["passed": failure == nil, "checks": checks, "skipped": [], "failure": failure ?? NSNull()]

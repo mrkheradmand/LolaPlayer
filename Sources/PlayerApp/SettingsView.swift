@@ -27,6 +27,8 @@ private typealias SettingsState<Value> = SwiftUI.State<Value>
 struct SettingsView: View {
     @Bindable var model: PlayerModel
     @SettingsState private var selection: SettingsPage? = .general
+    @SettingsState private var confirmingDataRemoval = false
+    @SettingsState private var removalError: String?
     private var page: SettingsPage { selection ?? .general }
 
     init(model: PlayerModel, initialPage: SettingsPage = .general) {
@@ -161,6 +163,35 @@ struct SettingsView: View {
                     Button("All Bookmarks") { model.show(.bookmarks); model.settingsOpen = false }
                     Button("Import Bookmarks…") { model.importBookmarks() }
                 }.padding(.top, 4)
+            }
+            card("Library data") {
+                HStack {
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        if let size = model.library.fileSize {
+                            let formatted = size == 0 ? "0 bytes" : ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
+                            Text("Data file size: \(formatted)")
+                        } else {
+                            Text("Data file size unavailable")
+                        }
+                    }.font(.callout).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Remove Data") { confirmingDataRemoval = true }
+                        .buttonStyle(.borderedProminent).tint(.red)
+                        .disabled(!model.libraryReady)
+                }
+                if let removalError {
+                    Text(removalError).font(.callout).foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .alert("Remove library data?", isPresented: $confirmingDataRemoval) {
+                Button("Cancel", role: .cancel) {}
+                Button("Remove Data", role: .destructive) {
+                    do { try model.removeLibraryData(); removalError = nil }
+                    catch { removalError = "Could not remove library data. \(error.localizedDescription)" }
+                }
+            } message: {
+                Text("This permanently clears your playlist, history, bookmarks, and saved playback positions. Playback will stop. Your media files stay on disk.")
             }
         }
     }

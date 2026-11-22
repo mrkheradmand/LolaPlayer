@@ -127,7 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         window.collectionBehavior = [.fullScreenPrimary]; window.delegate = self
         window.acceptsMouseMovedEvents = true
         (window as? PlayerWindow)?.pointerActivity = { [weak self] in
-            guard let self, self.model.isFullScreen else { return }
+            guard let self, self.model.isFullScreen, !self.model.mediaOnly else { return }
             self.model.revealFullScreenControls()
         }
         window.center()

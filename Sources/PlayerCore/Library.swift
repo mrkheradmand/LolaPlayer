@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 public struct MediaBookmark: Codable, Identifiable, Equatable, Sendable {
@@ -55,6 +56,15 @@ public final class MediaLibrary {
     public init(fileURL: URL, records: [MediaRecord]) {
         self.fileURL = fileURL; self.records = records
     }
+    public static func migrateDirectory(from legacy: URL, to current: URL) throws {
+        let manager = FileManager.default
+        guard !manager.fileExists(atPath: current.path), manager.fileExists(atPath: legacy.path) else { return }
+        do { try manager.moveItem(at: legacy, to: current) }
+        catch {
+            // Another launch may have completed the move.
+            if !manager.fileExists(atPath: current.path) { throw error }
+        }
+    }
     public func enableBackgroundSaving() { writer = LibraryWriter(url: fileURL) }
     public func flush() throws { try writer?.flush() }
     public func takeSaveError() -> String? { writer?.takeError() }
@@ -69,8 +79,21 @@ public final class MediaLibrary {
     public init(fileURL: URL) throws {
         self.fileURL = fileURL
         if FileManager.default.fileExists(atPath: fileURL.path) {
-            records = try JSONDecoder().decode([MediaRecord].self, from: Data(contentsOf: fileURL))
+            let data = try Data(contentsOf: fileURL)
+            records = try JSONDecoder().decode([MediaRecord].self, from: data)
+            if data.starts(with: "[\n".utf8) {
+                // Normal saves can retry if the existing library is temporarily read-only.
+                try? Self.write(records, to: fileURL)
+            }
         }
+    }
+    public var fileSize: Int64? {
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+            return (attributes[.size] as? NSNumber)?.int64Value
+        } catch let error as CocoaError where error.code == .fileNoSuchFile || error.code == .fileReadNoSuchFile {
+            return 0
+        } catch { return nil }
     }
     public var recent: [MediaRecord] { records.sorted { $0.lastOpened > $1.lastOpened } }
     public var history: [MediaRecord] { recent.filter { $0.isInHistory != false } }
@@ -204,8 +227,28 @@ public final class MediaLibrary {
     public func save() throws {
         guard batchDepth == 0 else { return }
         if let writer { writer.submit(records); return }
+        try Self.write(records, to: fileURL)
+    }
+
+    public func removeAll() throws {
+        if let writer { try writer.removeFile() }
+        else { try Self.removeFile(at: fileURL) }
+        records.removeAll()
+    }
+
+    fileprivate static func removeFile(at url: URL) throws {
+        try url.withUnsafeFileSystemRepresentation { path in
+            guard let path else { throw CocoaError(.fileWriteInvalidFileName) }
+            if unlink(path) != 0 && errno != ENOENT {
+                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            }
+        }
+    }
+
+    fileprivate static func write(_ records: [MediaRecord], to fileURL: URL) throws {
         try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.withoutEscapingSlashes]
         try encoder.encode(records).write(to: fileURL, options: .atomic)
     }
 }
@@ -232,14 +275,20 @@ private final class LibraryWriter: @unchecked Sendable {
         lock.lock(); let snapshot = pending; pending = nil; lock.unlock()
         guard let snapshot else { return }
         do {
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            try encoder.encode(snapshot).write(to: url, options: .atomic)
+            try MediaLibrary.write(snapshot, to: url)
             lock.lock(); failure = nil; lock.unlock()
         } catch {
             lock.lock()
             if pending == nil { pending = snapshot }
             failure = error.localizedDescription
+            lock.unlock()
+        }
+    }
+    func removeFile() throws {
+        try queue.sync {
+            try MediaLibrary.removeFile(at: url)
+            lock.lock()
+            pending = nil; failure = nil
             lock.unlock()
         }
     }

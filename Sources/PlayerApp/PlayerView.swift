@@ -73,9 +73,12 @@ struct PlayerView: View {
                     }
                 }
                 .overlay(alignment: .bottom) {
-                    if model.isFullScreen && !model.fullScreenControlsHidden {
-                        playbackControls
-                            .background(Color(nsColor: NSColor(white: 0.12, alpha: 0.95)))
+                    if model.isFullScreen {
+                        if model.mediaOnly { mediaOnlyTimeline }
+                        else if !model.fullScreenControlsHidden {
+                            controls
+                                .background(Color(nsColor: NSColor(white: 0.12, alpha: 0.95)))
+                        }
                     }
                 }
                 .overlay { PlaybackClickFeedbackView(feedback: model.playbackClickFeedback) }
@@ -92,7 +95,10 @@ struct PlayerView: View {
                     Divider()
                     Button("Close") { model.closePlayerWindow() }
                 }
-                if !model.isFullScreen { playbackControls }
+                if !model.isFullScreen {
+                    if model.mediaOnly { mediaOnlyTimeline.background(.black) }
+                    else { controls }
+                }
             }
         }
         .background(Color(nsColor: NSColor(white: 0.12, alpha: 1)))
@@ -124,12 +130,13 @@ struct PlayerView: View {
         .sheet(isPresented: $model.settingsOpen) { SettingsView(model: model) }
     }
 
-    @ViewBuilder private var playbackControls: some View {
-        if model.mediaOnly {
-            timeline.padding(.horizontal, 12).padding(.vertical, 4)
-        } else {
-            controls
-        }
+    private var mediaOnlyTimeline: some View {
+        let visible = !model.mediaOnlySeekBarHidden || model.scrubbing
+        return timeline.padding(.horizontal, 12).padding(.vertical, 4)
+            .background(Color(nsColor: NSColor(white: 0.12, alpha: 0.95)))
+            .opacity(visible ? 1 : 0)
+            .allowsHitTesting(visible)
+            .accessibilityHidden(!visible)
     }
 
     private var welcomeBackground: some View {

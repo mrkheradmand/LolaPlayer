@@ -1,5 +1,35 @@
 # Lola Player versions
 
+## 1.24.1 (build 75) — 2026-11-22
+
+### Added
+
+- None.
+
+### Modified
+
+- Store the library in Application Support/LolaPlayer and migrate the previous LumenPlayer data directory on launch.
+
+### Removed
+
+- None.
+
+## 1.24.0 (build 74) — 2026-11-22
+
+### Added
+
+- Library data in Settings → Bookmarks with file size and confirmed removal of playlist, history, bookmarks, and saved playback positions.
+- Name sorting in History, alongside the existing option in Playlist and Bookmarks.
+
+### Modified
+
+- In media-only mode, the seek bar hides five seconds after the pointer leaves and returns immediately on reentry.
+- Library saves use compact JSON and existing readable libraries compact automatically.
+
+### Removed
+
+- None.
+
 ## 1.23.0 (build 73) — 2026-10-25
 
 ### Added

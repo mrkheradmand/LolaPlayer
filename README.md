@@ -58,7 +58,7 @@ The menu and player window open before your library and playback engine finish l
 
 - Named, searchable bookmarks that stay saved when you close the app.
 - Float on Top during playback, full screen, and adjustable window sizes. **View → Remember Window Position and Size** restores your window when you reopen the app.
-- Media-only view (**2**) fits the window to the video and progress bar without moving the media upward; **1** restores the previous window size and full interface. Your choice is remembered when you reopen the app. Right-click the player and choose **Close** to close it.
+- Media-only view (**2**) fits the window to the video and progress bar. The bar hides five seconds after the pointer leaves the player and reappears when it returns. Press **1** to restore the full interface. Your choice is remembered when you reopen the app. Right-click the player and choose **Close** to close it.
 - Drag the player to move its window; click once to play/pause and twice for full screen.
 - Hover or drag along the progress bar to see the time and a thumbnail for local video files. Cached previews appear immediately.
 - A separate, resizable library window for playlists, history, and bookmarks. It opens beside the player when space allows and floats at the right-center in full screen.
@@ -109,9 +109,11 @@ Space plays/pauses only when Lola’s player window is active; it stays availabl
 
 Press **1** or **2** while the player window is active and you aren’t typing in a text box. Click the video to return keyboard control from Library or About.
 
-Use the **Bookmarks** tab to name, search, and replay saved moments. The **Playlist** and **History** tabs help you return to your media. Click anywhere inside a tab button, including its padding, to switch lists. Open the library with **⌘L**, history with **⇧⌘H**, or bookmarks with **⇧⌘B**; the player keeps its current size.
+Use the **Bookmarks** tab to name, search, and replay saved moments. The **Playlist** and **History** tabs help you return to your media. All three tabs offer **Name** sorting in both directions. Click anywhere inside a tab button, including its padding, to switch lists. Open the library with **⌘L**, history with **⇧⌘H**, or bookmarks with **⇧⌘B**. The player keeps its current size.
 
 Settings (**⌘,**) groups your preferences into **General**, **Playback**, and **Bookmarks**. Switches align along the right edge of each settings card. Changes apply immediately.
+
+In **Settings → Bookmarks → Library data**, check the current data file size or choose **Remove Data**. Confirm to clear the playlist, history, bookmarks, and saved playback positions. Playback stops and your media files stay on disk.
 
 ## Updates
 
@@ -128,7 +130,7 @@ Copyright © 2026 J Kheradmand. Bundled playback libraries retain their own lice
 
 | App | Release |
 | --- | --- |
-| Version | 1.23.0, build 73 |
+| Version | 1.24.1, build 75 |
 
 
 See [release notes](versions.md) for what's changed.<br>

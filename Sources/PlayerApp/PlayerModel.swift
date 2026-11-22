@@ -24,7 +24,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         controlsHideTimer?.invalidate()
         restoreFullScreenPointer()
         fullScreenControlsHidden = false
-        guard isFullScreen else { return }
+        guard isFullScreen, !mediaOnly else { return }
         controlsHideTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, self.isFullScreen else { return }
@@ -66,6 +66,9 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     var volume = 100.0
     var muted = false
     private(set) var mediaOnly = false
+    private(set) var mediaOnlySeekBarHidden = false
+    @ObservationIgnored private var mediaOnlyHideTimer: Timer?
+    @ObservationIgnored private var mediaOnlyPointerLeftAt: TimeInterval?
     private(set) var mediaAspectRatio = 0.0
     @ObservationIgnored private var fullInterfaceSize: NSSize?
     @ObservationIgnored private var fullInterfaceMinimum: NSSize?
@@ -235,23 +238,40 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     private(set) var libraryReady = false
     @ObservationIgnored private var shuttingDown = false
     @ObservationIgnored private var importing = false
+    private let legacyLibraryDirectory: URL?
 
     init() {
         let smokeIndex = CommandLine.arguments.firstIndex(of: "--smoke-test")
         let smokeRoot = smokeIndex.flatMap { index in CommandLine.arguments.count > index + 1 ? URL(fileURLWithPath: CommandLine.arguments[index + 1]).appendingPathComponent("library-\(UUID().uuidString)") : nil }
-        let root = smokeRoot ?? ProcessInfo.processInfo.environment["LUMEN_DATA_DIR"].map { URL(fileURLWithPath: $0) }
-            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("LumenPlayer")
+        let override = smokeRoot ?? ProcessInfo.processInfo.environment["LUMEN_DATA_DIR"].map { URL(fileURLWithPath: $0) }
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let root = override ?? support.appendingPathComponent("LolaPlayer", isDirectory: true)
+        legacyLibraryDirectory = override == nil ? support.appendingPathComponent("LumenPlayer", isDirectory: true) : nil
         library = MediaLibrary(fileURL: root.appendingPathComponent("library.json"), records: [])
     }
 
     func loadLibrary() async {
-        let url = library.fileURL
-        let result = await Task.detached {
-            Result { try MediaLibrary(fileURL: url).records }
+        let defaultURL = library.fileURL
+        let legacyDirectory = legacyLibraryDirectory
+        let (url, result, migrationProblem) = await Task.detached {
+            var url = defaultURL
+            var migrationProblem: String?
+            if let legacyDirectory {
+                do { try MediaLibrary.migrateDirectory(from: legacyDirectory, to: url.deletingLastPathComponent()) }
+                catch {
+                    url = legacyDirectory.appendingPathComponent("library.json")
+                    migrationProblem = error.localizedDescription
+                }
+            }
+            return (url, Result { try MediaLibrary(fileURL: url).records }, migrationProblem)
         }.value
         guard !shuttingDown else { return }
         switch result {
-        case .success(let records): library = MediaLibrary(fileURL: url, records: records)
+        case .success(let records):
+            library = MediaLibrary(fileURL: url, records: records)
+            if let migrationProblem {
+                error = "Could not move your library to LolaPlayer. Your library is open from its previous folder. \(migrationProblem)"
+            }
         case .failure(let problem):
             library = MediaLibrary(fileURL: url.deletingLastPathComponent().appendingPathComponent("library-recovery-\(UUID().uuidString).json"), records: [])
             error = "Could not read your library. The original file is preserved at \(url.path). \(problem.localizedDescription)"
@@ -269,6 +289,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         guard libraryReady, !importing, !shuttingDown else { return }
         if automatic && (!library.records.isEmpty || UserDefaults.standard.bool(forKey: "didAttemptElmediaImport")) { return }
         importing = true
+        let target = library
         let source = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/Elmedia Player")
         // Import into an isolated snapshot, then merge on the UI actor so user edits survive.
         Task {
@@ -282,7 +303,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
                 }
             }.value
             importing = false
-            guard !shuttingDown else { return }
+            guard !shuttingDown, library === target else { return }
             switch result {
             case .success(let records):
                 perform { try library.mergeImported(records) }
@@ -313,6 +334,43 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
     func perform(_ operation: () throws -> Void) {
         do { try operation(); revision += 1 } catch { self.error = error.localizedDescription }
     }
+
+    func removeLibraryData() throws {
+        let directory = library.fileURL.deletingLastPathComponent()
+        let standardFile = directory.appendingPathComponent("library.json")
+        let files: [URL]
+        do {
+            files = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        } catch let error as CocoaError where error.code == .fileNoSuchFile || error.code == .fileReadNoSuchFile {
+            files = []
+        }
+        // Include prior recovery files, whose names are generated by loadLibrary().
+        let prefix = "library-recovery-"
+        for file in files where file.path != library.fileURL.path {
+            let name = file.deletingPathExtension().lastPathComponent
+            if file.path == standardFile.path || (file.pathExtension == "json" && name.hasPrefix(prefix)
+                && UUID(uuidString: String(name.dropFirst(prefix.count))) != nil) {
+                try MediaLibrary(fileURL: file, records: []).removeAll()
+            }
+        }
+        try library.removeAll()
+        library = MediaLibrary(fileURL: standardFile, records: [])
+        library.enableBackgroundSaving()
+        if !CommandLine.arguments.contains("--smoke-test") {
+            UserDefaults.standard.set(true, forKey: "didAttemptElmediaImport")
+        }
+        queue = []; folderIDs = []; pendingURLs = []
+        currentID = nil; pendingLocation = nil; pendingSeek = nil; loadingSince = nil
+        loaded = false; paused = true; buffering = false; ended = false; failed = false
+        position = 0; duration = 0; unsavedPlayedSeconds = 0; mediaAspectRatio = 0; scrubbing = false
+        tracks = []; chapters = []
+        bookmarkNameTarget = nil; bookmarkConfirmation = nil; message = nil
+        clearLoop(); timelinePreview.clear(); playbackClickFeedback.clear()
+        midi?.shutdown(); midi = nil; engine?.command(["stop"])
+        window?.title = "Lola Player"
+        applyWindowLevel(); systemMediaControls?.update(force: true)
+        revision += 1
+    }
     func notify(_ text: String, inMediaOnly: Bool = false) { bookmarkConfirmation = nil; message = text; messageInMediaOnly = inMediaOnly; messageUntil = Date().addingTimeInterval(2.5) }
     func persistPosition() {
         guard let id = currentID, loaded else { return }
@@ -334,6 +392,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         guard libraryReady else { return false }
         let providers = providers.filter { $0.canLoadObject(ofClass: URL.self) }
         guard !providers.isEmpty else { return false }
+        let target = library
         Task {
             var urls: [URL] = []
             for provider in providers {
@@ -342,6 +401,7 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
                 }
                 if let url { urls.append(url) }
             }
+            guard library === target else { return }
             await appendPlaylistFiles(urls)
         }
         return true
@@ -349,8 +409,9 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
 
     func appendPlaylistFiles(_ urls: [URL]) async {
         guard libraryReady, !shuttingDown else { return }
+        let target = library
         let result = await Task.detached { Result { try MediaInput.playlistDropFiles(urls) } }.value
-        guard !shuttingDown else { return }
+        guard !shuttingDown, library === target else { return }
         switch result {
         case .success(let files):
             perform {
@@ -765,11 +826,39 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
 
     func closePlayerWindow() { window?.performClose(nil) }
 
+    private func trackMediaOnlyPointer() {
+        mediaOnlyHideTimer?.invalidate()
+        mediaOnlyPointerLeftAt = nil
+        mediaOnlySeekBarHidden = false
+        guard mediaOnly else { return }
+        updateMediaOnlySeekBar()
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.updateMediaOnlySeekBar() }
+        }
+        mediaOnlyHideTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func updateMediaOnlySeekBar() {
+        let now = ProcessInfo.processInfo.systemUptime
+        if let window, window.isVisible, window.frame.contains(NSEvent.mouseLocation) {
+            mediaOnlyPointerLeftAt = nil
+        } else if mediaOnlyPointerLeftAt == nil {
+            mediaOnlyPointerLeftAt = now
+        }
+        let hidden = mediaOnlyPointerLeftAt.map { now - $0 >= 5 } ?? false
+        if mediaOnlySeekBarHidden != hidden { mediaOnlySeekBarHidden = hidden }
+    }
+
     func setMediaOnly(_ enabled: Bool, defaults: UserDefaults = .standard) {
         if !CommandLine.arguments.contains("--smoke-test") || defaults !== UserDefaults.standard {
             defaults.set(enabled, forKey: "mediaOnly")
         }
         guard enabled != mediaOnly else { return }
+        defer {
+            trackMediaOnlyPointer()
+            revealFullScreenControls()
+        }
         guard let window else { mediaOnly = enabled; return }
         let fullScreen = window.styleMask.contains(.fullScreen)
         let originalFrame = window.frame
@@ -867,5 +956,5 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
         alert.window.initialFirstResponder = input
         guard alert.runModal() == .alertFirstButtonReturn else { return nil }; return input.stringValue
     }
-    func shutdown() { shuttingDown = true; controlsHideTimer?.invalidate(); restoreFullScreenPointer(); playbackWake.update(active: false); samplePlaybackTime(); playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); do { try library.flush() } catch { NSLog("Library save failed: %@", error.localizedDescription) }; midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
+    func shutdown() { shuttingDown = true; controlsHideTimer?.invalidate(); mediaOnlyHideTimer?.invalidate(); restoreFullScreenPointer(); playbackWake.update(active: false); samplePlaybackTime(); playbackClickFeedback.clear(); saveWindowGeometry(); timelinePreview.clear(); automaticUpdateTask?.cancel(); updateCheckTask?.cancel(); timer?.invalidate(); floatStatusTimer?.invalidate(); systemMediaControls?.stop(); persistPosition(); do { try library.flush() } catch { NSLog("Library save failed: %@", error.localizedDescription) }; midi?.shutdown(); engine?.shutdown(); window?.level = .normal }
 }
