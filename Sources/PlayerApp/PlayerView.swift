@@ -94,6 +94,7 @@ struct PlayerView: View {
                     Button("Enter Full Screen") { model.window?.toggleFullScreen(nil) }
                     Divider()
                     Button("Close") { model.closePlayerWindow() }
+                    Button("Quit") { NSApp.terminate(nil) }
                 }
                 if !model.isFullScreen {
                     if model.mediaOnly { mediaOnlyTimeline.background(.black) }

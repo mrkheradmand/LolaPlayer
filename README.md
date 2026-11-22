@@ -58,7 +58,7 @@ The menu and player window open before your library and playback engine finish l
 
 - Named, searchable bookmarks that stay saved when you close the app.
 - Float on Top during playback, full screen, and adjustable window sizes. **View → Remember Window Position and Size** restores your window when you reopen the app.
-- Media-only view (**2**) fits the window to the video and progress bar. The bar hides five seconds after the pointer leaves the player and reappears when it returns. Press **1** to restore the full interface. Your choice is remembered when you reopen the app. Right-click the player and choose **Close** to close it.
+- Media-only view (**2**) fits the window to the video and progress bar. The bar hides five seconds after the pointer leaves the player and reappears when it returns. Press **1** to restore the full interface. Your choice is remembered when you reopen the app. Right-click the player and choose **Close** to close the window or **Quit** to exit Lola Player.
 - Drag the player to move its window; click once to play/pause and twice for full screen.
 - Hover or drag along the progress bar to see the time and a thumbnail for local video files. Cached previews appear immediately.
 - A separate, resizable library window for playlists, history, and bookmarks. It opens beside the player when space allows and floats at the right-center in full screen.
@@ -130,7 +130,7 @@ Copyright © 2026 J Kheradmand. Bundled playback libraries retain their own lice
 
 | App | Release |
 | --- | --- |
-| Version | 1.24.1, build 75 |
+| Version | 1.24.2, build 76 |
 
 
 See [release notes](versions.md) for what's changed.<br>

@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.24.2 (build 76) — 2026-11-22
+
+### Added
+
+- Quit in the player’s right-click menu.
+
+### Modified
+
+- None.
+
+### Removed
+
+- None.
+
 ## 1.24.1 (build 75) — 2026-11-22
 
 ### Added
