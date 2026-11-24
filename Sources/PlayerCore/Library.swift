@@ -171,6 +171,17 @@ public final class MediaLibrary {
         if finished { records[i].hasFinishedPlayback = true }
         try save()
     }
+    public func setWatched(_ id: UUID, watched: Bool) throws {
+        guard let i = records.firstIndex(where: { $0.id == id }) else { return }
+        if watched {
+            records[i].hasFinishedPlayback = true
+        } else {
+            records[i].hasFinishedPlayback = nil
+            records[i].playedSeconds = nil
+            records[i].position = 0
+        }
+        try save()
+    }
     public func relocate(_ id: UUID, to input: URL) throws {
         guard let i = records.firstIndex(where: { $0.id == id }) else { return }
         let url = input.standardizedFileURL.resolvingSymlinksInPath()

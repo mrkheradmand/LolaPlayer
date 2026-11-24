@@ -1,5 +1,19 @@
 # Lola Player versions
 
+## 1.25.0 (build 77) — 2026-11-24
+
+### Added
+
+- Hovering over the leading icon beside a filename in Library -> Playlist now swaps it to a transparent-background checkmark button; clicking marks the file as Watched, and clicking again removes Watched and resets its timer and played state to 00:00.
+
+### Modified
+
+- None
+
+### Removed
+
+- None
+
 ## 1.24.2 (build 76) — 2026-11-22
 
 ### Added

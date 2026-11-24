@@ -382,6 +382,23 @@ enum LibraryTab: String, CaseIterable { case playlist = "Playlist", history = "H
             unsavedPlayedSeconds = 0
         }
     }
+    func toggleWatched(_ id: UUID) {
+        guard let record = library.record(id) else { return }
+        let watched = record.hasFinishedPlayback != true
+        perform {
+            try library.setWatched(id, watched: watched)
+        }
+        if !watched, currentID == id {
+            unsavedPlayedSeconds = 0
+            if loaded {
+                seek(0)
+            } else {
+                position = 0
+                ended = false
+                handledEnd = false
+            }
+        }
+    }
     func movePlaylistItem(_ id: UUID, before destination: UUID?) {
         playlistSort = .playlistOrder
         let reordered = PlaybackOrder.moving(queue, item: id, before: destination)

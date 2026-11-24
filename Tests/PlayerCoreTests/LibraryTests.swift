@@ -41,6 +41,32 @@ struct LibraryTests {
         try reopened.recordPlayback(short, seconds: 30, finished: true)
         #expect(reopened.record(short)?.watchStatus == "Watched")
     }
+    @Test func manualWatchedToggleMarksAndResetsUnwatchedState() throws {
+        let (root, library) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let id = try library.visit(URL(fileURLWithPath: "/tmp/manual-watch.mp4"))
+        try library.updatePosition(id, seconds: 125, duration: 600)
+        try library.recordPlayback(id, seconds: 40)
+        #expect(library.record(id)?.watchStatus == nil)
+        #expect(library.record(id)?.hasBeenPlayed == true)
+
+        try library.setWatched(id, watched: true)
+        #expect(library.record(id)?.watchStatus == "Watched")
+        #expect(library.record(id)?.position == 125)
+        #expect(library.record(id)?.duration == 600)
+        #expect(try MediaLibrary(fileURL: library.fileURL).record(id)?.watchStatus == "Watched")
+
+        try library.setWatched(id, watched: false)
+        let reset = try #require(library.record(id))
+        #expect(reset.watchStatus == nil)
+        #expect(reset.position == 0)
+        #expect(reset.duration == 600)
+        #expect(reset.hasBeenPlayed == false)
+        #expect(timestamp(reset.position) == "00:00")
+        let reopened = try #require(try MediaLibrary(fileURL: library.fileURL).record(id))
+        #expect(reopened.watchStatus == nil)
+        #expect(reopened.position == 0)
+        #expect(reopened.hasBeenPlayed == false)
+    }
     @Test func bookmarksSurviveFileSwitchingAndRelaunch() throws {
         let (root, library) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         let a = try library.visit(URL(fileURLWithPath: "/tmp/first.mp4"))

@@ -109,11 +109,17 @@ struct LibraryView: View {
                     ForEach(displayedRecords) { record in
                         VStack(alignment: .leading, spacing: 5) {
                             HStack(spacing: 0) {
+                              if model.tab == .playlist {
+                                  PlaylistWatchToggleButton(model: model, record: record)
+                                      .padding(.leading, 12)
+                              }
                               Button { model.play(record.id) } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: record.id == model.currentID ? (model.paused ? "pause.fill" : "waveform") : "play.rectangle")
-                                        .font(.system(size: 17)).foregroundStyle(record.id == model.currentID ? Color.accentColor : .secondary)
-                                        .frame(width: 36, height: 40).background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+                                    if model.tab != .playlist {
+                                        Image(systemName: record.id == model.currentID ? (model.paused ? "pause.fill" : "waveform") : "play.rectangle")
+                                            .font(.system(size: 17)).foregroundStyle(record.id == model.currentID ? Color.accentColor : .secondary)
+                                            .frame(width: 36, height: 40).background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+                                    }
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(record.name).font(.system(size: 13, weight: .medium)).lineLimit(2).multilineTextAlignment(.leading)
                                         (Text(timestamp(record.position))
@@ -123,7 +129,11 @@ struct LibraryView: View {
                                             .font(.system(size: 11)).foregroundStyle(.secondary)
                                     }
                                     Spacer(minLength: 0)
-                                }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .padding(.leading, model.tab == .playlist ? 10 : 12)
+                                .padding(.trailing, 12)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                               }.buttonStyle(LibraryRowButtonStyle()).help(record.location.path)
                               Button(role: .destructive) {
                                   switch model.tab {
@@ -476,6 +486,50 @@ final class PlaylistDragSurfaceView: NSView, NSDraggingSource {
     }
 }
 
+private typealias WatchToggleState<Value> = SwiftUI.State<Value>
+
+private struct PlaylistWatchToggleButton: View {
+    let model: PlayerModel
+    let record: MediaRecord
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @WatchToggleState private var hovered = false
+
+    private var isCurrent: Bool { record.id == model.currentID }
+    private var isWatched: Bool { record.hasFinishedPlayback == true }
+
+    var body: some View {
+        Button { model.toggleWatched(record.id) } label: {
+            Image(systemName: hovered ? "checkmark" : (isCurrent ? (model.paused ? "pause.fill" : "waveform") : "play.rectangle"))
+                .font(.system(size: hovered ? 16 : 17, weight: hovered ? .bold : .regular))
+                .foregroundStyle(hovered ? (isWatched ? Color.green : Color.primary) : (isCurrent ? Color.accentColor : Color.secondary))
+                .frame(width: 36, height: 40)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+                .contentShape(RoundedRectangle(cornerRadius: 8))
+                .background {
+                    GeometryReader { geometry in
+                        LibraryPointerRegion(kind: .button, layoutRect: geometry.frame(in: .named("libraryContent")))
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: hovered)
+        .onContinuousHover { phase in
+            switch phase {
+            case .active:
+                hovered = true
+                model.hoveredLibraryRecordID = record.id
+                NSCursor.pointingHand.set()
+            case .ended:
+                hovered = false
+            }
+        }
+        .onDisappear { hovered = false }
+        .help(isWatched ? "Mark as unwatched" : "Mark as watched")
+        .accessibilityLabel(isWatched ? "Mark \(record.name) as unwatched" : "Mark \(record.name) as watched")
+    }
+}
+
 private struct PlaylistReorderRow: ViewModifier {
     let model: PlayerModel
     let id: UUID
@@ -484,6 +538,7 @@ private struct PlaylistReorderRow: ViewModifier {
             content
                 .overlay {
                     HStack(spacing: 0) {
+                        Color.clear.frame(width: 48).allowsHitTesting(false)
                         PlaylistNativeDragSurface(model: model, source: id, before: id,
                             after: model.queue.firstIndex(of: id).flatMap { model.queue.indices.contains($0 + 1) ? model.queue[$0 + 1] : nil })
                         Color.clear.frame(width: 36).allowsHitTesting(false)
